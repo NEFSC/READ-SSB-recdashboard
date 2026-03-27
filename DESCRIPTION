@@ -1,0 +1,18 @@
+Package: recdashboard
+Title: Recreational Fisheries Data Dashboard
+Version: 0.0.1
+Authors@R: c(
+    person("Kimberly", "Bastille", , "kimberly.bastille@noaa.gov", role = c("aut", "cre")),
+    person("Theresa", "Petesch", , "theresa.petesch@noaa.gov", role = "aut"), 
+    person("Min-Yang", "Lee", , "min-yang.lee@noaa.gov", role = "aut"))
+Maintainer: Kimberly Bastille <kimberly.bastille@noaa.gov>
+Description: A short description
+License: file LICENSE
+URL: https://nefsc.github.io/READ-SSB-recdashboard/
+BugReports: https://github.com/NEFSC/READ-SSB-recdashboard/issues
+Depends: 
+    R (>= 3.5.0)
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
