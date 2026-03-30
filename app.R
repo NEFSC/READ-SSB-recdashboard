@@ -4,6 +4,9 @@ library(plotly)
 library(dplyr)
 library(tidyr)
 
+# reticulate::install_miniconda()
+# reticulate::conda_install("r-reticulate", "python-kaleido")
+
 # Generate sample recreational fishing data
 set.seed(123)
 generate_fish_data <- function() {
@@ -13,18 +16,32 @@ generate_fish_data <- function() {
   waves <- 1:6
   
   data <- expand.grid(
-    species = species,
-    mode = modes,
-    year = years,
-    wave = waves,
-    length_cm = seq(20, 80, by = 5)
+    species      = species,
+    mode         = modes,
+    year         = years,
+    wave         = waves,
+    length_cm    = seq(20, 80, by = 5)
   )
   
   data$catch_count <- rpois(nrow(data), lambda = sample(10:50, nrow(data), replace = TRUE))
-  data$weight_kg <- round(data$length_cm * 0.015 + rnorm(nrow(data), 0, 0.3), 2)
-  data$cpue <- round(runif(nrow(data), 0.1, 2.5), 2)
+  data$weight_kg   <- round(data$length_cm * 0.015 + rnorm(nrow(data), 0, 0.3), 2)
+  data$cpue        <- round(runif(nrow(data), 0.1, 2.5), 2)
   
-  data
+  data %>%
+    tidyr::pivot_longer(
+      cols      = c(catch_count, weight_kg, cpue),
+      names_to  = "metric",
+      values_to = "value"
+    ) %>%
+    mutate(
+      data_version = "v1.0",
+      units = dplyr::case_when(
+        metric == "catch_count" ~ "number of fish",
+        metric == "weight_kg"   ~ "kg",
+        metric == "cpue"        ~ "fish per trip"
+      )
+    ) %>%
+    select(species, mode, data_version, year, wave, metric, value, units)
 }
 
 fish_data <- generate_fish_data()
@@ -32,16 +49,16 @@ fish_data <- generate_fish_data()
 ui <- page_fillable(
   theme = bs_theme(
     version = 5,
-    bg = "#ffffff",
-    fg = "#003087",
-    primary = "#0085CA",
-    secondary = "#41B6E6",
+    bg = "#F1F2F3",        # --light-gray
+    fg = "#323C46",        # --whale-gray
+    primary = "#0085CA",   # --noaa-sea
+    secondary = "#5EB6D9", # --light-sea
     base_font = font_google("Open Sans")
   ),
   
   # NOAA Banner
   div(
-    style = "background-color: #003087; padding: 15px 30px; margin-bottom: 0px; display: flex; align-items: center; justify-content: space-between;",
+    style = "background-color: #003087; border-bottom: 4px solid #0085CA; padding: 15px 30px; margin-bottom: 0px; display: flex; align-items: center; justify-content: space-between;",
     
     div(
       style = "display: flex; align-items: center;",
@@ -50,29 +67,40 @@ ui <- page_fillable(
         height = "60px",
         style = "margin-right: 20px;"
       ),
-      h3("Recreational Fisheries Dashboard", 
-         style = "color: white; margin: 0; font-weight: 600;")
+      div(
+        h3("Recreational Fisheries Dashboard",
+           style = "color: white; margin: 0; font-weight: 700; font-size: 19px; letter-spacing: -0.01em;"),
+        div("MARINE RECREATIONAL INFORMATION PROGRAM",
+            style = "color: #C6E6F0; font-size: 11.5px; margin-top: 3px; letter-spacing: 0.02em;")
+      )
     ),
     
     div(
       style = "display: flex; gap: 10px; flex-wrap: wrap;",
-      downloadButton("download_data", "Download Data", 
-                     style = "background-color: #0085CA; border: none; color: white; font-size: 13px;"),
-      downloadButton("download_plot", "Download Plot", 
-                     style = "background-color: #0085CA; border: none; color: white; font-size: 13px;")
+      downloadButton("download_data", "Download Data",
+                     style = "background-color: #0085CA; border: none; color: white; font-size: 13px; border-radius: 3px;"),
+      downloadButton("download_plot", "Download Plot",
+                     style = "background-color: transparent; border: 1.5px solid #0085CA; color: white; font-size: 13px; border-radius: 3px;")
     )
+  ),
+  
+  # Nav bar
+  div(
+    style = "background-color: #002364; border-bottom: 1px solid rgba(255,255,255,0.08); padding: 0 30px; display: flex; gap: 5px;",
+    div("Overview",    style = "color: white; font-size: 12.5px; font-weight: 600; padding: 10px 15px; border-bottom: 3px solid #0085CA; cursor: pointer;")
   ),
   
   # Main content
   layout_sidebar(
     sidebar = sidebar(
-      title = "Filter Options",
+      #title = "Filter Options",
       width = 280,
+      style = "background-color: #ffffff; border-right: 1px solid #CBCFD1;",
       
-      # Stock section with blue header
+      # Stock section
       div(
         div(
-          style = "background-color: #0085CA; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600;",
+          style = "background-color: #003087; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
           "Stock"
         ),
         selectInput(
@@ -83,60 +111,74 @@ ui <- page_fillable(
         )
       ),
       
-      # Data Metric section with blue header
+      # Data Metric section
       div(
         style = "margin-top: 15px;",
         div(
-          style = "background-color: #0085CA; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600;",
+          style = "background-color: #003087; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
           "Data Metric"
         ),
         selectInput(
           "data_metric",
           NULL,
-          choices = c("Catch-at-Length" = "length", 
-                      "CPUE" = "cpue", 
+          choices = c("Catch-at-Length" = "length",
+                      "CPUE" = "cpue",
                       "Average Weight" = "weight"),
           selected = "length"
         )
       ),
       
-      checkboxGroupInput(
-        "mode",
-        "Fishing Mode:",
-        choices = c("Shore", "Private/Rental Boat", "Party/Charter Boat"),
-        selected = c("Shore", "Private/Rental Boat", "Party/Charter Boat")
-      ),
-      
-      radioButtons(
-        "time_interval",
-        "Time Interval:",
-        choices = c("Annual" = "annual", "By Wave (2-month periods)" = "wave"),
-        selected = "annual"
-      ),
-      
-      conditionalPanel(
-        condition = "input.time_interval == 'annual'",
+      # Fishing Mode section
+      div(
+        style = "margin-top: 15px;",
+        div(
+          style = "background-color: #003087; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
+          "Fishing Mode"
+        ),
         checkboxGroupInput(
-          "years",
-          "Select Years:",
-          choices = 2020:2023,
-          selected = 2020:2023
+          "mode",
+          NULL,
+          choices = c("Shore", "Private/Rental Boat", "Party/Charter Boat"),
+          selected = c("Shore", "Private/Rental Boat", "Party/Charter Boat")
         )
       ),
       
-      conditionalPanel(
-        condition = "input.time_interval == 'wave'",
-        selectInput(
-          "year_wave",
-          "Select Year:",
-          choices = 2020:2023,
-          selected = 2023
+      # Time Interval section
+      div(
+        style = "margin-top: 15px;",
+        div(
+          style = "background-color: #003087; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
+          "Time Interval"
         ),
-        checkboxGroupInput(
-          "waves",
-          "Select Waves:",
-          choices = setNames(1:6, paste("Wave", 1:6, c("(Jan-Feb)", "(Mar-Apr)", "(May-Jun)", "(Jul-Aug)", "(Sep-Oct)", "(Nov-Dec)"))),
-          selected = 1:6
+        radioButtons(
+          "time_interval",
+          NULL,
+          choices = c("Annual" = "annual", "By Wave (2-month periods)" = "wave"),
+          selected = "annual"
+        ),
+        conditionalPanel(
+          condition = "input.time_interval == 'annual'",
+          checkboxGroupInput(
+            "years",
+            "Select Years:",
+            choices = 2020:2023,
+            selected = 2020:2023
+          )
+        ),
+        conditionalPanel(
+          condition = "input.time_interval == 'wave'",
+          selectInput(
+            "year_wave",
+            "Select Year:",
+            choices = 2020:2023,
+            selected = 2023
+          ),
+          checkboxGroupInput(
+            "waves",
+            "Select Waves:",
+            choices = setNames(1:6, paste("Wave", 1:6, c("(Jan-Feb)", "(Mar-Apr)", "(May-Jun)", "(Jul-Aug)", "(Sep-Oct)", "(Nov-Dec)"))),
+            selected = 1:6
+          )
         )
       )
     ),
@@ -145,19 +187,27 @@ ui <- page_fillable(
       col_widths = c(12, 12),
       
       card(
-        card_header(textOutput("plot_title")),
+        style = "border: 1px solid #CBCFD1; border-radius: 3px;",
+        card_header(
+          textOutput("plot_title"),
+          style = "background-color: #003087; color: white; font-weight: 700; font-size: 13px;"
+        ),
         plotlyOutput("main_plot", height = "500px")
       ),
       
       card(
-        card_header("Data Summary"),
+        style = "border: 1px solid #CBCFD1; border-radius: 3px;",
+        card_header(
+          "Data Summary",
+          style = "background-color: #003087; color: white; font-weight: 700; font-size: 13px;"
+        ),
         tableOutput("summary_table")
       )
     )
   )
 )
 
-
+#The server needs to be updated to work with the long format data — filtering on metric instead of using column names directly, and extracting length_cm from the wave column where needed. Here's the updated server:
 server <- function(input, output, session) {
   
   # Reactive filtered data
@@ -180,119 +230,96 @@ server <- function(input, output, session) {
     data
   })
   
-  # Catch-at-Length plot
-  length_plot_reactive <- reactive({
-    data <- filtered_data()
-    
-    if (input$time_interval == "annual") {
-      plot_data <- data %>%
-        group_by(length_cm, year) %>%
-        summarise(total_catch = sum(catch_count), .groups = "drop")
-      
-      p <- plot_ly(plot_data, x = ~length_cm, y = ~total_catch, color = ~factor(year),
-                   type = "bar", colors = "Blues") %>%
-        layout(
-          xaxis = list(title = "Length (cm)"),
-          yaxis = list(title = "Total Catch Count"),
-          barmode = "group",
-          legend = list(title = list(text = "Year"))
-        )
-    } else {
-      plot_data <- data %>%
-        group_by(length_cm, wave) %>%
-        summarise(total_catch = sum(catch_count), .groups = "drop") %>%
-        mutate(wave_label = paste("Wave", wave))
-      
-      p <- plot_ly(plot_data, x = ~length_cm, y = ~total_catch, color = ~wave_label,
-                   type = "bar", colors = "Blues") %>%
-        layout(
-          xaxis = list(title = "Length (cm)"),
-          yaxis = list(title = "Total Catch Count"),
-          barmode = "group",
-          legend = list(title = list(text = "Wave"))
-        )
-    }
-    
-    p
+  # Plot title
+  output$plot_title <- renderText({
+    metric_label <- switch(input$data_metric,
+                           "length" = "Catch-at-Length",
+                           "cpue"   = "CPUE (fish per trip)",
+                           "weight" = "Average Weight (kg)"
+    )
+    paste(input$species, "-", metric_label)
   })
   
-  output$length_plot <- renderPlotly({
-    length_plot_reactive()
-  })
-  
-  # CPUE plot
-  cpue_plot_reactive <- reactive({
-    data <- filtered_data()
+  plot_obj <- reactive({
+    req(filtered_data())
     
-    if (input$time_interval == "annual") {
-      plot_data <- data %>%
-        group_by(year, mode) %>%
-        summarise(avg_cpue = mean(cpue, na.rm = TRUE), .groups = "drop")
-      
-      p <- plot_ly(plot_data, x = ~year, y = ~avg_cpue, color = ~mode,
-                   type = "scatter", mode = "lines+markers", colors = "Set2") %>%
-        layout(
-          xaxis = list(title = "Year"),
-          yaxis = list(title = "Average CPUE (fish per trip)"),
-          legend = list(title = list(text = "Mode"))
-        )
-    } else {
-      plot_data <- data %>%
-        group_by(wave, mode) %>%
-        summarise(avg_cpue = mean(cpue, na.rm = TRUE), .groups = "drop")
-      
-      p <- plot_ly(plot_data, x = ~wave, y = ~avg_cpue, color = ~mode,
-                   type = "scatter", mode = "lines+markers", colors = "Set2") %>%
-        layout(
-          xaxis = list(title = "Wave", tickvals = 1:6),
-          yaxis = list(title = "Average CPUE (fish per trip)"),
-          legend = list(title = list(text = "Mode"))
-        )
-    }
+    library(ggplot2)
     
-    p
-  })
-  
-  output$cpue_plot <- renderPlotly({
-    cpue_plot_reactive()
-  })
-  
-  # Weight plot
-  weight_plot_reactive <- reactive({
-    data <- filtered_data()
+    time_var   <- if (input$time_interval == "annual") "year" else "wave"
+    time_label <- if (input$time_interval == "annual") "Year" else "Wave"
     
-    if (input$time_interval == "annual") {
-      plot_data <- data %>%
-        group_by(year) %>%
-        summarise(avg_weight = mean(weight_kg, na.rm = TRUE), .groups = "drop")
-      
-      p <- plot_ly(plot_data, x = ~year, y = ~avg_weight, type = "bar",
-                   marker = list(color = "#0085CA")) %>%
-        layout(
-          xaxis = list(title = "Year"),
-          yaxis = list(title = "Average Weight (kg)")
-        )
-    } else {
-      plot_data <- data %>%
-        group_by(wave) %>%
-        summarise(avg_weight = mean(weight_kg, na.rm = TRUE), .groups = "drop")
-      
-      p <- plot_ly(plot_data, x = ~wave, y = ~avg_weight, type = "bar",
-                   marker = list(color = "#0085CA")) %>%
-        layout(
-          xaxis = list(title = "Wave", tickvals = 1:6),
-          yaxis = list(title = "Average Weight (kg)")
-        )
-    }
+    metric_name <- switch(input$data_metric,
+                          "length" = "catch_count",
+                          "cpue"   = "cpue",
+                          "weight" = "weight_kg"
+    )
     
-    p
+    x_label <- switch(input$data_metric,
+                      "length" = "Total Catch Count",
+                      "cpue"   = "CPUE (fish per trip)",
+                      "weight" = "Average Weight (kg)"
+    )
+    
+    plot_data <- filtered_data() %>%
+      dplyr::filter(metric == metric_name)
+    
+    max_time <- max(plot_data[[time_var]], na.rm = TRUE)
+    
+    max_data <- plot_data %>%
+      dplyr::filter(.data[[time_var]] == max_time)
+    
+    max_mean <- mean(max_data$value, na.rm = TRUE)
+    
+    g <- ggplot(max_data, aes(x = value)) +
+      geom_histogram(aes(y = ..density..), bins = 30,
+                     fill = "#5EB6D9", color = "#0085CA") +
+      geom_density(aes(y = after_stat(density)),
+                   color = "red", fill = NA, size = 0.5) +
+      geom_vline(xintercept = max_mean, linetype = "dashed", size = 1) +
+      labs(
+        x = x_label,
+        y = "Density",
+        title = paste("Distribution for", x_label, time_label, max_time)
+      ) +
+      theme_minimal()
+    
+    ggplotly(g)
   })
   
-  output$weight_plot <- renderPlotly({
-    weight_plot_reactive()
+  
+  
+  
+  
+  
+  # Single main plot driven by data_metric
+  output$main_plot <- renderPlotly({
+    plot_obj()
   })
   
-  # Download handlers
+  # Summary table
+  output$summary_table <- renderTable({
+    
+    metric_name <- switch(input$data_metric,
+                          "length" = "catch_count",
+                          "cpue"   = "cpue",
+                          "weight" = "weight_kg"
+    )
+    time_var <- if (input$time_interval == "annual") "year" else "wave"
+    
+    filtered_data() %>%
+      filter(metric == metric_name) %>%
+      group_by(mode, .data[[time_var]]) %>%
+      summarise(
+        Median  = round(median(value, na.rm = TRUE), 2),
+        Q25     = round(quantile(value, 0.25, na.rm = TRUE), 2),
+        Q75     = round(quantile(value, 0.75, na.rm = TRUE), 2),
+        N       = n(),
+        .groups = "drop"
+      ) %>%
+      rename(!!time_var := .data[[time_var]])
+  })
+  
+  # Download data
   output$download_data <- downloadHandler(
     filename = function() {
       paste0("fishing_data_", gsub(" ", "_", input$species), "_", Sys.Date(), ".csv")
@@ -302,6 +329,15 @@ server <- function(input, output, session) {
     }
   )
   
+  # Download plot
+  output$download_plot <- downloadHandler(
+    filename = function() {
+      paste0("fishing_plot_", gsub(" ", "_", input$species), "_", Sys.Date(), ".png")
+    },
+    content = function(file) {
+      plotly::save_image(plot_obj(), file)
+    }
+  )
 }
 
 shinyApp(ui, server)
