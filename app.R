@@ -56,40 +56,104 @@ ui <- page_fillable(
     base_font = font_google("Open Sans")
   ),
   
-  # NOAA Banner
+  # Combined NOAA Banner + Nav Bar
   div(
-    style = "background-color: #003087; border-bottom: 4px solid #0085CA; padding: 15px 30px; margin-bottom: 0px; display: flex; align-items: center; justify-content: space-between;",
+    style = "
+    background-color: #003087;
+    border-bottom: 4px solid #0085CA;
+    margin: 0;
+    padding: 5px 30px;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+  ",
     
+    # --- Top Row: Logo + Title + Buttons ---
     div(
-      style = "display: flex; align-items: center;",
-      img(
-        src = "https://www.fisheries.noaa.gov/themes/custom/noaa_components/images/fisheries_header_logo_jul2019.png",
-        height = "60px",
-        style = "margin-right: 20px;"
-      ),
+      style = "display: flex; justify-content: space-between; align-items: center; width: 100%;",
+      
+      # Left: Logo + Titles
       div(
-        h3("Recreational Fisheries Dashboard",
-           style = "color: white; margin: 0; font-weight: 700; font-size: 19px; letter-spacing: -0.01em;"),
-        div("MARINE RECREATIONAL INFORMATION PROGRAM",
-            style = "color: #C6E6F0; font-size: 11.5px; margin-top: 3px; letter-spacing: 0.02em;")
+        style = "display: flex; align-items: center; gap: 12px;",
+        img(
+          src = "https://www.fisheries.noaa.gov/themes/custom/noaa_components/images/fisheries_header_logo_jul2019.png",
+          height = "50px",
+          style = "display: block; vertical-align: top; margin: 0; padding: 0;"
+        ),
+        div(
+          h3("Recreational Fisheries Dashboard",
+             style = "
+             color: white;
+             margin: 0;
+             padding: 0;
+             font-weight: 700;
+             font-size: 18px;
+             line-height: 1;
+             vertical-align: top;
+           "
+          ),
+          div("Northeast & Mid-Atlantic Region",
+              style = "
+              color: #C6E6F0;
+              font-size: 11px;
+              margin: 0;
+              padding: 0;
+              line-height: 1;
+              vertical-align: top;
+            "
+          )
+        )
+      ),
+      
+      # Right: Download Buttons
+      div(
+        style = "display: flex; gap: 10px; flex-wrap: wrap;",
+        downloadButton("download_data", "Download Data",
+                       style = "background-color: #0085CA; border: none; color: white; font-size: 13px; border-radius: 3px; padding: 5px 10px;"),
+        downloadButton("download_plot", "Download Plot",
+                       style = "background-color: transparent; border: 1.5px solid #0085CA; color: white; font-size: 13px; border-radius: 3px; padding: 5px 10px;")
       )
     ),
     
+    # --- Bottom Row: Nav Bar ---
     div(
-      style = "display: flex; gap: 10px; flex-wrap: wrap;",
-      downloadButton("download_data", "Download Data",
-                     style = "background-color: #0085CA; border: none; color: white; font-size: 13px; border-radius: 3px;"),
-      downloadButton("download_plot", "Download Plot",
-                     style = "background-color: transparent; border: 1.5px solid #0085CA; color: white; font-size: 13px; border-radius: 3px;")
+      style = "
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      margin-top: 5px;
+      height: 35px;
+    ",
+      
+      div("Overview",
+          style = "
+          color: white;
+          font-size: 12.5px;
+          font-weight: 600;
+          padding: 5px 15px;
+          border-bottom: 3px solid #0085CA;
+          cursor: pointer;
+          margin: 0;
+          line-height: 1;
+        "
+      ),
+      
+      div("Documentation",
+          style = "
+          color: white;
+          font-size: 12.5px;
+          font-weight: 600;
+          padding: 5px 15px;
+          border-bottom: 3px solid transparent;
+          cursor: pointer;
+          margin: 0;
+          line-height: 1;
+        "
+      )
     )
   ),
   
-  # Nav bar
-  div(
-    style = "background-color: #002364; border-bottom: 1px solid rgba(255,255,255,0.08); padding: 0 30px; display: flex; gap: 5px;",
-    div("Overview",    style = "color: white; font-size: 12.5px; font-weight: 600; padding: 10px 15px; border-bottom: 3px solid #0085CA; cursor: pointer;")
-  ),
-  
+ 
   # Main content
   layout_sidebar(
     sidebar = sidebar(
