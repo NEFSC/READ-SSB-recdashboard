@@ -1,2 +1,13 @@
-
 .Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.secrets
+.csv
+
+/cod_haddock
+
+
+**/.env
+**/*.env
+
