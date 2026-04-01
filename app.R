@@ -46,33 +46,38 @@ generate_fish_data <- function() {
 
 fish_data <- generate_fish_data()
 
+
 ui <- page_fillable(
   theme = bs_theme(
     version = 5,
-    bg = "#F1F2F3",        # --light-gray
-    fg = "#323C46",        # --whale-gray
-    primary = "#0085CA",   # --noaa-sea
-    secondary = "#5EB6D9", # --light-sea
+    bg = "#F1F2F3",
+    fg = "#323C46",
+    primary = "#0085CA",
+    secondary = "#5EB6D9",
     base_font = font_google("Open Sans")
   ),
+  
+  shinyjs::useShinyjs(),
+  
+  # Hidden input to track active tab
+  tags$input(id = "current_tab", type = "hidden", value = "overview"),
   
   # Combined NOAA Banner + Nav Bar
   div(
     style = "
-    background-color: #003087;
-    border-bottom: 4px solid #0085CA;
-    margin: 0;
-    padding: 5px 30px;
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
-  ",
+      background-color: #003087;
+      border-bottom: 4px solid #0085CA;
+      margin: 0;
+      padding: 5px 30px;
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+    ",
     
-    # --- Top Row: Logo + Title + Buttons ---
+    # Top Row: Logo + Title + Buttons
     div(
       style = "display: flex; justify-content: space-between; align-items: center; width: 100%;",
       
-      # Left: Logo + Titles
       div(
         style = "display: flex; align-items: center; gap: 12px;",
         img(
@@ -82,194 +87,196 @@ ui <- page_fillable(
         ),
         div(
           h3("Recreational Fisheries Dashboard",
-             style = "
-             color: white;
-             margin: 0;
-             padding: 0;
-             font-weight: 700;
-             font-size: 18px;
-             line-height: 1;
-             vertical-align: top;
-           "
-          ),
+             style = "color: white; margin: 0; padding: 0; font-weight: 700; font-size: 18px; line-height: 1;"),
           div("Northeast & Mid-Atlantic Region",
-              style = "
-              color: #C6E6F0;
-              font-size: 11px;
-              margin: 0;
-              padding: 0;
-              line-height: 1;
-              vertical-align: top;
-            "
+              style = "color: #C6E6F0; font-size: 11px; margin: 0; padding: 0; line-height: 1;")
+        )
+      ),
+      
+      # Download buttons — only shown on Overview tab
+      conditionalPanel(
+        condition = "input.current_tab == 'overview'",
+        div(
+          style = "display: flex; gap: 10px; flex-wrap: wrap;",
+          downloadButton("download_data", "Download Data",
+                         style = "background-color: #0085CA; border: none; color: white; font-size: 13px; border-radius: 3px; padding: 5px 10px;"),
+          downloadButton("download_plot", "Download Plot",
+                         style = "background-color: transparent; border: 1.5px solid #0085CA; color: white; font-size: 13px; border-radius: 3px; padding: 5px 10px;")
+        )
+      )
+    ),
+    
+    # Bottom Row: Nav Bar
+    div(
+      style = "display: flex; gap: 5px; align-items: center; margin-top: 5px; height: 35px;",
+      
+      actionLink("nav_overview", "Overview",
+                 style = "color: white; font-size: 12.5px; font-weight: 600; padding: 5px 15px; cursor: pointer; margin: 0; line-height: 1; text-decoration: none;",
+                 class = "nav-link active-nav"),
+      
+      actionLink("nav_documentation", "Documentation",
+                 style = "color: white; font-size: 12.5px; font-weight: 600; padding: 5px 15px; cursor: pointer; margin: 0; line-height: 1; text-decoration: none;",
+                 class = "nav-link")
+    )
+  ),
+  
+  tags$style(HTML("
+    .nav-link {
+      border-bottom: 3px solid transparent;
+      transition: border-bottom 0.3s;
+    }
+    .active-nav {
+      border-bottom: 3px solid #0085CA !important;
+    }
+  ")),
+  
+  # ── Overview Panel ──────────────────────────────────────────────
+  conditionalPanel(
+    condition = "input.current_tab == 'overview'",
+    layout_sidebar(
+      sidebar = sidebar(
+        width = 280,
+        style = "background-color: #ffffff; border-right: 1px solid #CBCFD1;",
+        
+        # Stock
+        div(
+          div(style = "background-color: #003087; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
+              "Stock"),
+          selectInput("species", NULL,
+                      choices = c("Atlantic Cod", "Haddock", "Summer Flounder", "Black Sea Bass", "Scup", "Bluefish"),
+                      selected = "Atlantic Cod")
+        ),
+        
+        # Data Metric — uses input$data_metric, scoped to Overview only
+        div(
+          style = "margin-top: 15px;",
+          div(style = "background-color: #003087; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
+              "Data Metric"),
+          selectInput("data_metric", NULL,
+                      choices = c("Catch-at-Length" = "length", "CPUE" = "cpue", "Average Weight" = "weight"),
+                      selected = "length")
+        ),
+        
+        # Fishing Mode
+        div(
+          style = "margin-top: 15px;",
+          div(style = "background-color: #003087; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
+              "Fishing Mode"),
+          checkboxGroupInput("mode", NULL,
+                             choices = c("Shore", "Private/Rental Boat", "Party/Charter Boat"),
+                             selected = c("Shore", "Private/Rental Boat", "Party/Charter Boat"))
+        ),
+        
+        # State — conditional on species
+        conditionalPanel(
+          condition = "input.species == 'Summer Flounder' || input.species == 'Black Sea Bass' || input.species == 'Scup'",
+          div(
+            style = "margin-top: 15px;",
+            div(style = "background-color: #003087; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
+                "State"),
+            checkboxGroupInput("state", NULL,
+                               choices = c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC"),
+                               selected = c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC"))
+          )
+        ),
+        
+        # Time Interval
+        div(
+          style = "margin-top: 15px;",
+          div(style = "background-color: #003087; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
+              "Time Interval"),
+          radioButtons("time_interval", NULL,
+                       choices = c("Annual" = "annual", "By Wave (2-month periods)" = "wave"),
+                       selected = "annual"),
+          conditionalPanel(
+            condition = "input.time_interval == 'annual'",
+            checkboxGroupInput("years", "Select Years:", choices = 2020:2023, selected = 2020:2023)
+          ),
+          conditionalPanel(
+            condition = "input.time_interval == 'wave'",
+            selectInput("year_wave", "Select Year:", choices = 2020:2023, selected = 2023),
+            checkboxGroupInput("waves", "Select Waves:",
+                               choices = setNames(1:6, paste("Wave", 1:6, c("(Jan-Feb)", "(Mar-Apr)", "(May-Jun)", "(Jul-Aug)", "(Sep-Oct)", "(Nov-Dec)"))),
+                               selected = 1:6)
           )
         )
       ),
       
-      # Right: Download Buttons
-      div(
-        style = "display: flex; gap: 10px; flex-wrap: wrap;",
-        downloadButton("download_data", "Download Data",
-                       style = "background-color: #0085CA; border: none; color: white; font-size: 13px; border-radius: 3px; padding: 5px 10px;"),
-        downloadButton("download_plot", "Download Plot",
-                       style = "background-color: transparent; border: 1.5px solid #0085CA; color: white; font-size: 13px; border-radius: 3px; padding: 5px 10px;")
-      )
-    ),
-    
-    # --- Bottom Row: Nav Bar ---
-    div(
-      style = "
-      display: flex;
-      gap: 5px;
-      align-items: center;
-      margin-top: 5px;
-      height: 35px;
-    ",
-      
-      div("Overview",
-          style = "
-          color: white;
-          font-size: 12.5px;
-          font-weight: 600;
-          padding: 5px 15px;
-          border-bottom: 3px solid #0085CA;
-          cursor: pointer;
-          margin: 0;
-          line-height: 1;
-        "
-      ),
-      
-      div("Documentation",
-          style = "
-          color: white;
-          font-size: 12.5px;
-          font-weight: 600;
-          padding: 5px 15px;
-          border-bottom: 3px solid transparent;
-          cursor: pointer;
-          margin: 0;
-          line-height: 1;
-        "
+      layout_columns(
+        col_widths = c(12, 12),
+        card(
+          style = "border: 1px solid #CBCFD1; border-radius: 3px;",
+          card_header(textOutput("plot_title"),
+                      style = "background-color: #003087; color: white; font-weight: 700; font-size: 13px;"),
+          plotlyOutput("main_plot", height = "500px")
+        ),
+        card(
+          style = "border: 1px solid #CBCFD1; border-radius: 3px;",
+          card_header("Data Summary",
+                      style = "background-color: #003087; color: white; font-weight: 700; font-size: 13px;"),
+          tableOutput("summary_table")
+        )
       )
     )
   ),
   
- 
-  # Main content
-  layout_sidebar(
-    sidebar = sidebar(
-      #title = "Filter Options",
-      width = 280,
-      style = "background-color: #ffffff; border-right: 1px solid #CBCFD1;",
-      
-      # Stock section
-      div(
-        div(
-          style = "background-color: #003087; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
-          "Stock"
-        ),
-        selectInput(
-          "species",
-          NULL,
-          choices = c("Atlantic Cod", "Haddock", "Summer Flounder", "Black Sea Bass", "Scup", "Bluefish"),
-          selected = "Atlantic Cod"
-        )
-      ),
-      
-      # Data Metric section
-      div(
-        style = "margin-top: 15px;",
-        div(
-          style = "background-color: #003087; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
-          "Data Metric"
-        ),
-        selectInput(
-          "data_metric",
-          NULL,
-          choices = c("Catch-at-Length" = "length",
-                      "CPUE" = "cpue",
-                      "Average Weight" = "weight"),
-          selected = "length"
-        )
-      ),
-      
-      # Fishing Mode section
-      div(
-        style = "margin-top: 15px;",
-        div(
-          style = "background-color: #003087; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
-          "Fishing Mode"
-        ),
-        checkboxGroupInput(
-          "mode",
-          NULL,
-          choices = c("Shore", "Private/Rental Boat", "Party/Charter Boat"),
-          selected = c("Shore", "Private/Rental Boat", "Party/Charter Boat")
-        )
-      ),
-      
-      # Time Interval section
-      div(
-        style = "margin-top: 15px;",
-        div(
-          style = "background-color: #003087; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
-          "Time Interval"
-        ),
-        radioButtons(
-          "time_interval",
-          NULL,
-          choices = c("Annual" = "annual", "By Wave (2-month periods)" = "wave"),
-          selected = "annual"
-        ),
-        conditionalPanel(
-          condition = "input.time_interval == 'annual'",
-          checkboxGroupInput(
-            "years",
-            "Select Years:",
-            choices = 2020:2023,
-            selected = 2020:2023
-          )
-        ),
-        conditionalPanel(
-          condition = "input.time_interval == 'wave'",
-          selectInput(
-            "year_wave",
-            "Select Year:",
-            choices = 2020:2023,
-            selected = 2023
-          ),
-          checkboxGroupInput(
-            "waves",
-            "Select Waves:",
-            choices = setNames(1:6, paste("Wave", 1:6, c("(Jan-Feb)", "(Mar-Apr)", "(May-Jun)", "(Jul-Aug)", "(Sep-Oct)", "(Nov-Dec)"))),
-            selected = 1:6
-          )
-        )
-      )
-    ),
-    
-    layout_columns(
-      col_widths = c(12, 12),
-      
+  # ── Documentation Panel ─────────────────────────────────────────
+  conditionalPanel(
+    condition = "input.current_tab == 'documentation'",
+    div(
+      style = "padding: 30px;",
       card(
         style = "border: 1px solid #CBCFD1; border-radius: 3px;",
-        card_header(
-          textOutput("plot_title"),
-          style = "background-color: #003087; color: white; font-weight: 700; font-size: 13px;"
-        ),
-        plotlyOutput("main_plot", height = "500px")
-      ),
-      
-      card(
-        style = "border: 1px solid #CBCFD1; border-radius: 3px;",
-        card_header(
-          "Data Summary",
-          style = "background-color: #003087; color: white; font-weight: 700; font-size: 13px;"
-        ),
-        tableOutput("summary_table")
+        card_header("Documentation",
+                    style = "background-color: #003087; color: white; font-weight: 700; font-size: 15px;"),
+        card_body(
+          style = "padding: 0;",
+          
+          div(
+            style = "display: flex; height: 100%;",
+            
+            # ── Left: Metric Selector ──────────────────────────────
+            div(
+              style = "
+                width: 240px;
+                min-width: 240px;
+                background-color: #f8f9fa;
+                border-right: 1px solid #CBCFD1;
+                padding: 20px 15px;
+              ",
+              div(
+                style = "background-color: #003087; color: white; padding: 8px 12px; margin: -20px -15px 15px -15px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
+                "Data Metric"
+              ),
+              selectInput(
+                "doc_metric",
+                NULL,
+                choices = c(
+                  "Catch-at-Length" = "length",
+                  "CPUE"            = "cpue",
+                  "Average Weight"  = "weight"
+                ),
+                selected = "length",
+                width = "100%"
+              )
+            ),
+            
+            # ── Right: HTML Content ────────────────────────────────
+            div(
+              style = "
+                flex: 1;
+                padding: 25px 30px;
+                overflow-y: auto;
+              ",
+              uiOutput("documentation_content")
+            )
+          )
+        )
       )
     )
   )
 )
+
 
 #The server needs to be updated to work with the long format data — filtering on metric instead of using column names directly, and extracting length_cm from the wave column where needed. Here's the updated server:
 server <- function(input, output, session) {
@@ -402,6 +409,38 @@ server <- function(input, output, session) {
       plotly::save_image(plot_obj(), file)
     }
   )
+  
+  # ── Tab navigation ───────────────────────────────────────────────
+  observeEvent(input$nav_overview, {
+    shinyjs::runjs("
+      Shiny.setInputValue('current_tab', 'overview');
+      document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active-nav'));
+      document.getElementById('nav_overview').classList.add('active-nav');
+    ")
+  })
+  
+  observeEvent(input$nav_documentation, {
+    shinyjs::runjs("
+      Shiny.setInputValue('current_tab', 'documentation');
+      document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active-nav'));
+      document.getElementById('nav_documentation').classList.add('active-nav');
+    ")
+  })
+  
+  # ── Documentation content ────────────────────────────────────────
+  # Maps each metric value to its rendered RMD file.
+  # Replace the file paths below with your actual knitted HTML files.
+  output$documentation_content <- renderUI({
+  # Documentation
+  rmd_file <- switch(input$doc_metric,
+                     "length" = "docs/catch-at-length.html",
+                     "cpue"   = "docs/cpue.html",
+                     "weight" = "docs/average_weight.html"
+  )
+  
+  # Include the knitted HTML inline
+  includeHTML(rmd_file)
+  })
 }
 
 shinyApp(ui, server)
