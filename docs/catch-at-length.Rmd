@@ -1,0 +1,20 @@
+# Catch-at-Length 
+
+**Description**: Short Description of data set
+
+**Years available**: What years of data are avialable
+
+## Methods
+
+### Data sources
+
+Where does the data come from. Who collects/maintains/owns the data.
+
+### Data extraction 
+
+Where did we get this data. How do we access it. 
+
+### Data analysis/Processing
+
+Is there any analysis or processing that occurs. Links to code that does this. 
+
