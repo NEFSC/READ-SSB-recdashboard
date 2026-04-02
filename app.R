@@ -265,6 +265,8 @@ ui <- page_fillable(
 
 server <- function(input, output, session) {
   
+  shiny::addResourcePath("docs", "docs")
+  
   filtered_data <- reactive({
     req(input$species, input$mode)
     
@@ -380,8 +382,19 @@ server <- function(input, output, session) {
   })
   
   output$documentation_content <- renderUI({
-    rmd_file <- switch(input$doc_metric, "length_doc" = "docs/catch-at-length.html")
-    includeHTML(rmd_file)
+    
+    doc_path <- switch(input$doc_metric,
+                       "length_doc" = "docs/catch-at-length.html"
+    )
+    
+    tags$iframe(
+      src    = doc_path,
+      style  = "width: 100%; height: 800px; border: none;",
+      seamless = NA
+    )
+    
+    # rmd_file <- switch(input$doc_metric, "length_doc" = "docs/catch-at-length.html")
+    # includeHTML(rmd_file)
   })
 }
 
