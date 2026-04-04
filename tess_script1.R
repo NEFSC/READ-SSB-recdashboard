@@ -7,6 +7,8 @@
 library(dplyr)
 #library(tidyverse)
 library(tidyr)
+library(ggplot2)
+library(viridis)
 
 # Load data
 mean_catch_per_trip <- read.csv("cod_haddock/mean_catch_per_trip.csv")
@@ -15,11 +17,13 @@ baseline_catch_at_length <- read.csv("cod_haddock/baseline_catch_at_length.csv")
 #projected_catch_at_length <- read.csv("cod_haddock/projected_catch_at_length.csv")
 
 
+# want data from all the datasets in long format with the following columns: 
+# species	mode data_version	year wave	metric value units
+
+
+
 
 ### CATCH PER TRIP
-
-# want data in format with the following columns: 
-# species	mode data_version	year wave	metric value units
 
 # catch per trip data is at the month-mode level for April-Nov, 201 draws
 # only the for hire is open in April, only private open in Nov (14 obs per draw)
@@ -72,6 +76,45 @@ catch_wide_wm <- catch_wide_wm %>% mutate_at(vars(mean_cod_mm_wm2:mean_hadd_mm_w
 # create mode wave variable to merge with directed trip weights
 catch_wide_wm <- catch_wide_wm %>% 
   mutate(mode_wave = paste(mode, wave, sep = "_"))
+
+#a bit of a mismatch because directed trips has april trip for private but 
+#we don't have an april catch per trip estimate for private
+
+merge_catch_trips <- full_join(catch_wide_wm, dtrips_wide_wm, by = "mode_wave")
+
+merge_catch_trips <- merge_catch_trips %>% mutate_at(vars(mean_cod_mm_wm2:mean_hadd_mm_wm1), ~replace(., is.na(.), 0))
+
+# average haddock catch per trip = average haddock catch for march * weight_wm1_trips +
+# average haddock catch for april * weight_wm2_trips
+merge_catch_trips <- merge_catch_trips %>% 
+  mutate(mean_hadd_catch_per_wave = (mean_hadd_mm_wm1 * weight_wm1_trips) + (mean_hadd_mm_wm2 * weight_wm2_trips),
+         mean_cod_catch_per_wave = (mean_cod_mm_wm1 * weight_wm1_trips) + (mean_cod_mm_wm2 * weight_wm2_trips))
+
+
+# make these into side by side bar charts
+p1 <- ggplot(na.omit(merge_catch_trips), aes(x = wave.x, y = mean_cod_catch_per_wave, color = mode.x, group = mode.x)) + 
+  geom_line() +
+  labs(x = "Wave", y = "Number of Fish", color = "Mode") +
+  ggtitle("Average Cod Catch per Trip") +
+  scale_color_viridis_d(option = "plasma") +
+  theme_classic() +
+  geom_point() + scale_color_discrete(labels = c("For Hire", "Private"))
+
+p2 <- ggplot(na.omit(merge_catch_trips), aes(x = wave.x, y = mean_hadd_catch_per_wave, color = mode.x, group = mode.x)) + 
+  geom_line() +
+  labs(x = "Wave", y = "Number of Fish", color = "Mode") +
+  ggtitle("Average Haddock Catch per Trip") +
+  scale_color_viridis_d(option = "plasma") +
+  theme_classic() +
+  geom_point() + scale_color_discrete(labels = c("For Hire", "Private"))
+
+p1 + p2   #doesnt work
+
+
+###### NOW ITS TIME TO TURN merge_catch_trips into long and separate the species !!!!
+# https://shanghai.hosting.nyu.edu/data/r/reshaping.html#:~:text=)%20library(dplyr)-,long%20to%20wide,wide%20format%20with%20spread()%20.&text=spread()%20converts%20data%20from,and%20value%20is%20from%20gpa%20.&text=We%20can%20rename%20the%20two%20new%20columns%20if%20we%20want%20to.&text=Recently%2C%20tidyr%20has%20updated%20spread,not%20be%20under%20active%20development.&text=If%20there%20are%20multiple%20variables,()%20in%20the%20values_from%20argument.
+
+
 
 
 
@@ -236,16 +279,16 @@ dtrips_wide_wm <- dtrips_wide_wm %>% mutate(weight_wm2_trips = wm2 / dtrips_per_
 dtrips_wide_wm <- dtrips_wide_wm %>% 
   mutate(mode_wave = paste(mode, wave, sep = "_"))
 
-# Now convert the weights and trips per mode-month back to long, merge w catch per trip
-# OR could wide out the cod and hadd catch by wavemonth and merge in at mode wave level
+
+# wide out the cod and hadd catch by wavemonth and merge in at mode wave level
 # average haddock catch per trip = average haddock catch for march * weight_wm1_trips +
 # average haddock catch for april * weight_wm2_trips
 
 
 
 
-library(ggplot2)
-library(viridis)
+
+
 
 ggplot(dtrips_wide_wm, aes(x = wave, y = dtrips_per_mode_wave, color = mode, group = mode)) + 
   geom_line() +
