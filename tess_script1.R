@@ -46,6 +46,39 @@ mean_catch_per_trip <- mean_catch_per_trip %>%
     month >= 11 ~ "6"
   ))
 
+##adding stuff 4/3
+## Collapse the draws to get average catch per mode-month
+catch_1collapse <- mean_catch_per_trip %>%
+  group_by(mode, month, wave, year, data_version, metric, units) %>%
+  summarise(mean_hadd_mm = mean(hadd_catch, na.rm = TRUE), mean_cod_mm = mean(cod_catch, na.rm = TRUE))
+
+table(mean_catch_per_trip$mode, mean_catch_per_trip$month)
+
+catch_1collapse <- catch_1collapse %>%
+  mutate(wave_month = case_when(
+    month == 1|month==3|month == 5|month==7|month == 9|month==11 ~ "wm1",
+    month == 2|month==4|month == 6|month==8|month == 10|month==12 ~ "wm2"
+  ))
+
+# drop the month
+catch_1collapse <- subset(catch_1collapse, select = -c(month))
+
+catch_wide_wm <- catch_1collapse %>% 
+  pivot_wider(names_from = wave_month, values_from = c(mean_cod_mm, mean_hadd_mm))
+
+# replace na with 0
+catch_wide_wm <- catch_wide_wm %>% mutate_at(vars(mean_cod_mm_wm2:mean_hadd_mm_wm1), ~replace(., is.na(.), 0))
+
+# create mode wave variable to merge with directed trip weights
+catch_wide_wm <- catch_wide_wm %>% 
+  mutate(mode_wave = paste(mode, wave, sep = "_"))
+
+
+
+
+##back to the 4/1 edits - prob redo the stuff below
+
+
 #make cod data frame
 #leaving in some extra columns like month and draw for now, can delete later
 cod_mean_catch_per_trip <- mean_catch_per_trip[, c("mode", "data_version", "year", "month", "wave", "metric", "cod_catch", "units", "draw")]
@@ -140,6 +173,7 @@ directed_trips %>%
   summarise(mean_val = mean(dtrip, na.rm = TRUE))
 
 
+## Collapse the draws to get average trips per mode-month-kod
 dtrips_1collapse <- directed_trips %>%
   group_by(mode, month, year, kod, ID_mode_month_yr_kod) %>%
   summarise(mean_dtrip_mmyk = mean(dtrip, na.rm = TRUE))
@@ -199,13 +233,30 @@ dtrips_wide_wm <- dtrips_wide_wm %>%
 dtrips_wide_wm <- dtrips_wide_wm %>% mutate(weight_wm1_trips = wm1 / dtrips_per_mode_wave)
 dtrips_wide_wm <- dtrips_wide_wm %>% mutate(weight_wm2_trips = wm2 / dtrips_per_mode_wave)
 
+dtrips_wide_wm <- dtrips_wide_wm %>% 
+  mutate(mode_wave = paste(mode, wave, sep = "_"))
 
-# Now convert these weights and trips per mode-month back to long
-# so can merge with catch per trip
-#OR actually
+# Now convert the weights and trips per mode-month back to long, merge w catch per trip
+# OR could wide out the cod and hadd catch by wavemonth and merge in at mode wave level
+# average haddock catch per trip = average haddock catch for march * weight_wm1_trips +
+# average haddock catch for april * weight_wm2_trips
 
 
 
+
+library(ggplot2)
+library(viridis)
+
+ggplot(dtrips_wide_wm, aes(x = wave, y = dtrips_per_mode_wave, color = mode, group = mode)) + 
+  geom_line() +
+  labs(x = "Wave", y = "Number of Trips", color = "Mode") +
+  scale_color_discrete(labels = c("pr" = "Private", "fh" = "For Hire")) + #didnt work
+  ggtitle("Directed Trips") +
+  scale_color_viridis_d(option = "plasma") +
+  theme_classic() +
+  geom_point() + scale_color_discrete(labels = c("For Hire", "Private"))
+
+  
 
 
 
