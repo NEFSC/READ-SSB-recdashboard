@@ -83,7 +83,7 @@ ui <- page_fillable(
           style = "display: block; vertical-align: top; margin: 0; padding: 0;"
         ),
         div(
-          h3("Recreational Fisheries Dashboard",
+          h3("Recreational Fisheries Dashboard - PROTOTYPE - Fake Data",
              style = "color: white; margin: 0; padding: 0; font-weight: 700; font-size: 18px; line-height: 1;"),
           div("Northeast & Mid-Atlantic Region",
               style = "color: #C6E6F0; font-size: 11px; margin: 0; padding: 0; line-height: 1;")
