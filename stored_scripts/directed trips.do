@@ -553,7 +553,7 @@ gen disposition="cod angler trips"
 append using `gom'
 order area disp mode
 renvarlab dtrip*, predrop(6)
-save "$project_path\directed_trips.dta", replace 
+save "$data_out_dir\directed_trips.dta", replace 
 
   
 

@@ -1,8 +1,10 @@
-global project_path "$dashboard_path/stored_scripts" 
 
- /* Lou's project path */
-global input_data_cd "$dashboard_path/data/raw" 
-global save_directory "$dashboard_path/data/main" 
+/* Dashboard path must be defined in your stata profile.do that is executed at startup. It should point to the the root of the dashboard repository */
+
+
+global project_path "$dashboard_path/stored_scripts" 
+global input_data_dir "$dashboard_path/data/raw" 
+global data_out_dir "$dashboard_path/data/main" 
 
 * set a global seed #
 global seed 03211990

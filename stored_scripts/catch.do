@@ -266,7 +266,7 @@ gen pct_of_total=total/sum
 sort varname wave mode
 drop sum
 label variable pct_of_total "percent of mode-m's annual total"
-save "$project_path\wave_totals.dta", replace
+save "$data_out_dir\wave_totals.dta", replace
 restore 
 
 
@@ -361,4 +361,4 @@ order area disp mode total_FY2024 total_FY2025_impute pct_diffFY total_FY2024_cu
 sort area disp mode
 rename disp disposition
 renvarlab total*, predrop(6)
-save "$project_path\catch.dta", replace 
+save "$data_out_dir\catch.dta", replace 
