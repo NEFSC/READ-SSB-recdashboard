@@ -1,7 +1,6 @@
 
 ****************************
 * Catch of cod and haddock WGOM (model unit)
-cd $input_data_cd
 
 clear
 mata: mata clear
@@ -73,7 +72,7 @@ keep if common_dom=="ATLCO"
 
 *New MRIP site allocations
 preserve 
-import delimited using "$input_data_cd/MRIP_COD_ALL_SITE_LIST.csv", clear 
+import delimited using "$input_data_dir/MRIP_COD_ALL_SITE_LIST.csv", clear 
 keep if inlist(state, "MA", "ME")
 keep state intsite nmfs_stock_area nmfs_stat_area
 sort intsite nmfs_stock_area  

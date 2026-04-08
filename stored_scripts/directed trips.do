@@ -2,7 +2,6 @@
 
 ****************************
 * Directed trips for cod and haddock WGOM (model unit)
-cd $input_data_cd
 
 clear
 tempfile tl1 cl1
@@ -83,7 +82,7 @@ keep if dom_id=="1"
 
 *New MRIP site allocations
 preserve 
-import delimited using "$input_data_cd/MRIP_COD_ALL_SITE_LIST.csv", clear 
+import delimited using "$input_data_dir/MRIP_COD_ALL_SITE_LIST.csv", clear 
 keep if inlist(state, "MA", "ME")
 keep state intsite nmfs_stock_area nmfs_stat_area
 sort intsite nmfs_stock_area  
@@ -300,7 +299,6 @@ save `gom', replace
   
   ****************************
 * Directed COD trips cod in old SNE and new SNE
-cd $input_data_cd
 
 clear
 tempfile tl1 cl1
@@ -380,7 +378,7 @@ keep if dom_id=="1"
 
 *New MRIP site allocations
 preserve 
-import delimited using "$input_data_cd/MRIP_COD_ALL_SITE_LIST.csv", clear 
+import delimited using "$input_data_dir/MRIP_COD_ALL_SITE_LIST.csv", clear 
 keep if inlist(state, "MA", "ME")
 keep state intsite nmfs_stock_area nmfs_stat_area
 sort intsite nmfs_stock_area  
