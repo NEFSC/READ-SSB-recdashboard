@@ -1,49 +1,49 @@
 
-cd $input_data_cd
 
 
-*This code only needs to be run once after new MRIP data enters the repo
+*This section only needs to be run once after new MRIP data enters the repo
 *
+/*
 foreach wave in	$yr_wvs {				
 
-capture confirm file "trip_`wave'.dta"
+capture confirm file "${input_data_dir}/trip_`wave'.dta"
 if _rc==0{
-	use trip_`wave'.dta, clear
+	use  ${input_data_dir}/trip_`wave'.dta, clear
 	renvarlab, lower
-	save trip_`wave'.dta, replace
+	save ${input_data_dir}/trip_`wave'.dta, replace
 }
 
 else{
 	
 }
 
-capture confirm file "size_b2_`wave'.dta"
+capture confirm file "${input_data_dir}/size_b2_`wave'.dta"
 if _rc==0{
-	use size_b2_`wave'.dta, clear
+	use  ${input_data_dir}/size_b2_`wave'.dta, clear
 	renvarlab, lower
-	save size_b2_`wave'.dta, replace
+	save ${input_data_dir}/size_b2_`wave'.dta, replace
 }
 
 else{
 	
 }
 
-capture confirm file "size_`wave'.dta"
+capture confirm file "${input_data_dir}/size_`wave'.dta"
 if _rc==0{
-	use size_`wave'.dta, clear
+	use  ${input_data_dir}/size_`wave'.dta, clear
 	renvarlab, lower
-	save size_`wave'.dta, replace
+	save ${input_data_dir}/size_`wave'.dta, replace
 }
 
 else{
 	
 }
 
-capture confirm file "catch_`wave'.dta"
+capture confirm file "${input_data_dir}/catch_`wave'.dta"
 if _rc==0{
-	use catch_`wave'.dta, clear
+	use  ${input_data_dir}/catch_`wave'.dta, clear
 	renvarlab, lower
-	save catch_`wave'.dta, replace
+	save ${input_data_dir}/catch_`wave'.dta, replace
 }
 
 else{
@@ -51,20 +51,23 @@ else{
 }
 
 }
-*
+*/
 
+
+/* this section has to be run every time.*/
 /*catchlist -- this assembles then names of files that are needed in the catchlist */
-/*Check to see if the file exists */	/* If the file exists, add the filename to the list if there are observations */
+/*Check to see if the file exists */	
+/* If the file exists, add the filename to the list if there are observations */
 global catchlist
 foreach year in $yearlist{
 	foreach wave in $wavelist{
-	capture confirm file "catch_`year'`wave'.dta"
+	capture confirm file "${input_data_dir}/catch_`year'`wave'.dta"
 	if _rc==0{
-		use "catch_`year'`wave'.dta", clear
+		use "${input_data_dir}/catch_`year'`wave'.dta", clear
 		quietly count
 		scalar tt=r(N)
 		if scalar(tt)>0{
-			global catchlist "$catchlist "catch_`year'`wave'.dta " " 
+			global catchlist "$catchlist "${input_data_dir}/catch_`year'`wave'.dta " " 
 		}
 		else{
 		}
@@ -80,9 +83,9 @@ foreach year in $yearlist{
 global triplist
 foreach year in $yearlist{
 	foreach wave in  $wavelist{
-	capture confirm file "trip_`year'`wave'.dta"
+	capture confirm file "${input_data_dir}/trip_`year'`wave'.dta"
 	if _rc==0{
-		use "trip_`year'`wave'.dta", clear
+		use "${input_data_dir}/trip_`year'`wave'.dta", clear
 		quietly count
 		scalar tt=r(N)
 		if scalar(tt)>0{
@@ -101,9 +104,9 @@ foreach year in $yearlist{
 global b2list
 foreach year in $yearlist{
 	foreach wave in $wavelist{
-	capture confirm file "size_b2_`year'`wave'.dta"
+	capture confirm file "${input_data_dir}/size_b2_`year'`wave'.dta"
 	if _rc==0{
-		use "size_b2_`year'`wave'.dta", clear
+		use "${input_data_dir}/size_b2_`year'`wave'.dta", clear
 		quietly count
 		scalar tt=r(N)
 		if scalar(tt)>0{
@@ -123,9 +126,9 @@ foreach year in $yearlist{
 global sizelist
 foreach year in $yearlist{
 	foreach wave in $wavelist{
-	capture confirm file "size_`year'`wave'.dta"
+	capture confirm file "${input_data_dir}/size_`year'`wave'.dta"
 	if _rc==0{
-	use "size_`year'`wave'.dta", clear
+	use "${input_data_dir}/size_`year'`wave'.dta", clear
 	quietly count
 	scalar tt=r(N)
 	if scalar(tt)>0{
