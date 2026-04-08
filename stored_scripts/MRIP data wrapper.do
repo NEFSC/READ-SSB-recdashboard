@@ -89,7 +89,7 @@ foreach year in $yearlist{
 		quietly count
 		scalar tt=r(N)
 		if scalar(tt)>0{
-			global triplist "$triplist "trip_`year'`wave'.dta " " 
+			global triplist "$triplist "${input_data_dir}/trip_`year'`wave'.dta " " 
 		}
 		else{
 		}
@@ -110,7 +110,7 @@ foreach year in $yearlist{
 		quietly count
 		scalar tt=r(N)
 		if scalar(tt)>0{
-			global b2list "$b2list "size_b2_`year'`wave'.dta " " 
+			global b2list "$b2list "${input_data_dir}/size_b2_`year'`wave'.dta " " 
 		}
 		else{
 		}
@@ -132,7 +132,7 @@ foreach year in $yearlist{
 	quietly count
 	scalar tt=r(N)
 	if scalar(tt)>0{
-		global sizelist "$sizelist "size_`year'`wave'.dta " " 
+		global sizelist "$sizelist "${input_data_dir}/size_`year'`wave'.dta " " 
 		}
 		else{
 		}
