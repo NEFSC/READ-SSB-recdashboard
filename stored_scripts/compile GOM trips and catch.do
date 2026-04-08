@@ -1,6 +1,12 @@
 
 /* Dashboard path must be defined in your stata profile.do that is executed at startup. It should point to the the root of the dashboard repository */
 
+/* packages
+
+ssc install xsvmat
+ssc install dsconcat 
+*/
+
 
 global project_path "$dashboard_path/stored_scripts" 
 global input_data_dir "$dashboard_path/data/raw" 
