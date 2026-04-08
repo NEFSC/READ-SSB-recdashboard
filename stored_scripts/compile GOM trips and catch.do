@@ -5,6 +5,7 @@
 
 ssc install xsvmat
 ssc install dsconcat 
+ssc install renvarlab
 */
 
 set varabbrev on
@@ -54,8 +55,8 @@ do "$project_path\directed trips.do"
 do "$project_path\catch.do"
 
 
-u  "$project_path\directed_trips.dta", clear
-append using "$project_path\catch.dta"
+u  "$data_out_dir\directed_trips.dta", clear
+append using "$data_out_dir\catch.dta"
 replace area="old SNE" if area=="SNEold"
 rename disp metric
 gen order1 = 1 if area=="WGOM"
