@@ -7,6 +7,7 @@ ssc install xsvmat
 ssc install dsconcat 
 */
 
+set varabbrev on
 
 global project_path "$dashboard_path/stored_scripts" 
 global input_data_dir "$dashboard_path/data/raw" 
