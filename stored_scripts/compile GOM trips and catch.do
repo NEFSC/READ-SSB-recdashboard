@@ -1,8 +1,8 @@
+global project_path "$dashboard_path/stored_scripts" 
 
-
-global project_path "Z:\cod and haddock\2025 mgt" /* Lou's project path */
-*global input_data_cd "E:\Lou_projects\groundfishRDM\input_data" /* Lou's local path for data PRIOR to release of updated prel. wave 4 and prelim wave 5 MRIP data */
-global input_data_cd "C:\Users\andrew.carr-harris\Desktop\MRIP_data_2025\updated_2025_data" /* Lou's local data path containing updated prel. wave 4 and prelim wave 5 MRIP data */
+ /* Lou's project path */
+global input_data_cd "$dashboard_path/data/raw" 
+global save_directory "$dashboard_path/data/main" 
 
 * set a global seed #
 global seed 03211990
