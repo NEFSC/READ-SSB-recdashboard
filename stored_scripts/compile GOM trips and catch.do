@@ -215,3 +215,6 @@ order area metric mode
 sort order1 mode order2 
 
 
+save  "$data_out_dir\yearly_mrip_stats.dta", replace
+
+
