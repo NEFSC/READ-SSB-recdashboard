@@ -2,7 +2,8 @@
 
 ****************************
 * Directed trips for cod and haddock WGOM (model unit)
-
+* append all the trip files
+* do a tiny bit of processing
 clear
 tempfile tl1 cl1
 dsconcat $triplist
@@ -12,14 +13,23 @@ gen dtrip=1
 
 sort year strat_id psu_id id_code
 save `tl1'
-
 clear
+****************************
 
+
+****************************
+*append all the catch files
+* do a tiny bit of processing
 dsconcat $catchlist
 sort year strat_id psu_id id_code
 replace common=subinstr(lower(common)," ","",.)
 save `cl1'
+****************************
 
+
+****************************
+* read in the processed catch files.  merge to trips. tidy up the common (common name of catch), prim1_common (common name of primary target)
+* and (prim2_common) common name of secondary target
 use `tl1'
 merge 1:m year strat_id psu_id id_code using `cl1', keep(1 3)
 replace common=subinstr(lower(common)," ","",.)
@@ -29,6 +39,7 @@ replace prim2_common=subinstr(lower(prim2_common)," ","",.)
 drop _merge
  
  /* classify trips into dom_id=1 (DOMAIN OF INTEREST) and dom_id=2 ('OTHER' DOMAIN). */
+ /*caught or targeted cod or haddock */
 gen str1 dom_id="2"
 replace dom_id="1" if strmatch(common, "atlanticcod") 
 replace dom_id="1" if strmatch(prim1_common, "atlanticcod") 
@@ -38,6 +49,8 @@ replace dom_id="1" if strmatch(prim1_common, "haddock")
 
 tostring wave, gen(w2)
 tostring year, gen(year2)
+
+/*decode states. st is a fips code */
 gen st2 = string(st,"%02.0f")
 
 gen state="MA" if st==25
@@ -51,6 +64,8 @@ replace state="VA" if st==51
 replace state="NC" if st==37
 replace state="ME" if st==23
 replace state="NH" if st==33
+
+/* use decode mode_fx to shore, private, charter, and headboat */
 
 gen mode1="sh" if inlist(mode_fx, "1", "2", "3")
 replace mode1="pr" if inlist(mode_fx, "7")
@@ -80,7 +95,7 @@ replace dom_id="1" if strmatch(dom_id,"2") & claim_flag>0 & claim_flag!=. & strm
 
 keep if dom_id=="1"
 
-*New MRIP site allocations
+*New MRIP site allocations for Cod.  Intercept sites in ME and MA get allocated to different stocks depending on their locations.
 preserve 
 import delimited using "$input_data_dir/MRIP_COD_ALL_SITE_LIST.csv", clear 
 keep if inlist(state, "MA", "ME")
@@ -110,8 +125,9 @@ encode my_dom_id_string, gen(my_dom_id)
 bysort year wave strat_id psu_id id_code (dom_id): gen count_obs1=_n
 keep if count_obs1==1
 
-
+/* data cleaning */
 replace wp_int=0 if wp_int<=0
+/* declare the data to be survey data */
 svyset psu_id [pweight= wp_int], strata(strat_id) singleunit(certainty)
 
 preserve
@@ -123,6 +139,7 @@ tempfile domains
 save `domains', replace 
 restore
 
+/* Dont' think that mode2 is ever used */
 encode mode1, gen(mode2)
 
 svy: total dtrip, over(my_dom_id)  
@@ -422,7 +439,9 @@ restore
 encode mode1, gen(mode2)
 
 svy: total dtrip, over(my_dom_id)  
-
+/* get the result of the previous command into a dataset 
+There is probably an easier way, but it works and since we're moving to R, there's no 
+point in fixing it.*/
 xsvmat, from(r(table)') rownames(rname) names(col) norestor
 split rname, parse("@")
 drop rname1
@@ -445,8 +464,18 @@ drop my_dom_id_string
 rename b dtrip
 drop se ll ul pse 
 
+/* end table to dataset */
+
+
+
 reshape wide dtrip, i(year wave mode) j(area) string
+/* I think this is the place to stop. I produces effort by year-wave-mode and area.  */
+
 mvencode dtrip*, mv(0) override
+
+/* Aggregate spatially */
+
+
 replace dtripSNE = dtripSNE + dtrip538
 
 gen double dtripSNEold = dtripSNE
@@ -459,7 +488,7 @@ foreach a in 521 526 {
 
 keep dtripSNE dtripSNEold year wave mode
 
-
+/*gen flag variables for different aggregations */
 gen $FY2024
 gen $FY2025_impute
 gen $FY2024_current

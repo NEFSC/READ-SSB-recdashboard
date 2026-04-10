@@ -30,8 +30,8 @@ replace prim1_common=subinstr(lower(prim1_common)," ","",.)
 replace prim2_common=subinstr(lower(prim1_common)," ","",.)
 
 * We need to retain 1 observation for each strat_id, psu_id, and id_code
-/* A.  Trip (Targeted or Caught) (fluke, sea bass, or scup) then it should be marked in the domain "_ATLCO"
-   B.  Trip did not (Target or Caught) (fluke, sea bass, or scup) then it is marked in the the domain "ZZZZZ"
+/* A.  Trip (Targeted or Caught) (cod or haddock) then it should be marked in the domain "_ATLCO"
+   B.  Trip did not (Target or Caught) (cod or haddock) then it is marked in the the domain "ZZZZZ"
 */
 
 gen common_dom="ZZ"
@@ -206,6 +206,10 @@ drop my_dom_id_string
 
 reshape wide total, i(varname year wave mode) j(area) string
 mvencode total*, mv(0) override
+
+
+/* I think this is the place to stop. It produces kept and released for each species by year-wave-mode and area.  */
+
 
 gen double totalWGOM = 0
 foreach a in 513 514 515 521 526 NH{

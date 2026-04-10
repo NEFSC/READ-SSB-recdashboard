@@ -1,4 +1,4 @@
-# R script to get MRIP data
+# Purpose R script to get MRIP data
 
 #Load Libraries
 library("tidyverse")
