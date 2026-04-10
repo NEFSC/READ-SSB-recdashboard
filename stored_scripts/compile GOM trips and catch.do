@@ -1,15 +1,18 @@
+/* Purpose: Wrapper file to assemble annual catch and effort for trips that catch/target GOM cod or Haddock */
 
-/* Dashboard path must be defined in your stata profile.do that is executed at startup. It should point to the the root of the dashboard repository */
+/* the "dashboard_path" global must be defined before running this code. The easiest way 
+is to do so in your stata profile.do that is executed at startup. It should point to the the root of the dashboard repository */
 
-/* packages
+/* user written command dependencies
 
 ssc install xsvmat
 ssc install dsconcat 
-ssc install renvarlab
+ssc install renvarlab
 */
-
+/* options */
 set varabbrev on
 
+/*set paths */
 global project_path "$dashboard_path/stored_scripts" 
 global input_data_dir "$dashboard_path/data/raw" 
 global data_out_dir "$dashboard_path/data/main" 
@@ -26,10 +29,10 @@ global yr_wvs 20221 20222 20223 20224 20225 20226 ///
 global yearlist 2022 2023 2024 2025
 global wavelist 1 2 3 4 5 6
 
-
+/* run the "data getting wrapper */
 do "$project_path\MRIP data wrapper.do"
 
-
+/* define time periods used for grouping */
 *Set the estimation time period:
 *Original periods used for Jan. 20th, 2025 RAP meeting 
 /*
@@ -54,7 +57,7 @@ global period_list  "FY2024 FY2025_impute FY2024_current FY2025_current w52022 w
 do "$project_path\directed trips.do"
 do "$project_path\catch.do"
 
-
+/* bring together and make it look nice */
 u  "$data_out_dir\directed_trips.dta", clear
 append using "$data_out_dir\catch.dta"
 replace area="old SNE" if area=="SNEold"
