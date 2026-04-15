@@ -59,7 +59,7 @@ mrip_effort(dom = c('YEAR', 'WAVE', 'ST'),
                             typ = c('PRIM1', 'PRIM2', 'A', 'B1')))|>
   dplyr::filter(ST %in% c("25", "23", "33") & YEAR %in% c("2024", "2025"))
 
-
+## you need the stock area and mode (use MODE_FX)
 
 
 
