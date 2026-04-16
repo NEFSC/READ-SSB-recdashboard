@@ -44,22 +44,22 @@ mrip_effort(dom = c('YEAR', 'WAVE'),
 
 
 # 25 is MA, 23 is ME, 33 is NH
-# The way I defined typ, it's trips where fish were either stated as targeted by
-# the angler OR were landed
+# The way I defined typ, it's trips where cod/haddock were either stated as the 
+#  primary target by the angler OR were landed
 mrip_effort(dom = c('YEAR', 'WAVE', 'ST'),
             microdata = mrip_stats_041026,
             dir_trip = list(comname = 'HADDOCK',
-                            typ = c('PRIM1', 'PRIM2', 'A', 'B1')))|>
+                            typ = c('PRIM1', 'A', 'B1')))|>
   dplyr::filter(ST %in% c("25", "23", "33") & YEAR %in% c("2024", "2025"))
 
 
 mrip_effort(dom = c('YEAR', 'WAVE', 'ST'),
             microdata = mrip_stats_041026,
             dir_trip = list(comname = 'ATLANTIC COD',
-                            typ = c('PRIM1', 'PRIM2', 'A', 'B1')))|>
+                            typ = c('PRIM1', 'A', 'B1')))|>
   dplyr::filter(ST %in% c("25", "23", "33") & YEAR %in% c("2024", "2025"))
 
-## you need the stock area and mode (use MODE_FX)
+## you need the stock area and mode (use MODE_FX). blah
 
 
 
