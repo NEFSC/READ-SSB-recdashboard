@@ -72,9 +72,58 @@ cod_df <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE'),
 
 
 ##look at cod_df  and see how far off we are 
+# generate the mode variable, drop hours fished, try with and without NH, 
+# try including B2, try pulling for the various prim1 and A and the B's separately
+# try merging in stock area on intsite using the csv from lou but they may not be 1:1
+
+names(cod_df) <- tolower(names(cod_df))
+
+cod_df <- cod_df %>%
+  mutate(mode = case_when(
+    mode_fx == 3|mode_fx==2|mode_fx==1 ~ "shore",
+    mode_fx == 5 ~ "charter",
+    mode_fx == 7 ~ "private",
+    mode_fx == 4 ~ "headboat"
+  ))
+
+cod_df <- subset(cod_df, select = -c(hrsf))
+
+cod_df <- cod_df %>%
+  mutate(state = case_when(
+    st == "25" ~ "MA",
+    st == "33" ~ "NH",
+    st == "23" ~ "ME"
+  ))
 
 
+##combinations of intsite, stock area, and stat area aren't unique. 
+cod_site_list <- read.csv("data/raw/MRIP_COD_ALL_SITE_LIST.csv")
+names(cod_site_list) <- tolower(names(cod_site_list))
+n_distinct(cod_site_list$intsite)
+n_distinct(cod_site_list$nmfs_stock_area)
 
+cod_site_list %>% 
+  count(intsite) %>% 
+  filter(n > 1)
+
+n_distinct(cod_site_list$intsite, cod_site_list$nmfs_stock_area)
+n_distinct(cod_site_list$intsite, cod_site_list$nmfs_stock_area, cod_site_list$nmfs_stat_area)
+
+
+#this is what lou did except he didnt keep NH:
+cod_site_list <- cod_site_list %>% filter(state %in% c("MA", "ME", "NH"))
+cod_site_list[order(cod_site_list$intsite, cod_site_list$nmfs_stock_area), ]
+cod_site_list <- subset(cod_site_list, select = c(nmfs_stock_area, intsite, nmfs_stat_area, state))
+cod_site_list <- cod_site_list %>% distinct(nmfs_stock_area, intsite, nmfs_stat_area, state, .keep_all = TRUE)
+
+
+merge_cod <- left_join(cod_df, cod_site_list, by = c("state", "intsite"))
+  
+cod_collapse <- merge_cod %>%
+  group_by(mode, year, wave) %>%
+  summarise(dtrip = sum(n_trip, na.rm = TRUE))
+
+cod_collapse
 
 ## something to ask Sam Truesdall: Lou is using 'leader' to help ID trips but the
 # microdata function doesn't seem to pull leader. leader=group catch leader
