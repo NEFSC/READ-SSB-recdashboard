@@ -63,6 +63,9 @@ mrip_effort(dom = c('YEAR', 'WAVE', 'ST'),
                             typ = c('PRIM1', 'A', 'B1', 'B2')))|>
   dplyr::filter(ST %in% c("25", "23", "33") & YEAR %in% c("2024", "2025"))
 
+
+
+####COD####
 ## you need the stock area intsite and mode (use MODE_FX)
 cod_df <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE'),
             microdata = mrip_stats_041026,
@@ -73,6 +76,8 @@ cod_df <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE'),
 
 ##look at cod_df  and see how far off we are 
 # generate the mode variable, drop hours fished, try with and without NH, 
+## figure out what the typ part of the mrip effort function is doing..
+## pulling  trips where all three are cod or at least one is cod? 
 # try including B2, try pulling for the various prim1 and A and the B's separately
 # try merging in stock area on intsite using the csv from lou but they may not be 1:1
 
@@ -124,6 +129,71 @@ cod_collapse <- merge_cod %>%
   summarise(dtrip = sum(n_trip, na.rm = TRUE))
 
 cod_collapse
+
+cod_collapse2 <- cod_collapse %>%
+  group_by(mode, year) %>%
+  summarise(dtrip_ym = sum(dtrip, na.rm = TRUE))
+cod_collapse2
+
+##these numbers can't really be compared to lou's but I don't think they match well
+## think mine are low. 
+## try repeating this for haddock and adding it to cod? would that cause double counting?
+## since the same trip could be targeting cod but landing haddock
+
+
+
+
+####HADDOCK####
+hadd_df <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE'),
+                      microdata = mrip_stats_041026,
+                      dir_trip = list(comname = 'HADDOCK',
+                                      typ = c('PRIM1', 'A', 'B1')))|>
+  dplyr::filter(ST %in% c("25", "23", "33") & YEAR %in% c("2024", "2025"))
+
+names(hadd_df) <- tolower(names(hadd_df))
+
+hadd_df <- hadd_df %>%
+  mutate(mode = case_when(
+    mode_fx == 3|mode_fx==2|mode_fx==1 ~ "shore",
+    mode_fx == 5 ~ "charter",
+    mode_fx == 7 ~ "private",
+    mode_fx == 4 ~ "headboat"
+  ))
+
+hadd_df <- subset(hadd_df, select = -c(hrsf))
+
+hadd_df <- hadd_df %>%
+  mutate(state = case_when(
+    st == "25" ~ "MA",
+    st == "33" ~ "NH",
+    st == "23" ~ "ME"
+  ))
+
+hadd_collapse <- hadd_df %>%
+  group_by(mode, year, wave) %>%
+  summarise(dtrip = sum(n_trip, na.rm = TRUE))
+
+hadd_collapse
+
+hadd_collapse2 <- hadd_collapse %>%
+  group_by(mode, year) %>%
+  summarise(dtrip_ym = sum(dtrip, na.rm = TRUE))
+hadd_collapse2
+
+hadd_collapse2 <- rename(hadd_collapse2, dtrip_hadd_ym = dtrip_ym)
+cod_collapse2 <- rename(cod_collapse2, dtrip_cod_ym = dtrip_ym)
+merge_cod_hadd_ym <- merge(cod_collapse2, hadd_collapse2, by = c("mode", "year"), all = TRUE)
+
+merge_cod_hadd_ym$dtrip_ym <- merge_cod_hadd_ym$dtrip_cod_ym + merge_cod_hadd_ym$dtrip_hadd_ym
+merge_cod_hadd_ym
+
+##Lou cod/haddock WGOM trips 2024 private= 197908, 2025 private=179869
+## so yeah, these are off by 50k trips in 2024 and 11k trips in 2025
+## and you didn't even limit the stat areas to WGOM
+
+
+
+
 
 ## something to ask Sam Truesdall: Lou is using 'leader' to help ID trips but the
 # microdata function doesn't seem to pull leader. leader=group catch leader
