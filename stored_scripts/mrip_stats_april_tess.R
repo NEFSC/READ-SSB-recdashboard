@@ -4,7 +4,8 @@
 library(dplyr)
 library(readr)
 library("mriptacklebox")
-
+library(tidyverse)
+library(survey)
 
 
 #rm(mrip_stats_041026)
@@ -29,16 +30,47 @@ names(trip) <- tolower(names(trip))
 trip[] <- lapply(trip, function(x) if(is.character(x)) tolower(x) else x)
 
 
+### Read in site list from Lou that has stock and stat areas that he merges in on intsite
+##combinations of intsite, stock area, and stat area are not unique btw 
+cod_site_list <- read.csv("data/raw/MRIP_COD_ALL_SITE_LIST.csv")
+names(cod_site_list) <- tolower(names(cod_site_list))
+n_distinct(cod_site_list$intsite)
+n_distinct(cod_site_list$nmfs_stock_area)
+
+cod_site_list %>% 
+  count(intsite) %>% 
+  filter(n > 1)
+
+n_distinct(cod_site_list$intsite, cod_site_list$nmfs_stock_area)
+n_distinct(cod_site_list$intsite, cod_site_list$nmfs_stock_area, cod_site_list$nmfs_stat_area)
+
+#this is what lou did except he didnt keep NH so this wont match:
+cod_site_list <- cod_site_list %>% filter(state %in% c("MA", "ME", "NH"))
+cod_site_list[order(cod_site_list$intsite, cod_site_list$nmfs_stock_area), ]
+cod_site_list <- subset(cod_site_list, select = c(nmfs_stock_area, intsite, nmfs_stat_area, state))
+cod_site_list <- cod_site_list %>% distinct(nmfs_stock_area, intsite, nmfs_stat_area, state, .keep_all = TRUE)
+
+## think these are WGOM? 513 514 515 521 526 NH
+cod_site_list %>% count(nmfs_stat_area)
+cod_site_list %>% count(state)
+
+cod_site_list <- cod_site_list %>%
+  mutate(wgom = case_when(
+    state == "NH" ~ 1,
+    nmfs_stat_area == 513 | nmfs_stat_area == 514  ~ 1,
+    nmfs_stat_area == 515 | nmfs_stat_area == 521  ~ 1,
+    nmfs_stat_area == 526  ~ 1,
+    TRUE ~ 0 # Catch-all for all other cases
+  ))
+
+
+
 
 ## Sam's example for using mrip effort function:
 mrip_effort(dom = c('YEAR', 'ST'),
             microdata = mrip_stats_041026) |>
   dplyr::filter(ST == 25)
 
-mrip_effort(dom = c('YEAR'),
-           microdata = mrip_stats_041026,
-           dir_trip = list(comname = 'SCUP',
-                           typ = c('PRIM1', 'PRIM2', 'B1')))
 
 mrip_effort(dom = c('YEAR', 'WAVE'),
             microdata = mrip_stats_041026,
@@ -57,22 +89,45 @@ mrip_effort(dom = c('YEAR', 'WAVE', 'ST'),
   dplyr::filter(ST %in% c("25", "23", "33") & YEAR %in% c("2024", "2025"))
 
 
-mrip_effort(dom = c('YEAR', 'WAVE', 'ST'),
+
+
+
+####COD CATCH MOVE THIS####
+cod_catch_df <- mrip_catch(comname = 'ATLANTIC COD', 
+                            dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX'), 
+                            microdata = mrip_stats_041026, estimate_var = FALSE)
+
+##spits out a list and we want the estimates
+cod_catch_df <- cod_catch_df$estimates  |>
+  dplyr::filter(ST %in% c("25", "23", "33") & YEAR %in% c("2024", "2025"))
+
+names(cod_catch_df) <- tolower(names(cod_catch_df))
+
+cod_catch_df <- cod_catch_df %>%
+  mutate(mode = case_when(
+    mode_fx == 3|mode_fx==2|mode_fx==1 ~ "shore",
+    mode_fx == 5 ~ "charter",
+    mode_fx == 7 ~ "private",
+    mode_fx == 4 ~ "headboat"
+  ))
+
+cod_catch_df <- cod_catch_df %>%
+  mutate(state = case_when(
+    st == "25" ~ "MA",
+    st == "33" ~ "NH",
+    st == "23" ~ "ME"
+  ))
+
+
+
+####COD EFFORT####
+## common IDs species in catch data and prim1/prim2 IDs target species in trip data
+## need the stock area intsite and mode (use MODE_FX)
+cod_df <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE'),
             microdata = mrip_stats_041026,
             dir_trip = list(comname = 'ATLANTIC COD',
                             typ = c('PRIM1', 'A', 'B1', 'B2')))|>
   dplyr::filter(ST %in% c("25", "23", "33") & YEAR %in% c("2024", "2025"))
-
-
-
-####COD####
-## you need the stock area intsite and mode (use MODE_FX)
-cod_df <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE'),
-            microdata = mrip_stats_041026,
-            dir_trip = list(comname = 'ATLANTIC COD',
-                            typ = c('PRIM1', 'A', 'B1')))|>
-  dplyr::filter(ST %in% c("25", "23", "33") & YEAR %in% c("2024", "2025"))
-
 
 ##look at cod_df  and see how far off we are 
 # generate the mode variable, drop hours fished, try with and without NH, 
@@ -101,28 +156,11 @@ cod_df <- cod_df %>%
   ))
 
 
-##combinations of intsite, stock area, and stat area aren't unique. 
-cod_site_list <- read.csv("data/raw/MRIP_COD_ALL_SITE_LIST.csv")
-names(cod_site_list) <- tolower(names(cod_site_list))
-n_distinct(cod_site_list$intsite)
-n_distinct(cod_site_list$nmfs_stock_area)
-
-cod_site_list %>% 
-  count(intsite) %>% 
-  filter(n > 1)
-
-n_distinct(cod_site_list$intsite, cod_site_list$nmfs_stock_area)
-n_distinct(cod_site_list$intsite, cod_site_list$nmfs_stock_area, cod_site_list$nmfs_stat_area)
-
-
-#this is what lou did except he didnt keep NH:
-cod_site_list <- cod_site_list %>% filter(state %in% c("MA", "ME", "NH"))
-cod_site_list[order(cod_site_list$intsite, cod_site_list$nmfs_stock_area), ]
-cod_site_list <- subset(cod_site_list, select = c(nmfs_stock_area, intsite, nmfs_stat_area, state))
-cod_site_list <- cod_site_list %>% distinct(nmfs_stock_area, intsite, nmfs_stat_area, state, .keep_all = TRUE)
-
-
 merge_cod <- left_join(cod_df, cod_site_list, by = c("state", "intsite"))
+
+##keep wgom
+merge_cod <- merge_cod %>% 
+  filter(wgom == 1)
   
 cod_collapse <- merge_cod %>%
   group_by(mode, year, wave) %>%
@@ -136,8 +174,7 @@ cod_collapse2 <- cod_collapse %>%
 cod_collapse2
 
 ##these numbers can't really be compared to lou's but I don't think they match well
-## think mine are low. 
-## try repeating this for haddock and adding it to cod? would that cause double counting?
+## does adding cod and haddock trips like this cause double counting bc of cod AND hadd trips?
 ## since the same trip could be targeting cod but landing haddock
 
 
@@ -147,7 +184,7 @@ cod_collapse2
 hadd_df <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE'),
                       microdata = mrip_stats_041026,
                       dir_trip = list(comname = 'HADDOCK',
-                                      typ = c('PRIM1', 'A', 'B1')))|>
+                                      typ = c('PRIM1', 'A', 'B1', 'B2')))|>
   dplyr::filter(ST %in% c("25", "23", "33") & YEAR %in% c("2024", "2025"))
 
 names(hadd_df) <- tolower(names(hadd_df))
@@ -169,10 +206,18 @@ hadd_df <- hadd_df %>%
     st == "23" ~ "ME"
   ))
 
-hadd_collapse <- hadd_df %>%
+merge_hadd <- left_join(hadd_df, cod_site_list, by = c("state", "intsite"))
+
+merge_hadd %>% count(wgom)
+
+
+##keep wgom
+merge_hadd <- merge_hadd %>% 
+  filter(wgom == 1)
+
+hadd_collapse <- merge_hadd %>%
   group_by(mode, year, wave) %>%
   summarise(dtrip = sum(n_trip, na.rm = TRUE))
-
 hadd_collapse
 
 hadd_collapse2 <- hadd_collapse %>%
@@ -184,14 +229,19 @@ hadd_collapse2 <- rename(hadd_collapse2, dtrip_hadd_ym = dtrip_ym)
 cod_collapse2 <- rename(cod_collapse2, dtrip_cod_ym = dtrip_ym)
 merge_cod_hadd_ym <- merge(cod_collapse2, hadd_collapse2, by = c("mode", "year"), all = TRUE)
 
+merge_cod_hadd_ym$dtrip_cod_ym[is.na(merge_cod_hadd_ym$dtrip_cod_ym)] <- 0
 merge_cod_hadd_ym$dtrip_ym <- merge_cod_hadd_ym$dtrip_cod_ym + merge_cod_hadd_ym$dtrip_hadd_ym
 merge_cod_hadd_ym
 
 ##Lou cod/haddock WGOM trips 2024 private= 197908, 2025 private=179869
-## so yeah, these are off by 50k trips in 2024 and 11k trips in 2025
+## so yeah, these are off by -50k trips in 2024 and +11k trips in 2025
 ## and you didn't even limit the stat areas to WGOM
 
 
+##My pull exactly matches the MRIP query tool for 2024, private, 2024 cal year, MA
+cod_df %>% 
+  filter(state == "MA", year == "2024", mode_fx=="7") %>% 
+  summarize(total_sum = sum(n_trip, na.rm = TRUE))
 
 
 
