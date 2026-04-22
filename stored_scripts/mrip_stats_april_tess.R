@@ -154,25 +154,6 @@ cod_df <- cod_df %>%
 
 cod_df %>% count(wave, year)
 
-cod_df <- cod_df %>%
-  mutate(fy2024 = case_when(
-    year == 2024 & wave >= 3 ~ 1,
-    year == 2025 & wave == 2 ~ 1,
-    TRUE ~ 0 
-  ))
-
-cod_df <- cod_df %>%
-  mutate(fy2025_imp = case_when(
-    year == 2024 & wave == 2 ~ 1,
-    year == 2024 & wave >= 5 ~ 1,
-    year == 2025 & wave == 3 ~ 1,
-    year == 2025 & wave == 4 ~ 1,
-    TRUE ~ 0 
-  ))
-
-##kicks out the 26 observations in 2025 wave 5
-cod_df %>% count(fy2024, fy2025_imp)
-
 
 merge_cod <- left_join(cod_df, cod_site_list, by = c("state", "intsite"))
 
@@ -186,15 +167,64 @@ cod_collapse <- merge_cod %>%
 
 cod_collapse
 
+cod_collapse <- cod_collapse %>%
+  mutate(fy2024 = case_when(
+    year == 2024 & wave >= 3 ~ 1,
+    year == 2025 & wave == 2 ~ 1,
+    TRUE ~ 0 
+  ))
+
+cod_collapse <- cod_collapse %>%
+  mutate(fy2025_imp = case_when(
+    year == 2024 & wave == 2 ~ 1,
+    year == 2024 & wave == 6 ~ 1,
+    year == 2025 & wave == 3 ~ 1,
+    year == 2025 & wave == 4 ~ 1,
+    year == 2025 & wave == 5 ~ 1,
+    TRUE ~ 0 
+  ))
+
+##kicks out  2025 wave 5
+cod_collapse %>% count(fy2024, fy2025_imp)
+#cod_collapse1 <- subset(cod_collapse, !(fy2024 == 0 & fy2025_imp == 0))
+
+
+#FY2024
 cod_collapse2 <- cod_collapse %>%
-  group_by(mode, year) %>%
+  group_by(mode, fy2024) %>%
   summarise(dtrip_ym = sum(dtrip, na.rm = TRUE))
+cod_collapse2 <- subset(cod_collapse2, fy2024 == 1)
+
+cod_collapse2 <- cod_collapse2 %>%
+  mutate(year = case_when(
+    fy2024 == 1 ~ "fy2024"
+  ))
+cod_collapse2 <- subset(cod_collapse2, select = -c(fy2024))
 cod_collapse2
 
-##these numbers can't really be compared to lou's but I don't think they match well
-## does adding cod and haddock trips like this cause double counting bc of cod AND hadd trips?
-## since the same trip could be targeting cod but landing haddock
+##fy2025 impute
+cod_collapse3 <- cod_collapse %>%
+  group_by(mode, fy2025_imp) %>%
+  summarise(dtrip_ym = sum(dtrip, na.rm = TRUE))
+cod_collapse3 <- subset(cod_collapse3, fy2025_imp == 1)
 
+cod_collapse3 <- cod_collapse3 %>%
+  mutate(year = case_when(
+    fy2025_imp == 1 ~ "fy2025_imp"
+  ))
+cod_collapse3 <- subset(cod_collapse3, select = -c(fy2025_imp))
+cod_collapse3
+
+#append
+cod_ym <- rbind(cod_collapse2, cod_collapse3)
+cod_ym <- rename(cod_ym, dtrip_cod_ym = dtrip_ym)
+cod_ym
+
+##these numbers higher than lou's bc double counting bc of cod AND hadd trips
+## must deal with group catch
+## but also something is going on with your fishing year variable bc look at shore trips
+## theyre the same in 2024 and 2025impute but lou doesnt have that so you did somethjing
+## YOU DID SOMETHING WRONG. your 2025impute trips are LOWER than lou's now
 
 
 
@@ -226,25 +256,6 @@ hadd_df <- hadd_df %>%
 
 hadd_df %>% count(wave, year)
 
-hadd_df <- hadd_df %>%
-  mutate(fy2024 = case_when(
-    year == 2024 & wave >= 3 ~ 1,
-    year == 2025 & wave == 2 ~ 1,
-    TRUE ~ 0 
-  ))
-
-hadd_df <- hadd_df %>%
-  mutate(fy2025_imp = case_when(
-    year == 2024 & wave == 2 ~ 1,
-    year == 2024 & wave >= 5 ~ 1,
-    year == 2025 & wave == 3 ~ 1,
-    year == 2025 & wave == 4 ~ 1,
-    TRUE ~ 0 
-  ))
-
-##kicks out the 24 observations in 2025 wave 5,6
-hadd_df %>% count(fy2024, fy2025_imp)
-
 
 merge_hadd <- left_join(hadd_df, cod_site_list, by = c("state", "intsite"))
 
@@ -260,14 +271,62 @@ hadd_collapse <- merge_hadd %>%
   summarise(dtrip = sum(n_trip, na.rm = TRUE))
 hadd_collapse
 
+
+hadd_collapse <- hadd_collapse %>%
+  mutate(fy2024 = case_when(
+    year == 2024 & wave >= 3 ~ 1,
+    year == 2025 & wave == 2 ~ 1,
+    TRUE ~ 0 
+  ))
+
+hadd_collapse <- hadd_collapse %>%
+  mutate(fy2025_imp = case_when(
+    year == 2024 & wave == 2 ~ 1,
+    year == 2024 & wave == 6 ~ 1,
+    year == 2025 & wave == 3 ~ 1,
+    year == 2025 & wave == 4 ~ 1,
+    year == 2025 & wave == 5 ~ 1,
+    TRUE ~ 0 
+  ))
+
+##kicks out  2025 wave 5,6
+hadd_collapse %>% count(fy2024, fy2025_imp)
+
+#hadd_collapse1 <- subset(hadd_collapse, !(fy2024 == 0 & fy2025_imp == 0))
+
+#FY2024
 hadd_collapse2 <- hadd_collapse %>%
-  group_by(mode, year) %>%
+  group_by(mode, fy2024) %>%
   summarise(dtrip_ym = sum(dtrip, na.rm = TRUE))
+hadd_collapse2 <- subset(hadd_collapse2, fy2024 == 1)
+
+hadd_collapse2 <- hadd_collapse2 %>%
+  mutate(year = case_when(
+    fy2024 == 1 ~ "fy2024"
+  ))
+hadd_collapse2 <- subset(hadd_collapse2, select = -c(fy2024))
 hadd_collapse2
 
-hadd_collapse2 <- rename(hadd_collapse2, dtrip_hadd_ym = dtrip_ym)
-cod_collapse2 <- rename(cod_collapse2, dtrip_cod_ym = dtrip_ym)
-merge_cod_hadd_ym <- merge(cod_collapse2, hadd_collapse2, by = c("mode", "year"), all = TRUE)
+##fy2025 impute
+hadd_collapse3 <- hadd_collapse %>%
+  group_by(mode, fy2025_imp) %>%
+  summarise(dtrip_ym = sum(dtrip, na.rm = TRUE))
+hadd_collapse3 <- subset(hadd_collapse3, fy2025_imp == 1)
+
+hadd_collapse3 <- hadd_collapse3 %>%
+  mutate(year = case_when(
+    fy2025_imp == 1 ~ "fy2025_imp"
+  ))
+hadd_collapse3 <- subset(hadd_collapse3, select = -c(fy2025_imp))
+hadd_collapse3
+
+#append
+hadd_ym <- rbind(hadd_collapse2, hadd_collapse3)
+hadd_ym <- rename(hadd_ym, dtrip_hadd_ym = dtrip_ym)
+hadd_ym
+
+
+merge_cod_hadd_ym <- merge(cod_ym, hadd_ym, by = c("mode", "year"), all = TRUE)
 
 merge_cod_hadd_ym$dtrip_cod_ym[is.na(merge_cod_hadd_ym$dtrip_cod_ym)] <- 0
 merge_cod_hadd_ym$dtrip_ym <- merge_cod_hadd_ym$dtrip_cod_ym + merge_cod_hadd_ym$dtrip_hadd_ym
