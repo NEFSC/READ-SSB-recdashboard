@@ -129,9 +129,6 @@ cod_df <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE'),
                             typ = c('PRIM1', 'A', 'B1', 'B2')))|>
   dplyr::filter(ST %in% c("25", "23", "33") & YEAR %in% c("2024", "2025"))
 
-##look at cod_df  and see how far off we are 
-# generate the mode variable, drop hours fished, try with and without NH, 
-## figure out what the typ part of the mrip effort function is doing..
 ## pulling  trips where all three are cod or at least one is cod? 
 # try including B2, try pulling for the various prim1 and A and the B's separately
 # try merging in stock area on intsite using the csv from lou but they may not be 1:1
@@ -154,6 +151,27 @@ cod_df <- cod_df %>%
     st == "33" ~ "NH",
     st == "23" ~ "ME"
   ))
+
+cod_df %>% count(wave, year)
+
+cod_df <- cod_df %>%
+  mutate(fy2024 = case_when(
+    year == 2024 & wave >= 3 ~ 1,
+    year == 2025 & wave == 2 ~ 1,
+    TRUE ~ 0 
+  ))
+
+cod_df <- cod_df %>%
+  mutate(fy2025_imp = case_when(
+    year == 2024 & wave == 2 ~ 1,
+    year == 2024 & wave >= 5 ~ 1,
+    year == 2025 & wave == 3 ~ 1,
+    year == 2025 & wave == 4 ~ 1,
+    TRUE ~ 0 
+  ))
+
+##kicks out the 26 observations in 2025 wave 5
+cod_df %>% count(fy2024, fy2025_imp)
 
 
 merge_cod <- left_join(cod_df, cod_site_list, by = c("state", "intsite"))
@@ -206,6 +224,28 @@ hadd_df <- hadd_df %>%
     st == "23" ~ "ME"
   ))
 
+hadd_df %>% count(wave, year)
+
+hadd_df <- hadd_df %>%
+  mutate(fy2024 = case_when(
+    year == 2024 & wave >= 3 ~ 1,
+    year == 2025 & wave == 2 ~ 1,
+    TRUE ~ 0 
+  ))
+
+hadd_df <- hadd_df %>%
+  mutate(fy2025_imp = case_when(
+    year == 2024 & wave == 2 ~ 1,
+    year == 2024 & wave >= 5 ~ 1,
+    year == 2025 & wave == 3 ~ 1,
+    year == 2025 & wave == 4 ~ 1,
+    TRUE ~ 0 
+  ))
+
+##kicks out the 24 observations in 2025 wave 5,6
+hadd_df %>% count(fy2024, fy2025_imp)
+
+
 merge_hadd <- left_join(hadd_df, cod_site_list, by = c("state", "intsite"))
 
 merge_hadd %>% count(wgom)
@@ -234,8 +274,7 @@ merge_cod_hadd_ym$dtrip_ym <- merge_cod_hadd_ym$dtrip_cod_ym + merge_cod_hadd_ym
 merge_cod_hadd_ym
 
 ##Lou cod/haddock WGOM trips 2024 private= 197908, 2025 private=179869
-## so yeah, these are off by -50k trips in 2024 and +11k trips in 2025
-## and you didn't even limit the stat areas to WGOM
+## Now need to stop double counting the cod AND haddock trips
 
 
 ##My pull exactly matches the MRIP query tool for 2024, private, 2024 cal year, MA
@@ -249,6 +288,7 @@ cod_df %>%
 # microdata function doesn't seem to pull leader. leader=group catch leader
 
 # need to deal with the WGOM mismatch issue with stock area
+## and need to change 2025 to 2025 impute to match lou
 
 #need to also get trips where prim1 and prim2 are cod/haddock haddock/cod?/ caught both
 # in lou code this is WGOM: 513 514 515 521 526 NH
