@@ -330,10 +330,35 @@ merge_cod_hadd_ym <- merge(cod_ym, hadd_ym, by = c("mode", "year"), all = TRUE)
 
 merge_cod_hadd_ym$dtrip_cod_ym[is.na(merge_cod_hadd_ym$dtrip_cod_ym)] <- 0
 merge_cod_hadd_ym$dtrip_ym <- merge_cod_hadd_ym$dtrip_cod_ym + merge_cod_hadd_ym$dtrip_hadd_ym
+
+##add rows for total trips by year
+merge_cod_hadd_ym <- merge_cod_hadd_ym %>%
+  bind_rows(
+    merge_cod_hadd_ym %>%
+      filter(year == "fy2024") %>%
+      summarise(
+        across(where(is.numeric), sum),
+        year = "fy2024", mode = "total"
+      )
+  )
+
+merge_cod_hadd_ym <- merge_cod_hadd_ym %>%
+  bind_rows(
+    merge_cod_hadd_ym %>%
+      filter(year == "fy2025_imp") %>%
+      summarise(
+        across(where(is.numeric), sum),
+        year = "fy2025_imp", mode = "total"
+      )
+  )
 merge_cod_hadd_ym
 
 ##Lou cod/haddock WGOM trips 2024 private= 197908, 2025 private=179869
 ## Now need to stop double counting the cod AND haddock trips
+## deal with group catch and hopefully we match
+## want cod trips, hadd trips, cod and hadd trips. this current merge_cod_hadd_ym
+# should equal all those summed up (ie, private 2024=258196 and 2025=242693)
+
 
 
 ##My pull exactly matches the MRIP query tool for 2024, private, 2024 cal year, MA
