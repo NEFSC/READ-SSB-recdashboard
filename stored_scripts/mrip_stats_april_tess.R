@@ -137,7 +137,6 @@ cod_catch[] <- lapply(cod_catch, function(x) if(is.character(x)) tolower(x) else
 cod_catch <- subset(cod_catch, select = -c(se, cv))
 
 
-
 ####### MERGE COD TRIPS AND CATCH #######
 cod_effort$source <- "effort"
 cod_catch$source <- "catch"
@@ -147,7 +146,7 @@ cod_effort_catch <- left_join(cod_effort, cod_catch,
 # lou merged on year, strat_id, psu_id, id_code 
 # making sure st, wave, and mode are same in both datasets
 
-##there are trips without catch
+##there are 159 trips without catch
 ##should I keep them but assign their catch values as 0?
 cod_effort_catch %>% count(source.x, source.y)
 
@@ -161,15 +160,60 @@ sum(cod_effort_catch$day == "xx")
 
 
 
+####### HADDOCK EFFORT #######
+hadd_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE', 
+                                  'STRAT_ID', 'PSU_ID', 'ID_CODE'),
+                          microdata = mrip_stats_041026,
+                          dir_trip = list(comname = 'HADDOCK',
+                                          typ = c('PRIM1', 'A', 'B1', 'B2')))|>
+  dplyr::filter(ST %in% c("25", "23", "33") # 25 is MA, 23 is ME, 33 is NH
+                & YEAR %in% c("2024", "2025"))
+
+names(hadd_effort) <- tolower(names(hadd_effort))
+hadd_effort[] <- lapply(hadd_effort, function(x) if(is.character(x)) tolower(x) else x)
+hadd_effort <- subset(hadd_effort, select = -c(dir_trip_typ, hrsf))
+
+## 312860 trips before we clean it
+sum(hadd_effort$n_trip, na.rm = TRUE)
+
+####### HADDOCK CATCH #######
+hadd_catch <- mrip_catch(comname = 'HADDOCK', 
+                        dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'STRAT_ID', 
+                                'PSU_ID', 'ID_CODE', 'WP_INT'), 
+                        microdata = mrip_stats_041026, estimate_var = FALSE)
+
+## the above gives a list, we want the estimates
+hadd_catch <- hadd_catch$estimates  |>
+  dplyr::filter(ST %in% c("25", "23", "33") & YEAR %in% c("2024", "2025"))
+
+names(hadd_catch) <- tolower(names(hadd_catch))
+hadd_catch[] <- lapply(hadd_catch, function(x) if(is.character(x)) tolower(x) else x)
+hadd_catch <- subset(hadd_catch, select = -c(se, cv))
+
+####### MERGE HADDOCK TRIPS AND CATCH #######
+hadd_effort$source <- "effort"
+hadd_catch$source <- "catch"
+hadd_effort_catch <- left_join(hadd_effort, hadd_catch, 
+                              by = c("common", "year", "wave", "mode_fx", "st", 
+                                     "strat_id", "psu_id", "id_code"))
+
+##there are 367 trips without catch
+##should I keep them but assign their catch values as 0?
+hadd_effort_catch %>% count(source.x, source.y)
+
+##
+hadd_effort_catch$date <- substr(hadd_effort_catch$id_code, 6, 13)
+hadd_effort_catch$month <- substr(hadd_effort_catch$date, 5, 6)
+hadd_effort_catch$day <- substr(hadd_effort_catch$date, 7, 8)
+##none of these in the data though
+sum(hadd_effort_catch$day == "9x")
+sum(hadd_effort_catch$day == "xx")
 
 
+###### APPEND COD AND HADDOCK ######
+cod_hadd_all <- rbind(cod_effort_catch, hadd_effort_catch)
 
-
-
-
-
-### you could do this stuff after merging catch and appending haddock
-cod_effort <- cod_effort %>%
+cod_hadd_all <- cod_hadd_all %>%
   mutate(mode = case_when(
     mode_fx == 3|mode_fx==2|mode_fx==1 ~ "shore",
     mode_fx == 5 ~ "charter",
@@ -177,18 +221,22 @@ cod_effort <- cod_effort %>%
     mode_fx == 4 ~ "headboat"
   ))
 
-cod_effort <- cod_effort %>%
+cod_hadd_all <- cod_hadd_all %>%
   mutate(state = case_when(
     st == "25" ~ "MA",
     st == "33" ~ "NH",
     st == "23" ~ "ME"
   ))
 
-merge_cod <- left_join(cod_effort, cod_site_list, by = c("state", "intsite"))
+## merge in cod sites
+cod_hadd_all <- left_join(cod_hadd_all, cod_site_list, by = c("state", "intsite"))
 
-##keep wgom
-merge_cod <- merge_cod %>% 
+##keep wgom. we drop less than 300 rows
+cod_hadd_all <- cod_hadd_all %>% 
   filter(wgom == 1)
+
+
+
 
 
 
