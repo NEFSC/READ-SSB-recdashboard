@@ -8,52 +8,66 @@ library(tidyverse)
 library(survey)
 
 
-#rm(mrip_stats_041026)
-#mrip_stats_041026 <- readRDS("data/main/mrip_statistics_2026-04-10.Rds") 
-#class(mrip_stats_041026)
-
 # tidyverse 
 mrip_stats_041026 <- read_rds("data/main/mrip_statistics_2026-04-10.Rds")
+#class(mrip_stats_041026)
 
 #library(purrr)
 #trip <- map_dfr(mrip_stats_041026[[1]], as.data.frame)
 
 
-#load the elements in the list into dataframes
+#load elements in the list into dataframes
 trip <- as_tibble(mrip_stats_041026$trip)
 catch <- as_tibble(mrip_stats_041026$catch)
 size <- as_tibble(mrip_stats_041026$size)
 size_b2 <- as_tibble(mrip_stats_041026$size_b2)
 
-# make column names and everything lowercase
+# make column names and text lowercase
 names(trip) <- tolower(names(trip))
 trip[] <- lapply(trip, function(x) if(is.character(x)) tolower(x) else x)
+names(catch) <- tolower(names(catch))
+catch[] <- lapply(catch, function(x) if(is.character(x)) tolower(x) else x)
 
 
-### Read in site list from Lou that has stock and stat areas that he merges in on intsite
-##combinations of intsite, stock area, and stat area are not unique btw 
+## Sam's example for using mrip effort function:
+mrip_effort(dom = c('YEAR', 'ST'),
+            microdata = mrip_stats_041026) |>
+  dplyr::filter(ST == 25)
+
+# The way I defined typ, it's trips where haddock were stated as the 
+# primary target by the angler OR were landed-A, unobserved-B1, or discarded-B2
+mrip_effort(dom = c('YEAR', 'WAVE', 'ST'),
+            microdata = mrip_stats_041026,
+            dir_trip = list(comname = 'HADDOCK',
+                            typ = c('PRIM1', 'A', 'B1', 'B2')))|>
+  dplyr::filter(ST %in% c("25", "23", "33") & YEAR %in% c("2024", "2025"))
+
+
+
+####### Read in Lou's COD SITE LIST (stock and stat areas) #######
+## Will merge them into trip data on intsite 
+##combinations of intsite, stock area, and stat area are not unique btw.. 
+#think lou took the 1st obs but should it be the most common stat area for each intsite?
 cod_site_list <- read.csv("data/raw/MRIP_COD_ALL_SITE_LIST.csv")
 names(cod_site_list) <- tolower(names(cod_site_list))
 n_distinct(cod_site_list$intsite)
 n_distinct(cod_site_list$nmfs_stock_area)
+n_distinct(cod_site_list$intsite, cod_site_list$nmfs_stock_area, cod_site_list$nmfs_stat_area)
 
 cod_site_list %>% 
   count(intsite) %>% 
   filter(n > 1)
 
-n_distinct(cod_site_list$intsite, cod_site_list$nmfs_stock_area)
-n_distinct(cod_site_list$intsite, cod_site_list$nmfs_stock_area, cod_site_list$nmfs_stat_area)
-
-#this is what lou did except he didnt keep NH so this wont match:
+#this is what lou did except he didnt keep NH so this prob wont match:
+## PROBABLY NEED TO REDO THIS
 cod_site_list <- cod_site_list %>% filter(state %in% c("MA", "ME", "NH"))
 cod_site_list[order(cod_site_list$intsite, cod_site_list$nmfs_stock_area), ]
 cod_site_list <- subset(cod_site_list, select = c(nmfs_stock_area, intsite, nmfs_stat_area, state))
 cod_site_list <- cod_site_list %>% distinct(nmfs_stock_area, intsite, nmfs_stat_area, state, .keep_all = TRUE)
 
-## think these are WGOM? 513 514 515 521 526 NH
 cod_site_list %>% count(nmfs_stat_area)
-cod_site_list %>% count(state)
 
+## think these are WGOM according to the stata code? 513 514 515 521 526 NH
 cod_site_list <- cod_site_list %>%
   mutate(wgom = case_when(
     state == "NH" ~ 1,
@@ -66,44 +80,96 @@ cod_site_list <- cod_site_list %>%
 
 
 
-## Sam's example for using mrip effort function:
-mrip_effort(dom = c('YEAR', 'ST'),
-            microdata = mrip_stats_041026) |>
-  dplyr::filter(ST == 25)
 
 
-mrip_effort(dom = c('YEAR', 'WAVE'),
-            microdata = mrip_stats_041026,
-            dir_trip = list(comname = 'HADDOCK',
-                            typ = c('PRIM1', 'PRIM2', 'A', 'B1')))|>
-  dplyr::filter(ST == 25|ST == 23 & YEAR == 2024|YEAR == 2025)
 
 
-# 25 is MA, 23 is ME, 33 is NH
-# The way I defined typ, it's trips where cod/haddock were either stated as the 
-#  primary target by the angler OR were landed-A, unobserved-B1, or discarded-B2
-mrip_effort(dom = c('YEAR', 'WAVE', 'ST'),
-            microdata = mrip_stats_041026,
-            dir_trip = list(comname = 'HADDOCK',
-                            typ = c('PRIM1', 'A', 'B1', 'B2')))|>
+#rm(hadd_collapse2, hadd_collapse3, hadd_collapse, hadd_df, hadd_ym, cod_ym)
+
+
+####### COD EFFORT #######
+cod_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE', 
+                                  'STRAT_ID', 'PSU_ID', 'ID_CODE'),
+                      microdata = mrip_stats_041026,
+                      dir_trip = list(comname = 'ATLANTIC COD',
+                                      typ = c('PRIM1', 'A', 'B1', 'B2')))|>
+  dplyr::filter(ST %in% c("25", "23", "33") # 25 is MA, 23 is ME, 33 is NH
+                & YEAR %in% c("2024", "2025"))
+
+names(cod_effort) <- tolower(names(cod_effort))
+cod_effort[] <- lapply(cod_effort, function(x) if(is.character(x)) tolower(x) else x)
+cod_effort <- subset(cod_effort, select = -c(dir_trip_typ, hrsf))
+
+##261611 trips before we clean it
+sum(cod_effort$n_trip, na.rm = TRUE)
+
+## these are unique trips. they're multiplied by the weight to estimate trips
+##do they interview multiple people on same trip?
+#sum(cod_effort$n_trip == cod_effort$wp_int, na.rm = TRUE)
+
+## the rows are unique on id_code
+n_distinct(cod_effort$year, cod_effort$strat_id, cod_effort$psu_id, cod_effort$id_code)
+n_distinct(cod_effort$id_code)
+# summary by mode. there's a private trip record with 15k trips
+tapply(cod_effort$n_trip, cod_effort$mode_fx, summary)
+#nrow(cod_effort[cod_effort$n_trip == 1, ])
+## why are there rows where there are 0 trips? 
+nrow(cod_effort[cod_effort$n_trip == 0, ])
+
+
+
+## Ok, lets pull like this, merge in catch, merge in cod sites, deal w group catch
+## do the stuff you did below making mode, fishing yr, state, whatever 
+
+
+####### COD CATCH #######
+cod_catch <- mrip_catch(comname = 'ATLANTIC COD', 
+                        dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'STRAT_ID', 
+                                'PSU_ID', 'ID_CODE', 'WP_INT'), 
+                        microdata = mrip_stats_041026, estimate_var = FALSE)
+
+## the above gives a list, we want the estimates
+cod_catch <- cod_catch$estimates  |>
   dplyr::filter(ST %in% c("25", "23", "33") & YEAR %in% c("2024", "2025"))
 
+names(cod_catch) <- tolower(names(cod_catch))
+cod_catch[] <- lapply(cod_catch, function(x) if(is.character(x)) tolower(x) else x)
+cod_catch <- subset(cod_catch, select = -c(se, cv))
+
+
+
+####### MERGE COD TRIPS AND CATCH #######
+cod_effort$source <- "effort"
+cod_catch$source <- "catch"
+cod_effort_catch <- left_join(cod_effort, cod_catch, 
+                              by = c("common", "year", "wave", "mode_fx", "st", 
+                                     "strat_id", "psu_id", "id_code"))
+# lou merged on year, strat_id, psu_id, id_code 
+# making sure st, wave, and mode are same in both datasets
+
+##there are trips without catch
+##should I keep them but assign their catch values as 0?
+cod_effort_catch %>% count(source.x, source.y)
+
+##
+cod_effort_catch$date <- substr(cod_effort_catch$id_code, 6, 13)
+cod_effort_catch$month <- substr(cod_effort_catch$date, 5, 6)
+cod_effort_catch$day <- substr(cod_effort_catch$date, 7, 8)
+##none of these in the data though
+sum(cod_effort_catch$day == "9x")
+sum(cod_effort_catch$day == "xx")
 
 
 
 
-####COD CATCH MOVE THIS####
-cod_catch_df <- mrip_catch(comname = 'ATLANTIC COD', 
-                            dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX'), 
-                            microdata = mrip_stats_041026, estimate_var = FALSE)
 
-##spits out a list and we want the estimates
-cod_catch_df <- cod_catch_df$estimates  |>
-  dplyr::filter(ST %in% c("25", "23", "33") & YEAR %in% c("2024", "2025"))
 
-names(cod_catch_df) <- tolower(names(cod_catch_df))
 
-cod_catch_df <- cod_catch_df %>%
+
+
+
+### you could do this stuff after merging catch and appending haddock
+cod_effort <- cod_effort %>%
   mutate(mode = case_when(
     mode_fx == 3|mode_fx==2|mode_fx==1 ~ "shore",
     mode_fx == 5 ~ "charter",
@@ -111,16 +177,73 @@ cod_catch_df <- cod_catch_df %>%
     mode_fx == 4 ~ "headboat"
   ))
 
-cod_catch_df <- cod_catch_df %>%
+cod_effort <- cod_effort %>%
   mutate(state = case_when(
     st == "25" ~ "MA",
     st == "33" ~ "NH",
     st == "23" ~ "ME"
   ))
 
+merge_cod <- left_join(cod_effort, cod_site_list, by = c("state", "intsite"))
+
+##keep wgom
+merge_cod <- merge_cod %>% 
+  filter(wgom == 1)
 
 
-####COD EFFORT####
+
+## 13k cod trips in new england seems low
+#wp_int is not in the trip data frame but you can pull it with mrip_effort
+# probably comes from merging it in from catch
+nrow(trip[trip$prim1_common == "atlantic cod" & trip$year == 2024 & 
+            trip$st == 25|trip$st == 23|trip$st == 33, ])
+
+
+
+
+
+
+
+
+
+
+
+
+####COD CATCH OLD####
+# this is just pooling stuff by wave, not sure if you will match lou but try
+# can't limit this to WGOM using cod sites without insite and intsite is only in trip data
+# you will need to get trip level catch and individual trips so you can merge 
+# them and deal w group catch
+cod_catch <- mrip_catch(comname = 'ATLANTIC COD', 
+                            dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX'), 
+                            microdata = mrip_stats_041026, estimate_var = FALSE)
+
+##spits out a list and we want the estimates
+cod_catch <- cod_catch$estimates  |>
+  dplyr::filter(ST %in% c("25", "23", "33") & YEAR %in% c("2024", "2025"))
+
+names(cod_catch) <- tolower(names(cod_catch))
+
+cod_catch <- cod_catch %>%
+  mutate(mode = case_when(
+    mode_fx == 3|mode_fx==2|mode_fx==1 ~ "shore",
+    mode_fx == 5 ~ "charter",
+    mode_fx == 7 ~ "private",
+    mode_fx == 4 ~ "headboat"
+  ))
+
+cod_catch <- cod_catch %>%
+  mutate(state = case_when(
+    st == "25" ~ "MA",
+    st == "33" ~ "NH",
+    st == "23" ~ "ME"
+  ))
+
+n_distinct(cod_catch$year, cod_catch$strat_id, cod_catch$psu_id, cod_catch$id_code)
+
+
+
+####COD EFFORT OLD####
 ## common IDs species in catch data and prim1/prim2 IDs target species in trip data
 ## need the stock area intsite and mode (use MODE_FX)
 cod_df <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE'),
@@ -129,9 +252,7 @@ cod_df <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE'),
                             typ = c('PRIM1', 'A', 'B1', 'B2')))|>
   dplyr::filter(ST %in% c("25", "23", "33") & YEAR %in% c("2024", "2025"))
 
-## pulling  trips where all three are cod or at least one is cod? 
-# try including B2, try pulling for the various prim1 and A and the B's separately
-# try merging in stock area on intsite using the csv from lou but they may not be 1:1
+# try pulling for the various prim1 and A and the B's separately
 
 names(cod_df) <- tolower(names(cod_df))
 
@@ -143,8 +264,6 @@ cod_df <- cod_df %>%
     mode_fx == 4 ~ "headboat"
   ))
 
-cod_df <- subset(cod_df, select = -c(hrsf))
-
 cod_df <- cod_df %>%
   mutate(state = case_when(
     st == "25" ~ "MA",
@@ -154,6 +273,7 @@ cod_df <- cod_df %>%
 
 cod_df %>% count(wave, year)
 
+cod_df <- subset(cod_df, select = -c(hrsf))
 
 merge_cod <- left_join(cod_df, cod_site_list, by = c("state", "intsite"))
 
@@ -228,7 +348,7 @@ cod_ym
 
 
 
-####HADDOCK####
+####HADDOCK effort OLD####
 hadd_df <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE'),
                       microdata = mrip_stats_041026,
                       dir_trip = list(comname = 'HADDOCK',
@@ -358,6 +478,13 @@ merge_cod_hadd_ym
 ## deal with group catch and hopefully we match
 ## want cod trips, hadd trips, cod and hadd trips. this current merge_cod_hadd_ym
 # should equal all those summed up (ie, private 2024=258196 and 2025=242693)
+
+
+
+######## GROUP CATCH ############
+## can deal with this later
+## append cod and hadd trips, merge trip with catch data: 
+# lou merged on year, strat_id, psu_id, id_code
 
 
 
