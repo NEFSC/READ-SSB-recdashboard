@@ -1,6 +1,10 @@
 ######  MRIP STATISTICS April 2026  ######
 
 
+# if Rstudio is making you enter a username and PAT and then not letting you push, 
+# enter this in the terminal and then enter user and PAT: 
+# git config --global credential.helper store
+
 library(dplyr)
 library(readr)
 library("mriptacklebox")
@@ -84,12 +88,12 @@ cod_site_list <- cod_site_list %>%
 
 
 
-#rm(hadd_collapse2, hadd_collapse3, hadd_collapse, hadd_df, hadd_ym, cod_ym)
 
 
 ####### COD EFFORT #######
+# which(colnames(trip) == "leader") ## leader is in there it's just hidden
 cod_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE', 
-                                  'STRAT_ID', 'PSU_ID', 'ID_CODE'),
+                                  'STRAT_ID', 'PSU_ID', 'ID_CODE', 'LEADER'),
                       microdata = mrip_stats_041026,
                       dir_trip = list(comname = 'ATLANTIC COD',
                                       typ = c('PRIM1', 'A', 'B1', 'B2')))|>
@@ -146,7 +150,7 @@ cod_effort_catch <- left_join(cod_effort, cod_catch,
 # lou merged on year, strat_id, psu_id, id_code 
 # making sure st, wave, and mode are same in both datasets
 
-##there are 159 trips without catch
+##there are 159 trips without catch. lou kept them
 ##should I keep them but assign their catch values as 0?
 cod_effort_catch %>% count(source.x, source.y)
 
@@ -154,7 +158,7 @@ cod_effort_catch %>% count(source.x, source.y)
 cod_effort_catch$date <- substr(cod_effort_catch$id_code, 6, 13)
 cod_effort_catch$month <- substr(cod_effort_catch$date, 5, 6)
 cod_effort_catch$day <- substr(cod_effort_catch$date, 7, 8)
-##none of these in the data though
+##none of these are in the data (if they do show up in other cases we would drop)
 sum(cod_effort_catch$day == "9x")
 sum(cod_effort_catch$day == "xx")
 
@@ -162,7 +166,7 @@ sum(cod_effort_catch$day == "xx")
 
 ####### HADDOCK EFFORT #######
 hadd_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE', 
-                                  'STRAT_ID', 'PSU_ID', 'ID_CODE'),
+                                  'STRAT_ID', 'PSU_ID', 'ID_CODE', 'LEADER'),
                           microdata = mrip_stats_041026,
                           dir_trip = list(comname = 'HADDOCK',
                                           typ = c('PRIM1', 'A', 'B1', 'B2')))|>
@@ -198,14 +202,14 @@ hadd_effort_catch <- left_join(hadd_effort, hadd_catch,
                                      "strat_id", "psu_id", "id_code"))
 
 ##there are 367 trips without catch
-##should I keep them but assign their catch values as 0?
+##should I keep them but assign their catch values as 0? lou kept them, assigned missing claim=0
 hadd_effort_catch %>% count(source.x, source.y)
 
 ##
 hadd_effort_catch$date <- substr(hadd_effort_catch$id_code, 6, 13)
 hadd_effort_catch$month <- substr(hadd_effort_catch$date, 5, 6)
 hadd_effort_catch$day <- substr(hadd_effort_catch$date, 7, 8)
-##none of these in the data though
+##none of these are in the data (if they do show up in other cases we would drop)
 sum(hadd_effort_catch$day == "9x")
 sum(hadd_effort_catch$day == "xx")
 
@@ -235,11 +239,45 @@ cod_hadd_all <- left_join(cod_hadd_all, cod_site_list, by = c("state", "intsite"
 cod_hadd_all <- cod_hadd_all %>% 
   filter(wgom == 1)
 
+cod_hadd_all <- cod_hadd_all %>%
+  mutate(fy2024 = case_when(
+    year == 2024 & wave >= 3 ~ 1,
+    year == 2025 & wave == 2 ~ 1,
+    TRUE ~ 0 
+  ))
+
+cod_hadd_all <- cod_hadd_all %>%
+  mutate(fy2025_imp = case_when(
+    year == 2024 & wave == 2 ~ 1,
+    year == 2024 & wave == 6 ~ 1,
+    year == 2025 & wave == 3 ~ 1,
+    year == 2025 & wave == 4 ~ 1,
+    year == 2025 & wave == 5 ~ 1,
+    TRUE ~ 0 
+  ))
+
+#lou kept the trips with no catch data, assigned claim=0 when it was missing. 
+# make those rows have value=0 and variable =claim (not creating rows for other catch vars)
+cod_hadd_all$value[is.na(cod_hadd_all$value)] <- 0
+cod_hadd_all$variable[is.na(cod_hadd_all$variable)] <- "claim"
+
+
+
+####### DEAL WITH GROUP CATCH before you can get trips #######
+## need to be able to do lou's lines 92-94
+##check out your chat with gemini saved in downloads
+## ask gemini to rewrite the stata code in R and explain the group catch stuff
+#  2301/19297
+n_distinct(cod_hadd_all$leader)
+#strat_id psu_id leader (dom_id)
+n_distinct(cod_hadd_all$strat_id, cod_hadd_all$psu_id, cod_hadd_all$leader)
 
 
 
 
 
+
+##OLD NOTE
 ## 13k cod trips in new england seems low
 #wp_int is not in the trip data frame but you can pull it with mrip_effort
 # probably comes from merging it in from catch
