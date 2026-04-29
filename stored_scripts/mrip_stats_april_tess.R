@@ -12,19 +12,20 @@ library(tidyverse)
 library(survey)
 
 
-# tidyverse 
-mrip_stats_041026 <- read_rds("data/main/mrip_statistics_2026-04-10.Rds")
-#class(mrip_stats_041026)
 
-#library(purrr)
-#trip <- map_dfr(mrip_stats_041026[[1]], as.data.frame)
+#RUN pull_mrip.R
+# or read in from data/main but w/correct date in the filename
+#mrip_statistics <- read_rds("data/main/mrip_statistics_2026-04-10.Rds")
 
 
 #load elements in the list into dataframes
-trip <- as_tibble(mrip_stats_041026$trip)
-catch <- as_tibble(mrip_stats_041026$catch)
-size <- as_tibble(mrip_stats_041026$size)
-size_b2 <- as_tibble(mrip_stats_041026$size_b2)
+trip<-mrip_statistics$trip
+catch<-mrip_statistics$catch
+size<-mrip_statistics$size
+size_b2<-mrip_statistics$size_b2
+
+#may just need to clean the above trip and catch files directly rather than use 
+# Sam's effort and catch functions
 
 # make column names and text lowercase
 names(trip) <- tolower(names(trip))
@@ -32,19 +33,6 @@ trip[] <- lapply(trip, function(x) if(is.character(x)) tolower(x) else x)
 names(catch) <- tolower(names(catch))
 catch[] <- lapply(catch, function(x) if(is.character(x)) tolower(x) else x)
 
-
-## Sam's example for using mrip effort function:
-mrip_effort(dom = c('YEAR', 'ST'),
-            microdata = mrip_stats_041026) |>
-  dplyr::filter(ST == 25)
-
-# The way I defined typ, it's trips where haddock were stated as the 
-# primary target by the angler OR were landed-A, unobserved-B1, or discarded-B2
-mrip_effort(dom = c('YEAR', 'WAVE', 'ST'),
-            microdata = mrip_stats_041026,
-            dir_trip = list(comname = 'HADDOCK',
-                            typ = c('PRIM1', 'A', 'B1', 'B2')))|>
-  dplyr::filter(ST %in% c("25", "23", "33") & YEAR %in% c("2024", "2025"))
 
 
 
@@ -92,9 +80,12 @@ cod_site_list <- cod_site_list %>%
 
 ####### COD EFFORT #######
 # which(colnames(trip) == "leader") ## leader is in there it's just hidden
+
+# typ is pulling trips where cod were stated as primary target by the angler OR
+# were landed-A, unobserved-B1, or discarded-B2
 cod_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE', 
                                   'STRAT_ID', 'PSU_ID', 'ID_CODE', 'LEADER'),
-                      microdata = mrip_stats_041026,
+                      microdata = mrip_statistics,
                       dir_trip = list(comname = 'ATLANTIC COD',
                                       typ = c('PRIM1', 'A', 'B1', 'B2')))|>
   dplyr::filter(ST %in% c("25", "23", "33") # 25 is MA, 23 is ME, 33 is NH
@@ -130,7 +121,7 @@ nrow(cod_effort[cod_effort$n_trip == 0, ])
 cod_catch <- mrip_catch(comname = 'ATLANTIC COD', 
                         dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'STRAT_ID', 
                                 'PSU_ID', 'ID_CODE', 'WP_INT'), 
-                        microdata = mrip_stats_041026, estimate_var = FALSE)
+                        microdata = mrip_statistics, estimate_var = FALSE)
 
 ## the above gives a list, we want the estimates
 cod_catch <- cod_catch$estimates  |>
@@ -167,7 +158,7 @@ sum(cod_effort_catch$day == "xx")
 ####### HADDOCK EFFORT #######
 hadd_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE', 
                                   'STRAT_ID', 'PSU_ID', 'ID_CODE', 'LEADER'),
-                          microdata = mrip_stats_041026,
+                          microdata = mrip_statistics,
                           dir_trip = list(comname = 'HADDOCK',
                                           typ = c('PRIM1', 'A', 'B1', 'B2')))|>
   dplyr::filter(ST %in% c("25", "23", "33") # 25 is MA, 23 is ME, 33 is NH
@@ -184,7 +175,7 @@ sum(hadd_effort$n_trip, na.rm = TRUE)
 hadd_catch <- mrip_catch(comname = 'HADDOCK', 
                         dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'STRAT_ID', 
                                 'PSU_ID', 'ID_CODE', 'WP_INT'), 
-                        microdata = mrip_stats_041026, estimate_var = FALSE)
+                        microdata = mrip_statistics, estimate_var = FALSE)
 
 ## the above gives a list, we want the estimates
 hadd_catch <- hadd_catch$estimates  |>
