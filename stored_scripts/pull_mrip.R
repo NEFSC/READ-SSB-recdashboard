@@ -31,7 +31,7 @@ here::i_am("stored_scripts/pull_mrip.R")
 data_vintage<-as.character(Sys.Date())
 
 # set directory of mrip data
-# pd <- file.path(network_path,"mrfss","products","mrip_estim","Public_data_cal2018")
+pd <- file.path(network_path,"mrfss","products","mrip_estim","Public_data_cal2018")
 
 
 
