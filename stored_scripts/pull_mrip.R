@@ -23,6 +23,8 @@ library("glue")
 tacklebox_main_lib <- file.path(Sys.getenv("R_LIBS_USER"), "MRIPtacklebox_main_install")
 library("mriptacklebox",lib.loc = tacklebox_main_lib)
 library("conflicted")
+conflicts_prefer(dplyr::filter)
+
 
 # deal with directories
 here::i_am("stored_scripts/pull_mrip.R")
