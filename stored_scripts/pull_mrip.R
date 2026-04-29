@@ -5,7 +5,7 @@ library("tidyverse")
 library("here")
 library("glue")
 tacklebox_main_lib <- file.path(Sys.getenv("R_LIBS_USER"), "MRIPtacklebox_main_install")
-library("mriptacklebox",lib.loc = tacklebox_main_lib)
+library("mriptacklebox",lib.loc = tacklebox_main_lib)  ##error here
 library("conflicted")
 
 # deal with directories
