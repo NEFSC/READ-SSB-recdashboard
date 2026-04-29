@@ -269,10 +269,64 @@ cod_hadd_all$variable[is.na(cod_hadd_all$variable)] <- "claim"
 ## ask gemini to rewrite the stata code in R and explain the group catch stuff
 #  2301/19297
 n_distinct(cod_hadd_all$leader)
+# 2653
+n_distinct(cod_hadd_all$id_code)
 #strat_id psu_id leader (dom_id)
 n_distinct(cod_hadd_all$strat_id, cod_hadd_all$psu_id, cod_hadd_all$leader)
 
+# gen domain_claim=claim
+class(cod_hadd_all$value)
 
+nrow(cod_hadd_all[cod_hadd_all$variable == "claim", ])
+nrow(cod_hadd_all[cod_hadd_all$variable == "claim" & cod_hadd_all$value == 0, ])
+
+cod_hadd_all %>% count(source.x, source.y)
+table(cod_hadd_all$source2)
+#need to wide out the catch variables. 
+cod_hadd_all_w <- cod_hadd_all %>% spread(key = variable, value = value)
+
+#remove spaces in 'atlantic cod'
+cod_hadd_all_w$common <- gsub(" ", "", cod_hadd_all_w$common)
+
+#dom_id is 1 if cod or haddock and 2 if else
+cod_hadd_all_w$dom_id <- ifelse(cod_hadd_all_w$common == "atlanticcod"|cod_hadd_all_w$common == "haddock", 1, 2)
+
+#domain_claim is claim if common is cod or haddock
+cod_hadd_all_w <- cod_hadd_all_w %>%
+  mutate(domain_claim = ifelse(common %in% c("atlanticcod", "haddock"), claim, 0))
+
+sum(cod_hadd_all_w$domain_claim == 0, na.rm = TRUE)
+
+
+# gc_flag assigns each leader the lowest dom_id in the group, flagging the whole 
+#group if at least one record is cod or haddock
+#bysort strat_id psu_id leader (dom_id): gen gc_flag=dom_id[1]
+
+#this finds the max domain claim in the group
+#bysort strat_id psu_id leader (domain_claim): gen claim_flag=domain_claim[_N]
+
+# this recodes a trip as dom_id=1 if it was previously 2 if claim_flag>0 and gc_flag is 1
+#replace dom_id="1" if strmatch(dom_id,"2") & claim_flag>0 & claim_flag!=. & strmatch(gc_flag,"1")
+cod_hadd_all_w <- cod_hadd_all_w %>%
+  group_by(strat_id, psu_id, leader) %>%
+  mutate(
+    # Lowest dom_id (if "1" exists in the group, gc_flag becomes "1")
+    gc_flag = min(dom_id, na.rm = TRUE),
+    # Highest domain_claim in the group
+    claim_flag = max(domain_claim, na.rm = TRUE)
+  ) %>%
+  ungroup() %>%
+  # Re-classify the trip into the domain of interest
+  mutate(dom_id = ifelse(
+    dom_id == "2" & !is.na(claim_flag) & claim_flag > 0 & gc_flag == "1",
+    "1",
+    dom_id
+  ))
+
+sum(cod_hadd_all_w$claim_flag == 0, na.rm = TRUE)
+
+cod_hadd_all_w %>% count(gc_flag)
+table(cod_hadd_all_w$gc_flag)
 
 
 
