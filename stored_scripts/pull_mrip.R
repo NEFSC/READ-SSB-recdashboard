@@ -11,9 +11,6 @@
 # List containing trips, catch, size, size_b2 
 
 ###############################################################################  
-# Purpose 
-
-# Depends: 
 
 
 
