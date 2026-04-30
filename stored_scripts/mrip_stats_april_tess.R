@@ -59,7 +59,7 @@ cod_site_list <- cod_site_list %>% distinct(nmfs_stock_area, intsite, nmfs_stat_
 
 cod_site_list %>% count(nmfs_stat_area)
 
-## think these are WGOM according to the stata code? 513 514 515 521 526 NH
+##  these are WGOM according to the stata code? 513 514 515 521 526 NH
 cod_site_list <- cod_site_list %>%
   mutate(wgom = case_when(
     state == "NH" ~ 1,
@@ -95,7 +95,8 @@ names(cod_effort) <- tolower(names(cod_effort))
 cod_effort[] <- lapply(cod_effort, function(x) if(is.character(x)) tolower(x) else x)
 cod_effort <- subset(cod_effort, select = -c(dir_trip_typ, hrsf))
 
-##261611 trips before we clean it
+# 261611 trips before we clean it except with new mrip pull it's 267506.
+#(it should match unless the underlying mrip data was updated - ask MY)
 sum(cod_effort$n_trip, na.rm = TRUE)
 
 ## these are unique trips. they're multiplied by the weight to estimate trips
@@ -107,14 +108,12 @@ n_distinct(cod_effort$year, cod_effort$strat_id, cod_effort$psu_id, cod_effort$i
 n_distinct(cod_effort$id_code)
 # summary by mode. there's a private trip record with 15k trips
 tapply(cod_effort$n_trip, cod_effort$mode_fx, summary)
-#nrow(cod_effort[cod_effort$n_trip == 1, ])
 ## why are there rows where there are 0 trips? 
 nrow(cod_effort[cod_effort$n_trip == 0, ])
 
 
 
-## Ok, lets pull like this, merge in catch, merge in cod sites, deal w group catch
-## do the stuff you did below making mode, fishing yr, state, whatever 
+
 
 
 ####### COD CATCH #######
@@ -141,11 +140,9 @@ cod_effort_catch <- left_join(cod_effort, cod_catch,
 # lou merged on year, strat_id, psu_id, id_code 
 # making sure st, wave, and mode are same in both datasets
 
-##there are 159 trips without catch. lou kept them
-##should I keep them but assign their catch values as 0?
+#there are 159 trips without catch. lou kept them. assign their catch values as 0?
 cod_effort_catch %>% count(source.x, source.y)
 
-##
 cod_effort_catch$date <- substr(cod_effort_catch$id_code, 6, 13)
 cod_effort_catch$month <- substr(cod_effort_catch$date, 5, 6)
 cod_effort_catch$day <- substr(cod_effort_catch$date, 7, 8)
@@ -168,7 +165,7 @@ names(hadd_effort) <- tolower(names(hadd_effort))
 hadd_effort[] <- lapply(hadd_effort, function(x) if(is.character(x)) tolower(x) else x)
 hadd_effort <- subset(hadd_effort, select = -c(dir_trip_typ, hrsf))
 
-## 312860 trips before we clean it
+## 312860 trips before we clean it. same issue as cod. new pull has 318244 trips
 sum(hadd_effort$n_trip, na.rm = TRUE)
 
 ####### HADDOCK CATCH #######
@@ -193,7 +190,7 @@ hadd_effort_catch <- left_join(hadd_effort, hadd_catch,
                                      "strat_id", "psu_id", "id_code"))
 
 ##there are 367 trips without catch
-##should I keep them but assign their catch values as 0? lou kept them, assigned missing claim=0
+#keep them but assign their catch values as 0? lou kept them, assigned missing claim=0
 hadd_effort_catch %>% count(source.x, source.y)
 
 ##
@@ -262,8 +259,7 @@ cod_hadd_all$variable[is.na(cod_hadd_all$variable)] <- "claim"
 n_distinct(cod_hadd_all$leader)
 # 2653
 n_distinct(cod_hadd_all$id_code)
-#strat_id psu_id leader (dom_id)
-n_distinct(cod_hadd_all$strat_id, cod_hadd_all$psu_id, cod_hadd_all$leader)
+
 
 # gen domain_claim=claim
 class(cod_hadd_all$value)
@@ -272,7 +268,6 @@ nrow(cod_hadd_all[cod_hadd_all$variable == "claim", ])
 nrow(cod_hadd_all[cod_hadd_all$variable == "claim" & cod_hadd_all$value == 0, ])
 
 cod_hadd_all %>% count(source.x, source.y)
-table(cod_hadd_all$source2)
 #need to wide out the catch variables. 
 cod_hadd_all_w <- cod_hadd_all %>% spread(key = variable, value = value)
 
@@ -316,7 +311,6 @@ cod_hadd_all_w <- cod_hadd_all_w %>%
 
 sum(cod_hadd_all_w$claim_flag == 0, na.rm = TRUE)
 
-cod_hadd_all_w %>% count(gc_flag)
 table(cod_hadd_all_w$gc_flag)
 
 
