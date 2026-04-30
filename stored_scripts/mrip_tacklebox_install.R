@@ -28,7 +28,7 @@ dir.create(file.path(tacklebox_main_lib ), showWarnings = FALSE)
 dir.create(file.path(tacklebox_dev_lib ), showWarnings = FALSE)
 
 #install main  branch of mriptacklebox
-remotes::install_github("NEFSC/READ-PDB-mriptacklebox")
+#remotes::install_github("NEFSC/READ-PDB-mriptacklebox")
 
 remotes::install_github("NEFSC/READ-PDB-mriptacklebox", lib=tacklebox_main_lib, dependencies = TRUE, force = TRUE)
 #error in line above, asked thru comment on min-yang's commit in github about it
