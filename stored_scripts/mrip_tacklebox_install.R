@@ -19,6 +19,8 @@ gitcreds::gitcreds_set()
 # enter this in the terminal and then enter user and PAT: 
 #git config --global credential.helper store
 
+#To install manually, switch to tacklebox repo, go to build tab upper right, install
+
 # Setup libraries
 tacklebox_main_lib <- file.path(Sys.getenv("R_LIBS_USER"), "MRIPtacklebox_main_install")
 tacklebox_dev_lib <- file.path(Sys.getenv("R_LIBS_USER"), "MRIPtacklebox_dev_install")
