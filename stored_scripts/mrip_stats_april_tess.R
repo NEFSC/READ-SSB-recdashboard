@@ -15,7 +15,7 @@ library(survey)
 
 #RUN pull_mrip.R
 # or read in from data/main but w/correct date in the filename
-#mrip_statistics <- read_rds("data/main/mrip_statistics_2026-04-10.Rds")
+mrip_statistics <- read_rds("data/raw/mrip_statistics_2026-04-29.Rds")
 
 
 #load elements in the list into dataframes
@@ -25,7 +25,7 @@ size<-mrip_statistics$size
 size_b2<-mrip_statistics$size_b2
 
 #may just need to clean the above trip and catch files directly rather than use 
-# Sam's effort and catch functions
+# Sam's effort and catch functions but will try his functions first
 
 # make column names and text lowercase
 names(trip) <- tolower(names(trip))
@@ -44,32 +44,26 @@ cod_site_list <- read.csv("data/raw/MRIP_COD_ALL_SITE_LIST.csv")
 names(cod_site_list) <- tolower(names(cod_site_list))
 n_distinct(cod_site_list$intsite)
 n_distinct(cod_site_list$nmfs_stock_area)
-n_distinct(cod_site_list$intsite, cod_site_list$nmfs_stock_area, cod_site_list$nmfs_stat_area)
+n_distinct(cod_site_list$intsite, cod_site_list$nmfs_stat_area, cod_site_list$nmfs_stock_area)
 
-cod_site_list %>% 
-  count(intsite) %>% 
-  filter(n > 1)
-
-#this is what lou did except he didnt keep NH so this prob wont match:
-## PROBABLY NEED TO REDO THIS
-cod_site_list <- cod_site_list %>% filter(state %in% c("MA", "ME", "NH"))
-cod_site_list[order(cod_site_list$intsite, cod_site_list$nmfs_stock_area), ]
-cod_site_list <- subset(cod_site_list, select = c(nmfs_stock_area, intsite, nmfs_stat_area, state))
+# lou did this and after merging he made nmfs_stat_area="NH" if state=="NH" 
+cod_site_list <- cod_site_list %>% filter(state %in% c("MA", "ME"))
+cod_site_list <- subset(cod_site_list, select = c(state, intsite, nmfs_stock_area, nmfs_stat_area))
+cod_site_list <- cod_site_list[order(cod_site_list$intsite, cod_site_list$nmfs_stock_area), ]
 cod_site_list <- cod_site_list %>% distinct(nmfs_stock_area, intsite, nmfs_stat_area, state, .keep_all = TRUE)
 
 cod_site_list %>% count(nmfs_stat_area)
 
-##  these are WGOM according to the stata code? 513 514 515 521 526 NH
+##  these are WGOM according to the stata code: 513 514 515 521 526 NH
 cod_site_list <- cod_site_list %>%
   mutate(wgom = case_when(
-    state == "NH" ~ 1,
     nmfs_stat_area == 513 | nmfs_stat_area == 514  ~ 1,
     nmfs_stat_area == 515 | nmfs_stat_area == 521  ~ 1,
     nmfs_stat_area == 526  ~ 1,
     TRUE ~ 0 # Catch-all for all other cases
   ))
 
-
+cod_site_list %>% count(wgom)
 
 
 
@@ -223,7 +217,14 @@ cod_hadd_all <- cod_hadd_all %>%
 ## merge in cod sites
 cod_hadd_all <- left_join(cod_hadd_all, cod_site_list, by = c("state", "intsite"))
 
-##keep wgom. we drop less than 300 rows
+# label NH trips as part of WGOM and fill in their stat area
+cod_hadd_all <- cod_hadd_all %>%
+  mutate(wgom = if_else(state == "NH", 1, wgom))
+
+cod_hadd_all <- cod_hadd_all %>%
+  mutate(nmfs_stat_area = if_else(state == "NH", "NH", nmfs_stat_area))
+
+## keep wgom. dropped less than 300 rows
 cod_hadd_all <- cod_hadd_all %>% 
   filter(wgom == 1)
 
@@ -249,6 +250,8 @@ cod_hadd_all <- cod_hadd_all %>%
 cod_hadd_all$value[is.na(cod_hadd_all$value)] <- 0
 cod_hadd_all$variable[is.na(cod_hadd_all$variable)] <- "claim"
 
+
+# lou generates dom_id=1 if common or prim1_common is atlanticcod or haddock, dom_id=2 otherwise
 
 
 ####### DEAL WITH GROUP CATCH before you can get trips #######
