@@ -15,11 +15,7 @@ usethis::create_github_token()
 library("gitcreds")
 gitcreds_list_helpers()
 gitcreds::gitcreds_set()
-# if Rstudio is making you enter a username and PAT and then not letting you push, 
-# enter this in the terminal and then enter user and PAT: 
-#git config --global credential.helper store
 
-#To install manually, switch to tacklebox repo, go to build tab upper right, install
 
 # Setup libraries
 tacklebox_main_lib <- file.path(Sys.getenv("R_LIBS_USER"), "MRIPtacklebox_main_install")
