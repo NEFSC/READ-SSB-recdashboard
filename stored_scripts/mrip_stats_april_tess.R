@@ -327,11 +327,13 @@ sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2025_imp == 1], na.rm = TRUE)
 
 
 ##### ************* WHAT TO DO NEXT ****** ######
-#start from here, get directed trips by mode (and a total for all modes) and by
+#start from here, get directed trips by mode (and total for all modes) and by
 # wave (and totals for FY2024 and FY2025) and calculate the percent_different variables  
-# that lou has and then format it for Kim, send her a clean script renamed directed_trips_tp.R
+# that lou has and then format it for Kim, get her a clean script renamed directed_trips_tp.R
+# what was the format again? its in issues on github
 # Then move on to catch and catch per trip
 # And ask for help from MY on next steps for directed trips
+# lou manually organized the microdata as survey data and weighted it, is that how MRIP does it?
 # does it have anything to do with there being so many NH rows?
 sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$state == "NH"], na.rm = TRUE)
 sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$state == "ME"], na.rm = TRUE)
