@@ -253,16 +253,101 @@ n_distinct(cod_hadd_all$id_code)
 
 
 
-####### DEAL WITH GROUP CATCH before you can get trips #######
-# lou generates dom_id=1 if common / prim1_common is atlanticcod or haddock, dom_id=2 otherwise
-# gen domain_claim=claim
+
 
 #need to wide out the catch variables. 
 cod_hadd_all_w <- cod_hadd_all %>% spread(key = variable, value = value)
 
+cod_hadd_all_w <- rename(cod_hadd_all_w, dtrip = n_trip)
 #remove spaces in 'atlantic cod'
 cod_hadd_all_w$common <- gsub(" ", "", cod_hadd_all_w$common)
 
+n_distinct(cod_hadd_all_w$id_code)
+n_distinct(cod_hadd_all_w$id_code, cod_hadd_all_w$dtrip)
+n_distinct(cod_hadd_all_w$id_code, cod_hadd_all_w$dtrip, cod_hadd_all_w$wp_int)
+
+
+
+# 306k need to get to 231k
+sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2024 == 1], na.rm = TRUE)
+# 258k need to get to 197k
+sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$mode == "private"], na.rm = TRUE)
+# 279k need to get to 198k
+sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2025_imp == 1], na.rm = TRUE)
+# 249k need to get to 179k
+sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2025_imp == 1 & cod_hadd_all_w$mode == "private"], na.rm = TRUE)
+
+# catch is really close to lou. 267891.9 compared to 267885
+sum(cod_hadd_all_w$tot_cat[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$common == "atlantic cod"], na.rm = TRUE)
+# and this is 1,385,001 compared to lou's 1,384,427
+sum(cod_hadd_all_w$tot_cat[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$common == "haddock"], na.rm = TRUE)
+# these match perfectly
+sum(cod_hadd_all_w$tot_cat[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$common == "atlantic cod" & cod_hadd_all_w$mode == "private"], na.rm = TRUE)
+sum(cod_hadd_all_w$tot_cat[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$common == "haddock" & cod_hadd_all_w$mode == "private"], na.rm = TRUE)
+
+
+
+
+
+
+## trying to not double count 
+trip_species_composition <- cod_hadd_all_w %>%
+  group_by(id_code) %>%
+  summarize(
+    has_cod = any(common == "atlanticcod"),
+    has_haddock = any(common == "haddock")
+  ) %>%
+  ungroup()
+
+trip_species_composition <- trip_species_composition %>%
+  mutate(trip_category = case_when(
+    has_cod & !has_haddock ~ "cod_only",
+    has_haddock & !has_cod ~ "hadd_only",
+    has_cod & has_haddock  ~ "cod_and_hadd"
+  ))
+
+#merge that in
+cod_hadd_all_w$source2 <- "cod_hadd_all"
+trip_species_composition$source2 <- "trip_species"
+cod_hadd_all_w <- left_join(cod_hadd_all_w, trip_species_composition, by = c("id_code"))
+
+table(cod_hadd_all_w$trip_category)
+
+######## DROP duplicate cod AND haddock trips
+## sometimes the same id_code has different wp_int for cod or haddock so I'll keep the highest wp_int
+cod_hadd_all_w <- cod_hadd_all_w %>%
+  # Sort by wp_int in descending order
+  arrange(desc(wp_int)) %>%
+  # Keep only the first (highest value) row for each id_code
+  distinct(id_code, .keep_all = TRUE)
+
+
+## much closer now, esp for 2024 although more off for 2025 
+# 306k down to 232k, need to get to 231k
+sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2024 == 1], na.rm = TRUE)
+# 279k down to 221k, need to get to 198k
+sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2025_imp == 1], na.rm = TRUE)
+
+
+
+sum(is.na(cod_hadd_all_w$wp_int))
+# there are weights that are NA, what happens when we don't count those trips
+cod_hadd_all_w <- cod_hadd_all_w %>%
+  mutate(dtrip = if_else(is.na(wp_int), 0, dtrip))
+# we knock a ton out, TOO MANY
+# now at 179k, need to get to 231k
+sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2024 == 1], na.rm = TRUE)
+# now at 180k, need to get to 198k
+sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2025_imp == 1], na.rm = TRUE)
+
+
+
+
+
+
+####### DEAL WITH GROUP CATCH before you can get trips #######
+# lou generates dom_id=1 if common / prim1_common is atlanticcod or haddock, dom_id=2 otherwise
+# gen domain_claim=claim
 #dom_id is 1 if cod or haddock and 2 if else
 cod_hadd_all_w$dom_id <- ifelse(cod_hadd_all_w$common == "atlanticcod"|cod_hadd_all_w$common == "haddock", 1, 2)
 
@@ -298,12 +383,81 @@ cod_hadd_all_w <- cod_hadd_all_w %>%
     dom_id
   ))
 
-sum(cod_hadd_all_w$claim_flag == 0, na.rm = TRUE)
-sum(cod_hadd_all_w$dom_id == 2, na.rm = TRUE)
-table(cod_hadd_all_w$gc_flag)
+# sum(cod_hadd_all_w$claim_flag == 0, na.rm = TRUE)
+# sum(cod_hadd_all_w$dom_id == 2, na.rm = TRUE)
+# table(cod_hadd_all_w$gc_flag)
+
+cod_hadd_all_w <- cod_hadd_all_w %>% 
+  filter(dom_id %in% c(1))
+
+#### The above GROUP CATCH CODE DOES NOTHING bc we already filtered for species
+## you can move this code somewhere else in case we end up cleaning straight from microdata
+
+
+# generate the estimation strata - year, month, kind-of-day (weekend including 
+# fed holidays/weekday), mode (pr/fh)*/
+cod_hadd_all_w$wave1 <- as.character(cod_hadd_all_w$wave)
+cod_hadd_all_w$my_dom_id_string <- 
+  paste(cod_hadd_all_w$year, cod_hadd_all_w$wave1, cod_hadd_all_w$nmfs_stat_area,cod_hadd_all_w$ mode, sep = "_") 
+
+cod_hadd_all_w$my_dom_id_string <- gsub(" ", "", cod_hadd_all_w$my_dom_id_string)
+
+#encode my_dom_id
+cod_hadd_all_w$my_dom_id <- as.numeric(as.factor(cod_hadd_all_w$my_dom_id_string))
+
+#keep 1 observation per year-strat-psu-id_code. 
+cod_hadd_all_w1 <- cod_hadd_all_w %>%
+  group_by(year, wave, strat_id, psu_id, id_code) %>%
+  arrange(dom_id, .by_group = TRUE) %>%
+  filter(row_number() == 1) %>%
+  ungroup()
+
+#replace wp_int=0 if wp_int<=0
+cod_hadd_all_w1 <- cod_hadd_all_w1 %>%
+  mutate(wp_int = if_else(wp_int <= 0, 0, wp_int))
+
+
+cod_hadd_all_w1$my_dom_id_area <- substr(cod_hadd_all_w1$my_dom_id_string, 8, 10)
+cod_hadd_all_w1$my_dom_id_area <- gsub("_", "", cod_hadd_all_w1$my_dom_id_area)
+sum(cod_hadd_all_w1$my_dom_id_area == cod_hadd_all_w1$nmfs_stat_area, na.rm = TRUE)
+
+cod_hadd_wide <- cod_hadd_all_w1 %>%
+  # 1. Reshape from long to wide
+  pivot_wider(
+    names_from = nmfs_stat_area, 
+    values_from = dtrip, 
+    names_prefix = "dtrip"
+  ) %>%
+  # 2. Replace NAs (missing values) with 0 for all dtrip columns
+  mutate(across(starts_with("dtrip"), ~replace_na(., 0)))
 
 
 
+
+
+#####Not run
+#svyset psu_id [pweight= wp_int], strata(strat_id) singleunit(certainty)
+# If a stratum has only one PSU, treat as a 'certainty unit, ie assume it contributes zero to the variance for that level
+options(survey.lonely.psu = "certainty")    #Set the lonely PSU handling first
+
+cod_hadd_survey <- svydesign(
+  id      = ~psu_id,     # Cluster IDs (use ~1 if no clusters)
+  strata  = ~strat_id,   # Strata
+  weights = ~wp_int, # Your sampling weights variable
+  data    = cod_hadd_all_w1,          # The cleaned dataframe
+  nest    = TRUE         # Ensures PSUs are nested within strata
+)
+
+
+
+
+
+
+
+
+
+
+############# From here down you haven't copied basic R commands
 
 ##OLD NOTE
 ## 13k cod trips in new england seems low
