@@ -36,46 +36,10 @@ catch[] <- lapply(catch, function(x) if(is.character(x)) tolower(x) else x)
 
 
 
-####### Read in Lou's COD SITE LIST (stock and stat areas) #######
-## Will merge them into trip data on intsite 
-##combinations of intsite, stock area, and stat area are not unique btw.. 
-#think lou took the 1st obs but should it be the most common stat area for each intsite?
-cod_site_list <- read.csv("data/raw/MRIP_COD_ALL_SITE_LIST.csv")
-names(cod_site_list) <- tolower(names(cod_site_list))
-n_distinct(cod_site_list$intsite)
-n_distinct(cod_site_list$nmfs_stock_area)
-n_distinct(cod_site_list$intsite, cod_site_list$nmfs_stat_area, cod_site_list$nmfs_stock_area)
-
-# lou did this and after merging he made nmfs_stat_area="NH" if state=="NH" 
-cod_site_list <- cod_site_list %>% filter(state %in% c("MA", "ME"))
-cod_site_list <- subset(cod_site_list, select = c(state, intsite, nmfs_stock_area, nmfs_stat_area))
-cod_site_list <- cod_site_list[order(cod_site_list$intsite, cod_site_list$nmfs_stock_area), ]
-cod_site_list <- cod_site_list %>% distinct(nmfs_stock_area, intsite, nmfs_stat_area, state, .keep_all = TRUE)
-
-cod_site_list %>% count(nmfs_stat_area)
-
-##  these are WGOM according to the stata code: 513 514 515 521 526 NH
-cod_site_list <- cod_site_list %>%
-  mutate(wgom = case_when(
-    nmfs_stat_area == 513 | nmfs_stat_area == 514  ~ 1,
-    nmfs_stat_area == 515 | nmfs_stat_area == 521  ~ 1,
-    nmfs_stat_area == 526  ~ 1,
-    TRUE ~ 0 # Catch-all for all other cases
-  ))
-
-cod_site_list %>% count(wgom)
-
-
-
-
-
-
-
-
 ####### COD EFFORT #######
-# which(colnames(trip) == "leader") ## leader is in there it's just hidden
+# which(colnames(trip) == "leader") ## leader IS in there it's just hidden
 
-# typ is pulling trips where cod were stated as primary target by the angler OR
+# typ is pulling trips where cod were stated as primary OR
 # were landed-A, unobserved-B1, or discarded-B2
 cod_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE', 
                                   'STRAT_ID', 'PSU_ID', 'ID_CODE', 'LEADER'),
@@ -89,16 +53,12 @@ names(cod_effort) <- tolower(names(cod_effort))
 cod_effort[] <- lapply(cod_effort, function(x) if(is.character(x)) tolower(x) else x)
 cod_effort <- subset(cod_effort, select = -c(dir_trip_typ, hrsf))
 
-# 261611 trips before we clean it except with new mrip pull it's 267506.
-#(it should match unless the underlying mrip data was updated - ask MY)
+# 261611 trips before we clean it except w new mrip pull it's 267506
+#sometimes mrip data has slight updates w/o an announcement 
 sum(cod_effort$n_trip, na.rm = TRUE)
 
-## these are unique trips. they're multiplied by the weight to estimate trips
-##do they interview multiple people on same trip?
-#sum(cod_effort$n_trip == cod_effort$wp_int, na.rm = TRUE)
-
-## the rows are unique on id_code
-n_distinct(cod_effort$year, cod_effort$strat_id, cod_effort$psu_id, cod_effort$id_code)
+##the rows are unique trips. they're multiplied by the weight wp_int to estimate trips
+## rows are unique on id_code
 n_distinct(cod_effort$id_code)
 # summary by mode. there's a private trip record with 15k trips
 tapply(cod_effort$n_trip, cod_effort$mode_fx, summary)
@@ -132,9 +92,8 @@ cod_effort_catch <- left_join(cod_effort, cod_catch,
                               by = c("common", "year", "wave", "mode_fx", "st", 
                                      "strat_id", "psu_id", "id_code"))
 # lou merged on year, strat_id, psu_id, id_code 
-# making sure st, wave, and mode are same in both datasets
 
-#there are 159 trips without catch. lou kept them. assign their catch values as 0?
+# 159 trips without catch. lou kept them. assign their catch values as 0?
 cod_effort_catch %>% count(source.x, source.y)
 
 cod_effort_catch$date <- substr(cod_effort_catch$id_code, 6, 13)
@@ -159,7 +118,7 @@ names(hadd_effort) <- tolower(names(hadd_effort))
 hadd_effort[] <- lapply(hadd_effort, function(x) if(is.character(x)) tolower(x) else x)
 hadd_effort <- subset(hadd_effort, select = -c(dir_trip_typ, hrsf))
 
-## 312860 trips before we clean it. same issue as cod. new pull has 318244 trips
+## 318244 trips before we clean 
 sum(hadd_effort$n_trip, na.rm = TRUE)
 
 ####### HADDOCK CATCH #######
@@ -187,7 +146,6 @@ hadd_effort_catch <- left_join(hadd_effort, hadd_catch,
 #keep them but assign their catch values as 0? lou kept them, assigned missing claim=0
 hadd_effort_catch %>% count(source.x, source.y)
 
-##
 hadd_effort_catch$date <- substr(hadd_effort_catch$id_code, 6, 13)
 hadd_effort_catch$month <- substr(hadd_effort_catch$date, 5, 6)
 hadd_effort_catch$day <- substr(hadd_effort_catch$date, 7, 8)
@@ -214,17 +172,52 @@ cod_hadd_all <- cod_hadd_all %>%
     st == "23" ~ "ME"
   ))
 
-## merge in cod sites
+
+
+####### Read in COD SITE LIST (stock and stat areas) #######
+##combinations of intsite, stock area, and stat area are not unique.. 
+#lou took the 1st unique obs in the group (should it be the most common stat area for each intsite?)
+cod_site_list <- read.csv("data/raw/MRIP_COD_ALL_SITE_LIST.csv")
+names(cod_site_list) <- tolower(names(cod_site_list))
+n_distinct(cod_site_list$intsite)
+n_distinct(cod_site_list$nmfs_stock_area)
+n_distinct(cod_site_list$intsite, cod_site_list$nmfs_stat_area, cod_site_list$nmfs_stock_area)
+
+# lou did this and after merging he made nmfs_stat_area="NH" if state=="NH" 
+cod_site_list <- cod_site_list %>% filter(state %in% c("MA", "ME"))
+cod_site_list <- subset(cod_site_list, select = c(state, intsite, nmfs_stock_area, nmfs_stat_area))
+cod_site_list <- cod_site_list[order(cod_site_list$intsite, cod_site_list$nmfs_stock_area), ]
+cod_site_list <- cod_site_list %>% distinct(nmfs_stock_area, intsite, nmfs_stat_area, state, .keep_all = TRUE)
+
+cod_site_list %>% count(nmfs_stat_area)
+
+##  these are WGOM according to stata code: 513 514 515 521 526 NH
+cod_site_list <- cod_site_list %>%
+  mutate(wgom = case_when(
+    nmfs_stat_area == 513 | nmfs_stat_area == 514  ~ 1,
+    nmfs_stat_area == 515 | nmfs_stat_area == 521  ~ 1,
+    nmfs_stat_area == 526  ~ 1,
+    TRUE ~ 0 # Catch-all for all other cases
+  ))
+
+cod_site_list %>% count(wgom)
+
+
+## MERGE cod sites into trips on intsite
 cod_hadd_all <- left_join(cod_hadd_all, cod_site_list, by = c("state", "intsite"))
 
 # label NH trips as part of WGOM and fill in their stat area
 cod_hadd_all <- cod_hadd_all %>%
   mutate(wgom = if_else(state == "NH", 1, wgom))
 
+# why does NH have way more observations than MA and ME...
+cod_hadd_all %>% count(state)
+
+cod_hadd_all$nmfs_stat_area <- as.character(cod_hadd_all$nmfs_stat_area)
 cod_hadd_all <- cod_hadd_all %>%
   mutate(nmfs_stat_area = if_else(state == "NH", "NH", nmfs_stat_area))
 
-## keep wgom. dropped less than 300 rows
+## keep if WGOM. dropped less than 300 rows
 cod_hadd_all <- cod_hadd_all %>% 
   filter(wgom == 1)
 
@@ -250,27 +243,20 @@ cod_hadd_all <- cod_hadd_all %>%
 cod_hadd_all$value[is.na(cod_hadd_all$value)] <- 0
 cod_hadd_all$variable[is.na(cod_hadd_all$variable)] <- "claim"
 
+nrow(cod_hadd_all[cod_hadd_all$variable == "claim", ])
+nrow(cod_hadd_all[cod_hadd_all$variable == "claim" & cod_hadd_all$value == 0, ])
 
-# lou generates dom_id=1 if common or prim1_common is atlanticcod or haddock, dom_id=2 otherwise
-
-
-####### DEAL WITH GROUP CATCH before you can get trips #######
-## need to be able to do lou's lines 92-94
-##check out your chat with gemini saved in downloads
-## ask gemini to rewrite the stata code in R and explain the group catch stuff
 #  2301/19297
 n_distinct(cod_hadd_all$leader)
 # 2653
 n_distinct(cod_hadd_all$id_code)
 
 
+
+####### DEAL WITH GROUP CATCH before you can get trips #######
+# lou generates dom_id=1 if common / prim1_common is atlanticcod or haddock, dom_id=2 otherwise
 # gen domain_claim=claim
-class(cod_hadd_all$value)
 
-nrow(cod_hadd_all[cod_hadd_all$variable == "claim", ])
-nrow(cod_hadd_all[cod_hadd_all$variable == "claim" & cod_hadd_all$value == 0, ])
-
-cod_hadd_all %>% count(source.x, source.y)
 #need to wide out the catch variables. 
 cod_hadd_all_w <- cod_hadd_all %>% spread(key = variable, value = value)
 
@@ -313,7 +299,7 @@ cod_hadd_all_w <- cod_hadd_all_w %>%
   ))
 
 sum(cod_hadd_all_w$claim_flag == 0, na.rm = TRUE)
-
+sum(cod_hadd_all_w$dom_id == 2, na.rm = TRUE)
 table(cod_hadd_all_w$gc_flag)
 
 
