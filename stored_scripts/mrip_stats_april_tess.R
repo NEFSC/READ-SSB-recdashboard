@@ -287,10 +287,7 @@ sum(cod_hadd_all_w$tot_cat[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$common ==
 
 
 
-
-
-
-## trying to not double count 
+## Label trips based on species they caught
 trip_species_composition <- cod_hadd_all_w %>%
   group_by(id_code) %>%
   summarize(
@@ -307,14 +304,12 @@ trip_species_composition <- trip_species_composition %>%
   ))
 
 #merge that in
-cod_hadd_all_w$source2 <- "cod_hadd_all"
-trip_species_composition$source2 <- "trip_species"
 cod_hadd_all_w <- left_join(cod_hadd_all_w, trip_species_composition, by = c("id_code"))
 
 table(cod_hadd_all_w$trip_category)
 
 ######## DROP duplicate cod AND haddock trips
-## sometimes the same id_code has different wp_int for cod or haddock so I'll keep the highest wp_int
+## sometimes the same id_code has different wp_int for cod or haddock so keeping the highest wp_int
 cod_hadd_all_w <- cod_hadd_all_w %>%
   # Sort by wp_int in descending order
   arrange(desc(wp_int)) %>%
@@ -323,15 +318,39 @@ cod_hadd_all_w <- cod_hadd_all_w %>%
 
 
 ## much closer now, esp for 2024 although more off for 2025 
-# 306k down to 232k, need to get to 231k
+# 306k now to 232k, need to get to 231k
 sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2024 == 1], na.rm = TRUE)
-# 279k down to 221k, need to get to 198k
+# 279k now to 221k, need to get to 198k
 sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2025_imp == 1], na.rm = TRUE)
 
 
 
+
+##### ************* WHAT TO DO NEXT ****** ######
+#start from here, get directed trips by mode (and a total for all modes) and by
+# wave (and totals for FY2024 and FY2025) and calculate the percent_different variables  
+# that lou has and then format it for Kim, send her a clean script renamed directed_trips_tp.R
+# Then move on to catch and catch per trip
+# And ask for help from MY on next steps for directed trips
+# does it have anything to do with there being so many NH rows?
+sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$state == "NH"], na.rm = TRUE)
+sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$state == "ME"], na.rm = TRUE)
+sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$state == "MA"], na.rm = TRUE)
+
+
+
+
+
+
+
+
+
+
+
+######## REMOVE THIS PROBABLY
+# there are weights that are NA meaning no catch data, what happens when we don't count those trips
 sum(is.na(cod_hadd_all_w$wp_int))
-# there are weights that are NA, what happens when we don't count those trips
+
 cod_hadd_all_w <- cod_hadd_all_w %>%
   mutate(dtrip = if_else(is.na(wp_int), 0, dtrip))
 # we knock a ton out, TOO MANY
@@ -344,7 +363,7 @@ sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2025_imp == 1], na.rm = TRUE)
 
 
 
-
+### dont think we need:
 ####### DEAL WITH GROUP CATCH before you can get trips #######
 # lou generates dom_id=1 if common / prim1_common is atlanticcod or haddock, dom_id=2 otherwise
 # gen domain_claim=claim
@@ -390,10 +409,13 @@ cod_hadd_all_w <- cod_hadd_all_w %>%
 cod_hadd_all_w <- cod_hadd_all_w %>% 
   filter(dom_id %in% c(1))
 
-#### The above GROUP CATCH CODE DOES NOTHING bc we already filtered for species
+#### The above GROUP CATCH code doesnt do anything when I ran it without the 
+#code dealing with duplicate cod and haddock trips bc we already filtered for species
 ## you can move this code somewhere else in case we end up cleaning straight from microdata
 
 
+
+# This is a translation of how Lou dealt with duplicate cod and haddock trips, leads to same end result as my code
 # generate the estimation strata - year, month, kind-of-day (weekend including 
 # fed holidays/weekday), mode (pr/fh)*/
 cod_hadd_all_w$wave1 <- as.character(cod_hadd_all_w$wave)
@@ -421,6 +443,16 @@ cod_hadd_all_w1$my_dom_id_area <- substr(cod_hadd_all_w1$my_dom_id_string, 8, 10
 cod_hadd_all_w1$my_dom_id_area <- gsub("_", "", cod_hadd_all_w1$my_dom_id_area)
 sum(cod_hadd_all_w1$my_dom_id_area == cod_hadd_all_w1$nmfs_stat_area, na.rm = TRUE)
 
+# this is same result as my code above
+# 306k now to 232k, need to get to 231k
+sum(cod_hadd_all_w1$dtrip[cod_hadd_all_w1$fy2024 == 1], na.rm = TRUE)
+# 279k now to 221k, need to get to 198k
+sum(cod_hadd_all_w1$dtrip[cod_hadd_all_w1$fy2025_imp == 1], na.rm = TRUE)
+
+
+
+
+######### HAVE Not Run. I don't think we need to calculate EGOM trips
 cod_hadd_wide <- cod_hadd_all_w1 %>%
   # 1. Reshape from long to wide
   pivot_wider(
@@ -435,7 +467,7 @@ cod_hadd_wide <- cod_hadd_all_w1 %>%
 
 
 
-#####Not run
+#####Not run because the tacklebox stuff is already weighted, although potentially not the same as lou did it?
 #svyset psu_id [pweight= wp_int], strata(strat_id) singleunit(certainty)
 # If a stratum has only one PSU, treat as a 'certainty unit, ie assume it contributes zero to the variance for that level
 options(survey.lonely.psu = "certainty")    #Set the lonely PSU handling first
