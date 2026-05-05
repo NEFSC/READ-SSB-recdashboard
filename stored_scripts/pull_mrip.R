@@ -29,8 +29,8 @@ conflicts_prefer(dplyr::filter)
 # deal with directories
 here::i_am("stored_scripts/pull_mrip.R")
 
-#get a data vintage
-data_vintage<-as.character(Sys.Date())
+#get a data version
+data_version<-as.character(Sys.Date())
 
 # set directory of mrip data
 pd <- file.path(network_path,"mrfss","products","mrip_estim","Public_data_cal2018")
