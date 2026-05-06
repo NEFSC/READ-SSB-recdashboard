@@ -327,13 +327,70 @@ sum(cod_hadd_all_w$tot_cat[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$common ==
 
 
 
+## grab tsn codes and store as numeric
+subset_values <- trip$tsn1[trip$prim1_common == "atlantic cod"]
+tsn_cod <- subset_values[!is.na(subset_values)][1]
+subset_values <- trip$tsn1[trip$prim1_common == "haddock"]
+tsn_hadd <- subset_values[!is.na(subset_values)][1]
+
+cod_hadd_all_w <- cod_hadd_all_w %>%
+  mutate(species_itis = ifelse(common == "atlanticcod", tsn_cod,
+                        ifelse(common == "haddock", tsn_hadd, NA)))
+
+cod_hadd_all_w$species_itis <- as.numeric(cod_hadd_all_w$species_itis)
+
+
+cod_hadd_all_w$stock_abbrev <- "WGOM"
+cod_hadd_all_w$data_version <- Sys.Date()
+cod_hadd_all_w$metric <- "cod/haddock directed trips"
+cod_hadd_all_w$value <- cod_hadd_all_w$dtrip
+cod_hadd_all_w$units <- "number of trips"
+cod_hadd_all_w$wave <- as.numeric(cod_hadd_all_w$wave)
+cod_hadd_all_w$year <- as.numeric(cod_hadd_all_w$year)
+
+sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$year == 2024 & cod_hadd_all_w$state=="MA" 
+                         & cod_hadd_all_w$mode=="charter" & cod_hadd_all_w$wave==3], na.rm = TRUE)
+
+
+cod_hadd_trips <- cod_hadd_all_w %>%
+  group_by(stock_abbrev, state, mode, data_version, year, wave, metric, units) %>%
+  summarise(value = sum(dtrip, na.rm = TRUE))
+print(cod_hadd_trips)
+
+
+
+cod_hadd_trips <- cod_hadd_trips %>%
+  mutate(fy2024 = case_when(
+    year == 2024 & wave >= 3 ~ 1,
+    year == 2025 & wave == 2 ~ 1,
+    TRUE ~ 0 
+  ))
+
+cod_hadd_trips <- cod_hadd_trips %>%
+  mutate(fy2025_imp = case_when(
+    year == 2024 & wave == 2 ~ 1,
+    year == 2024 & wave == 6 ~ 1,
+    year == 2025 & wave == 3 ~ 1,
+    year == 2025 & wave == 4 ~ 1,
+    year == 2025 & wave == 5 ~ 1,
+    TRUE ~ 0 
+  ))
+
+sum(cod_hadd_trips$value[cod_hadd_trips$fy2024 == 1], na.rm = TRUE)
+sum(cod_hadd_trips$value[cod_hadd_trips$fy2025_imp == 1], na.rm = TRUE)
+
+
+##issue for directed trips - theyre cod/haddock trips so what should common and species_itis be?
+#### NOW A CLEAN SCRIPT
+## ask kim, should I just this non clean script in my documents or my drive and then clean/rename this?
+
 
 ##### ************* WHAT TO DO NEXT ****** ######
 #start from here, get directed trips by mode (and total for all modes) and by
 # wave (and totals for FY2024 and FY2025) and calculate the pct_different variables  
 # that lou has and format it for Kim, get her a clean script renamed directed_trips_tp.R
 # what was the format again? its in issues on github:
-# itis_code common stock_abbrev	mode	data_version	year	wave	metric	value	units state 
+# species_itis common stock_abbrev	mode	data_version	year	wave	metric	value	units state 
 # Then move on to catch and catch per trip
 # And ask for help from MY on next steps for directed trips
 # lou manually organized the microdata as survey data and weighted it, is that how MRIP does it?
