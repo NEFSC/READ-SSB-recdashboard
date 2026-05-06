@@ -224,7 +224,8 @@ cod_hadd_all_w$common <- gsub(" ", "", cod_hadd_all_w$common)
 
 n_distinct(cod_hadd_all_w$id_code)
 n_distinct(cod_hadd_all_w$id_code, cod_hadd_all_w$dtrip)
-n_distinct(cod_hadd_all_w$id_code, cod_hadd_all_w$dtrip, cod_hadd_all_w$wp_int)
+#some of the same id_codes have different weights but it doesn't actually matter
+n_distinct(cod_hadd_all_w$id_code, cod_hadd_all_w$wp_int)
 
 
 
@@ -251,10 +252,9 @@ cod_hadd_all_w <- left_join(cod_hadd_all_w, trip_species_composition, by = c("id
 table(cod_hadd_all_w$trip_category)
 
 ######## DROP duplicate cod AND haddock trips
-## sometimes the same id_code has different wp_int for cod or haddock 
 cod_hadd_all_w <- cod_hadd_all_w %>%
   # Sort by wp_int in descending order
-  #arrange(desc(wp_int)) %>%
+  #arrange(desc(wp_int)) %>%   #sometimes same id_code has different wp_int, don't need to sort for trips
   # Keep only the first (highest value) row for each id_code
   distinct(id_code, .keep_all = TRUE)
 
@@ -310,7 +310,7 @@ cod_hadd_all_w <- cod_hadd_all_w %>%
 
 
 
-## much closer now, esp for 2024 although more off for 2025 
+## close-ish to lou now, esp for 2024 although more off for 2025 
 # 306k now to 232k, need to get to 231k
 sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2024 == 1], na.rm = TRUE)
 # 279k now to 221k, need to get to 198k
