@@ -381,8 +381,10 @@ sum(cod_hadd_trips$value[cod_hadd_trips$fy2025_imp == 1], na.rm = TRUE)
 
 
 ##issue for directed trips - theyre cod/haddock trips so what should common and species_itis be?
-#### NOW A CLEAN SCRIPT
-## ask kim, should I just this non clean script in my documents or my drive and then clean/rename this?
+#### NOW A CLEAN SCRIPT,  then catch and catch per trip, then append and make the table we want and some plots
+## does kim want a directed trips script now or wait for one with everything
+## maybe she can look at a directed trips script and give you feedback on whether its horrible
+## ask kim, should I just save this non clean script in my documents or my drive and then clean/rename this? whats NAA?
 
 
 ##### ************* WHAT TO DO NEXT ****** ######
