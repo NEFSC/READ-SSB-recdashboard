@@ -57,15 +57,13 @@ cod_effort <- subset(cod_effort, select = -c(dir_trip_typ, hrsf))
 #sometimes mrip data has slight updates w/o an announcement 
 sum(cod_effort$n_trip, na.rm = TRUE)
 
-##the rows are unique trips. they're multiplied by the weight wp_int to estimate trips
-## rows are unique on id_code
+## rows are unique trips. they're multiplied by the weight wp_int to estimate trips
+## rows unique on id_code
 n_distinct(cod_effort$id_code)
-# summary by mode. there's a private trip record with 15k trips
+# summary by mode
 tapply(cod_effort$n_trip, cod_effort$mode_fx, summary)
-## why are there rows where there are 0 trips? 
+## there are trips weighted as zero 
 nrow(cod_effort[cod_effort$n_trip == 0, ])
-
-
 
 
 
@@ -93,13 +91,13 @@ cod_effort_catch <- left_join(cod_effort, cod_catch,
                                      "strat_id", "psu_id", "id_code"))
 # lou merged on year, strat_id, psu_id, id_code 
 
-# 159 trips without catch. lou kept them. assign their catch values as 0?
+# 159 trips without catch. lou kept them. all catch records have a matched trip
 cod_effort_catch %>% count(source.x, source.y)
 
 cod_effort_catch$date <- substr(cod_effort_catch$id_code, 6, 13)
 cod_effort_catch$month <- substr(cod_effort_catch$date, 5, 6)
 cod_effort_catch$day <- substr(cod_effort_catch$date, 7, 8)
-##none of these are in the data (if they do show up in other cases we would drop)
+##none of these are in the data (if they show up in other cases we would drop)
 sum(cod_effort_catch$day == "9x")
 sum(cod_effort_catch$day == "xx")
 
@@ -142,14 +140,13 @@ hadd_effort_catch <- left_join(hadd_effort, hadd_catch,
                               by = c("common", "year", "wave", "mode_fx", "st", 
                                      "strat_id", "psu_id", "id_code"))
 
-##there are 367 trips without catch
-#keep them but assign their catch values as 0? lou kept them, assigned missing claim=0
+##there are 367 trips without catch, lou kept them, assigned missing claim=0
 hadd_effort_catch %>% count(source.x, source.y)
 
 hadd_effort_catch$date <- substr(hadd_effort_catch$id_code, 6, 13)
 hadd_effort_catch$month <- substr(hadd_effort_catch$date, 5, 6)
 hadd_effort_catch$day <- substr(hadd_effort_catch$date, 7, 8)
-##none of these are in the data (if they do show up in other cases we would drop)
+##none of these are in the data (if they show up in other cases we would drop)
 sum(hadd_effort_catch$day == "9x")
 sum(hadd_effort_catch$day == "xx")
 
@@ -172,55 +169,6 @@ cod_hadd_all <- cod_hadd_all %>%
     st == "23" ~ "ME"
   ))
 
-
-
-####### Read in COD SITE LIST (stock and stat areas) #######
-##combinations of intsite, stock area, and stat area are not unique.. 
-#lou took the 1st unique obs in the group (should it be the most common stat area for each intsite?)
-cod_site_list <- read.csv("data/raw/MRIP_COD_ALL_SITE_LIST.csv")
-names(cod_site_list) <- tolower(names(cod_site_list))
-n_distinct(cod_site_list$intsite)
-n_distinct(cod_site_list$nmfs_stock_area)
-n_distinct(cod_site_list$intsite, cod_site_list$nmfs_stat_area, cod_site_list$nmfs_stock_area)
-
-# lou did this and after merging he made nmfs_stat_area="NH" if state=="NH" 
-cod_site_list <- cod_site_list %>% filter(state %in% c("MA", "ME"))
-cod_site_list <- subset(cod_site_list, select = c(state, intsite, nmfs_stock_area, nmfs_stat_area))
-cod_site_list <- cod_site_list[order(cod_site_list$intsite, cod_site_list$nmfs_stock_area), ]
-cod_site_list <- cod_site_list %>% distinct(nmfs_stock_area, intsite, nmfs_stat_area, state, .keep_all = TRUE)
-
-cod_site_list %>% count(nmfs_stat_area)
-
-##  these are WGOM according to stata code: 513 514 515 521 526 NH
-cod_site_list <- cod_site_list %>%
-  mutate(wgom = case_when(
-    nmfs_stat_area == 513 | nmfs_stat_area == 514  ~ 1,
-    nmfs_stat_area == 515 | nmfs_stat_area == 521  ~ 1,
-    nmfs_stat_area == 526  ~ 1,
-    TRUE ~ 0 # Catch-all for all other cases
-  ))
-
-cod_site_list %>% count(wgom)
-
-
-## MERGE cod sites into trips on intsite
-cod_hadd_all <- left_join(cod_hadd_all, cod_site_list, by = c("state", "intsite"))
-
-# label NH trips as part of WGOM and fill in their stat area
-cod_hadd_all <- cod_hadd_all %>%
-  mutate(wgom = if_else(state == "NH", 1, wgom))
-
-# why does NH have way more observations than MA and ME...
-cod_hadd_all %>% count(state)
-
-cod_hadd_all$nmfs_stat_area <- as.character(cod_hadd_all$nmfs_stat_area)
-cod_hadd_all <- cod_hadd_all %>%
-  mutate(nmfs_stat_area = if_else(state == "NH", "NH", nmfs_stat_area))
-
-## keep if WGOM. dropped less than 300 rows
-cod_hadd_all <- cod_hadd_all %>% 
-  filter(wgom == 1)
-
 cod_hadd_all <- cod_hadd_all %>%
   mutate(fy2024 = case_when(
     year == 2024 & wave >= 3 ~ 1,
@@ -238,24 +186,36 @@ cod_hadd_all <- cod_hadd_all %>%
     TRUE ~ 0 
   ))
 
+cod_hadd_all <- cod_hadd_all %>%
+  mutate(fy2024_current = case_when(
+    year == 2024 & wave == 3 ~ 1,
+    year == 2024 & wave == 4 ~ 1,
+    year == 2024 & wave == 5 ~ 1,  
+    TRUE ~ 0 
+  ))
+
+cod_hadd_all <- cod_hadd_all %>%
+  mutate(fy2025_current = case_when(
+    year == 2025 & wave == 3 ~ 1,
+    year == 2025 & wave == 4 ~ 1,
+    year == 2025 & wave == 5 ~ 1,  
+    TRUE ~ 0 
+  ))
+
+
 #lou kept the trips with no catch data, assigned claim=0 when it was missing. 
 # make those rows have value=0 and variable =claim (not creating rows for other catch vars)
+sum(is.na(cod_hadd_all$value))
+
 cod_hadd_all$value[is.na(cod_hadd_all$value)] <- 0
 cod_hadd_all$variable[is.na(cod_hadd_all$variable)] <- "claim"
 
-nrow(cod_hadd_all[cod_hadd_all$variable == "claim", ])
-nrow(cod_hadd_all[cod_hadd_all$variable == "claim" & cod_hadd_all$value == 0, ])
-
-#  2301/19297
-n_distinct(cod_hadd_all$leader)
-# 2653
-n_distinct(cod_hadd_all$id_code)
+sum(cod_hadd_all$variable == "claim", na.rm = TRUE)
+sum(cod_hadd_all$value == 0, na.rm = TRUE)
 
 
 
-
-
-#need to wide out the catch variables. 
+##### WIDE out the catch variables 
 cod_hadd_all_w <- cod_hadd_all %>% spread(key = variable, value = value)
 
 cod_hadd_all_w <- rename(cod_hadd_all_w, dtrip = n_trip)
@@ -266,24 +226,6 @@ n_distinct(cod_hadd_all_w$id_code)
 n_distinct(cod_hadd_all_w$id_code, cod_hadd_all_w$dtrip)
 n_distinct(cod_hadd_all_w$id_code, cod_hadd_all_w$dtrip, cod_hadd_all_w$wp_int)
 
-
-
-# 306k need to get to 231k
-sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2024 == 1], na.rm = TRUE)
-# 258k need to get to 197k
-sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$mode == "private"], na.rm = TRUE)
-# 279k need to get to 198k
-sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2025_imp == 1], na.rm = TRUE)
-# 249k need to get to 179k
-sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2025_imp == 1 & cod_hadd_all_w$mode == "private"], na.rm = TRUE)
-
-# catch is really close to lou. 267891.9 compared to 267885
-sum(cod_hadd_all_w$tot_cat[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$common == "atlantic cod"], na.rm = TRUE)
-# and this is 1,385,001 compared to lou's 1,384,427
-sum(cod_hadd_all_w$tot_cat[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$common == "haddock"], na.rm = TRUE)
-# these match perfectly
-sum(cod_hadd_all_w$tot_cat[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$common == "atlantic cod" & cod_hadd_all_w$mode == "private"], na.rm = TRUE)
-sum(cod_hadd_all_w$tot_cat[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$common == "haddock" & cod_hadd_all_w$mode == "private"], na.rm = TRUE)
 
 
 
@@ -309,12 +251,63 @@ cod_hadd_all_w <- left_join(cod_hadd_all_w, trip_species_composition, by = c("id
 table(cod_hadd_all_w$trip_category)
 
 ######## DROP duplicate cod AND haddock trips
-## sometimes the same id_code has different wp_int for cod or haddock so keeping the highest wp_int
+## sometimes the same id_code has different wp_int for cod or haddock 
 cod_hadd_all_w <- cod_hadd_all_w %>%
   # Sort by wp_int in descending order
-  arrange(desc(wp_int)) %>%
+  #arrange(desc(wp_int)) %>%
   # Keep only the first (highest value) row for each id_code
   distinct(id_code, .keep_all = TRUE)
+
+
+
+
+####### Read in COD SITE LIST (stock and stat areas) #######
+##combinations of intsite, stock area, and stat area are not unique.. 
+#lou took the 1st unique obs in the group (should it be the most common stat area for each intsite?)
+cod_site_list <- read.csv("data/raw/MRIP_COD_ALL_SITE_LIST.csv")
+names(cod_site_list) <- tolower(names(cod_site_list))
+n_distinct(cod_site_list$intsite)
+n_distinct(cod_site_list$nmfs_stock_area)
+n_distinct(cod_site_list$intsite, cod_site_list$nmfs_stat_area, cod_site_list$nmfs_stock_area)
+
+# lou did this and after merging he made nmfs_stat_area="NH" if state=="NH" 
+cod_site_list <- cod_site_list %>% filter(state %in% c("MA", "ME"))
+cod_site_list <- subset(cod_site_list, select = c(state, intsite, nmfs_stock_area, nmfs_stat_area))
+cod_site_list <- cod_site_list[order(cod_site_list$intsite, cod_site_list$nmfs_stock_area), ]
+cod_site_list <- cod_site_list %>% distinct(nmfs_stock_area, intsite, nmfs_stat_area, state, .keep_all = TRUE)
+
+cod_site_list %>% count(nmfs_stat_area)
+
+## WGOM according to stata code: 513 514 515 521 526 NH
+cod_site_list <- cod_site_list %>%
+  mutate(wgom = case_when(
+    nmfs_stat_area == 513 | nmfs_stat_area == 514  ~ 1,
+    nmfs_stat_area == 515 | nmfs_stat_area == 521  ~ 1,
+    nmfs_stat_area == 526  ~ 1,
+    TRUE ~ 0 # Catch-all for all other cases
+  ))
+
+cod_site_list %>% count(wgom)
+
+
+## MERGE cod sites into trips on intsite
+cod_hadd_all_w <- left_join(cod_hadd_all_w, cod_site_list, by = c("state", "intsite"))
+
+# label NH trips as part of WGOM and fill in their stat area
+cod_hadd_all_w <- cod_hadd_all_w %>%
+  mutate(wgom = if_else(state == "NH", 1, wgom))
+
+# NH has way more observations than MA and ME
+cod_hadd_all_w %>% count(state)
+
+cod_hadd_all_w$nmfs_stat_area <- as.character(cod_hadd_all_w$nmfs_stat_area)
+cod_hadd_all_w <- cod_hadd_all_w %>%
+  mutate(nmfs_stat_area = if_else(state == "NH", "NH", nmfs_stat_area))
+
+## keep if WGOM
+cod_hadd_all_w <- cod_hadd_all_w %>% 
+  filter(wgom == 1)
+
 
 
 ## much closer now, esp for 2024 although more off for 2025 
@@ -322,15 +315,25 @@ cod_hadd_all_w <- cod_hadd_all_w %>%
 sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2024 == 1], na.rm = TRUE)
 # 279k now to 221k, need to get to 198k
 sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2025_imp == 1], na.rm = TRUE)
+# 197k need to get to 197k
+sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$mode == "private"], na.rm = TRUE)
+# 198k need to get to 179k
+sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2025_imp == 1 & cod_hadd_all_w$mode == "private"], na.rm = TRUE)
+
+# catch is really close to lou. 267891.9 compared to 267885
+sum(cod_hadd_all_w$tot_cat[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$common == "atlanticcod"], na.rm = TRUE)
+# this matches perfectly
+sum(cod_hadd_all_w$tot_cat[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$common == "atlanticcod" & cod_hadd_all_w$mode == "private"], na.rm = TRUE)
 
 
 
 
 ##### ************* WHAT TO DO NEXT ****** ######
 #start from here, get directed trips by mode (and total for all modes) and by
-# wave (and totals for FY2024 and FY2025) and calculate the percent_different variables  
-# that lou has and then format it for Kim, get her a clean script renamed directed_trips_tp.R
-# what was the format again? its in issues on github
+# wave (and totals for FY2024 and FY2025) and calculate the pct_different variables  
+# that lou has and format it for Kim, get her a clean script renamed directed_trips_tp.R
+# what was the format again? its in issues on github:
+# itis_code common stock_abbrev	mode	data_version	year	wave	metric	value	units state 
 # Then move on to catch and catch per trip
 # And ask for help from MY on next steps for directed trips
 # lou manually organized the microdata as survey data and weighted it, is that how MRIP does it?
@@ -339,13 +342,29 @@ sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$state == "N
 sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$state == "ME"], na.rm = TRUE)
 sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$state == "MA"], na.rm = TRUE)
 
+dtrips_annual <- data.frame(
+  area = rep("wgom", times=5),
+  disposition = rep("cod/haddock trips", times=5),
+  mode = c("charter", "headboat", "private", "shore", "total")
+)
+print(dtrips_annual)
 
+cod_hadd_all_w %>%
+  filter(fy2024 == 1) %>% 
+  group_by(mode) %>%
+  summarise(dtrip = sum(dtrip, na.rm = TRUE))
 
+df_final <- df1 %>%
+  left_join(df2, by = "product_id") %>%        # Join based on a shared key
+  mutate(total_cost = price * tax_rate) 
 
+dtrips_annual <- dtrips_annual %>%
+  left_join(cod_hadd_all_w, by = "mode") %>%
+  filter(fy2024 == 1) %>% 
+  group_by(mode) %>%
+  mutate(dtrip = sum(dtrip, na.rm = TRUE))
 
-
-
-
+rm(dtrips_annual)
 
 
 
