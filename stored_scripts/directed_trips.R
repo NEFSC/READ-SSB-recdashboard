@@ -1,33 +1,28 @@
-######  MRIP STATISTICS April 2026  ######
+######  Directed trips for WGOM Cod and Haddock  ######
 
-
-# if Rstudio is making you enter a username and PAT and then not letting you push, 
-# enter this in the terminal and then enter user and PAT: 
-# git config --global credential.helper store
-
+# load packages
 library(dplyr)
 library(readr)
 library("mriptacklebox")
 library(tidyverse)
-library(survey)
 
 
+# Run pull_mrip.R
+# Or, if you've pulled the data recently, read in but check the date in the file name
+filename <- "data/raw/mrip_statistics_2026-04-29.Rds"
+mrip_statistics <- read_rds(filename)
 
-#RUN pull_mrip.R
-# or read in from data/main but w/correct date in the filename
-mrip_statistics <- read_rds("data/raw/mrip_statistics_2026-04-29.Rds")
+# Extract the date if reading in a previous day's MRIP pull
+file_date <- str_extract(filename, "\\d{4}-\\d{2}-\\d{2}")
 
 
-#load elements in the list into dataframes
+# Load the elements in the list 
 trip<-mrip_statistics$trip
 catch<-mrip_statistics$catch
-size<-mrip_statistics$size
-size_b2<-mrip_statistics$size_b2
+#size<-mrip_statistics$size
+#size_b2<-mrip_statistics$size_b2
 
-#may just need to clean the above trip and catch files directly rather than use 
-# Sam's effort and catch functions but will try his functions first
-
-# make column names and text lowercase
+# convert column names and text to lowercase
 names(trip) <- tolower(names(trip))
 trip[] <- lapply(trip, function(x) if(is.character(x)) tolower(x) else x)
 names(catch) <- tolower(names(catch))
@@ -35,12 +30,9 @@ catch[] <- lapply(catch, function(x) if(is.character(x)) tolower(x) else x)
 
 
 
-
-####### COD EFFORT #######
-# which(colnames(trip) == "leader") ## leader IS in there it's just hidden
-
-# typ is pulling trips where cod were stated as primary OR
-# were landed-A, unobserved-B1, or discarded-B2
+#### Cod effort ####
+# set typ to pull trips where cod were stated as primary target OR were landed-A,
+# unobserved-B1, or discarded-B2
 cod_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE', 
                                   'STRAT_ID', 'PSU_ID', 'ID_CODE', 'LEADER'),
                       microdata = mrip_statistics,
@@ -53,28 +45,14 @@ names(cod_effort) <- tolower(names(cod_effort))
 cod_effort[] <- lapply(cod_effort, function(x) if(is.character(x)) tolower(x) else x)
 cod_effort <- subset(cod_effort, select = -c(dir_trip_typ, hrsf))
 
-# 261611 trips before we clean it except w new mrip pull it's 267506
-#sometimes mrip data has slight updates w/o an announcement 
-sum(cod_effort$n_trip, na.rm = TRUE)
 
-## rows are unique trips. they're multiplied by the weight wp_int to estimate trips
-## rows unique on id_code
-n_distinct(cod_effort$id_code)
-# summary by mode
-tapply(cod_effort$n_trip, cod_effort$mode_fx, summary)
-## there are trips weighted as zero 
-nrow(cod_effort[cod_effort$n_trip == 0, ])
-
-
-
-
-####### COD CATCH #######
+#### Cod Catch ####
 cod_catch <- mrip_catch(comname = 'ATLANTIC COD', 
                         dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'STRAT_ID', 
                                 'PSU_ID', 'ID_CODE', 'WP_INT'), 
                         microdata = mrip_statistics, estimate_var = FALSE)
 
-## the above gives a list, we want the estimates
+## pull out estimates
 cod_catch <- cod_catch$estimates  |>
   dplyr::filter(ST %in% c("25", "23", "33") & YEAR %in% c("2024", "2025"))
 
@@ -83,27 +61,23 @@ cod_catch[] <- lapply(cod_catch, function(x) if(is.character(x)) tolower(x) else
 cod_catch <- subset(cod_catch, select = -c(se, cv))
 
 
-####### MERGE COD TRIPS AND CATCH #######
+# Merge effort and catch
 cod_effort$source <- "effort"
 cod_catch$source <- "catch"
 cod_effort_catch <- left_join(cod_effort, cod_catch, 
                               by = c("common", "year", "wave", "mode_fx", "st", 
                                      "strat_id", "psu_id", "id_code"))
-# lou merged on year, strat_id, psu_id, id_code 
 
-# 159 trips without catch. lou kept them. all catch records have a matched trip
+## some trips without catch, keep them, will assign claim=0 down below
 cod_effort_catch %>% count(source.x, source.y)
 
 cod_effort_catch$date <- substr(cod_effort_catch$id_code, 6, 13)
 cod_effort_catch$month <- substr(cod_effort_catch$date, 5, 6)
 cod_effort_catch$day <- substr(cod_effort_catch$date, 7, 8)
-##none of these are in the data (if they show up in other cases we would drop)
-sum(cod_effort_catch$day == "9x")
-sum(cod_effort_catch$day == "xx")
+cod_effort_catch <- cod_effort_catch %>% filter(!(day %in% c("9x", "xx")))
 
 
-
-####### HADDOCK EFFORT #######
+#### Haddock effort ####
 hadd_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE', 
                                   'STRAT_ID', 'PSU_ID', 'ID_CODE', 'LEADER'),
                           microdata = mrip_statistics,
@@ -116,16 +90,13 @@ names(hadd_effort) <- tolower(names(hadd_effort))
 hadd_effort[] <- lapply(hadd_effort, function(x) if(is.character(x)) tolower(x) else x)
 hadd_effort <- subset(hadd_effort, select = -c(dir_trip_typ, hrsf))
 
-## 318244 trips before we clean 
-sum(hadd_effort$n_trip, na.rm = TRUE)
 
-####### HADDOCK CATCH #######
+#### Haddock catch ####
 hadd_catch <- mrip_catch(comname = 'HADDOCK', 
                         dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'STRAT_ID', 
                                 'PSU_ID', 'ID_CODE', 'WP_INT'), 
                         microdata = mrip_statistics, estimate_var = FALSE)
 
-## the above gives a list, we want the estimates
 hadd_catch <- hadd_catch$estimates  |>
   dplyr::filter(ST %in% c("25", "23", "33") & YEAR %in% c("2024", "2025"))
 
@@ -133,25 +104,22 @@ names(hadd_catch) <- tolower(names(hadd_catch))
 hadd_catch[] <- lapply(hadd_catch, function(x) if(is.character(x)) tolower(x) else x)
 hadd_catch <- subset(hadd_catch, select = -c(se, cv))
 
-####### MERGE HADDOCK TRIPS AND CATCH #######
+
+# Merge effort and catch
 hadd_effort$source <- "effort"
 hadd_catch$source <- "catch"
 hadd_effort_catch <- left_join(hadd_effort, hadd_catch, 
                               by = c("common", "year", "wave", "mode_fx", "st", 
                                      "strat_id", "psu_id", "id_code"))
 
-##there are 367 trips without catch, lou kept them, assigned missing claim=0
-hadd_effort_catch %>% count(source.x, source.y)
-
 hadd_effort_catch$date <- substr(hadd_effort_catch$id_code, 6, 13)
 hadd_effort_catch$month <- substr(hadd_effort_catch$date, 5, 6)
 hadd_effort_catch$day <- substr(hadd_effort_catch$date, 7, 8)
-##none of these are in the data (if they show up in other cases we would drop)
-sum(hadd_effort_catch$day == "9x")
-sum(hadd_effort_catch$day == "xx")
+hadd_effort_catch <- hadd_effort_catch %>% filter(!(day %in% c("9x", "xx")))
 
 
-###### APPEND COD AND HADDOCK ######
+
+### APPEND cod and haddock ###
 cod_hadd_all <- rbind(cod_effort_catch, hadd_effort_catch)
 
 cod_hadd_all <- cod_hadd_all %>%
@@ -169,68 +137,23 @@ cod_hadd_all <- cod_hadd_all %>%
     st == "23" ~ "ME"
   ))
 
-cod_hadd_all <- cod_hadd_all %>%
-  mutate(fy2024 = case_when(
-    year == 2024 & wave >= 3 ~ 1,
-    year == 2025 & wave == 2 ~ 1,
-    TRUE ~ 0 
-  ))
 
-cod_hadd_all <- cod_hadd_all %>%
-  mutate(fy2025_imp = case_when(
-    year == 2024 & wave == 2 ~ 1,
-    year == 2024 & wave == 6 ~ 1,
-    year == 2025 & wave == 3 ~ 1,
-    year == 2025 & wave == 4 ~ 1,
-    year == 2025 & wave == 5 ~ 1,
-    TRUE ~ 0 
-  ))
-
-cod_hadd_all <- cod_hadd_all %>%
-  mutate(fy2024_current = case_when(
-    year == 2024 & wave == 3 ~ 1,
-    year == 2024 & wave == 4 ~ 1,
-    year == 2024 & wave == 5 ~ 1,  
-    TRUE ~ 0 
-  ))
-
-cod_hadd_all <- cod_hadd_all %>%
-  mutate(fy2025_current = case_when(
-    year == 2025 & wave == 3 ~ 1,
-    year == 2025 & wave == 4 ~ 1,
-    year == 2025 & wave == 5 ~ 1,  
-    TRUE ~ 0 
-  ))
-
-
-#lou kept the trips with no catch data, assigned claim=0 when it was missing. 
-# make those rows have value=0 and variable =claim (not creating rows for other catch vars)
-sum(is.na(cod_hadd_all$value))
-
+#For trips with no catch data, assign variable as claim and value=0 
 cod_hadd_all$value[is.na(cod_hadd_all$value)] <- 0
 cod_hadd_all$variable[is.na(cod_hadd_all$variable)] <- "claim"
 
-sum(cod_hadd_all$variable == "claim", na.rm = TRUE)
-sum(cod_hadd_all$value == 0, na.rm = TRUE)
 
 
-
-##### WIDE out the catch variables 
+#### Wide out the catch variables 
 cod_hadd_all_w <- cod_hadd_all %>% spread(key = variable, value = value)
 
 cod_hadd_all_w <- rename(cod_hadd_all_w, dtrip = n_trip)
 #remove spaces in 'atlantic cod'
 cod_hadd_all_w$common <- gsub(" ", "", cod_hadd_all_w$common)
 
-n_distinct(cod_hadd_all_w$id_code)
-n_distinct(cod_hadd_all_w$id_code, cod_hadd_all_w$dtrip)
-#some of the same id_codes have different weights but it doesn't actually matter
-n_distinct(cod_hadd_all_w$id_code, cod_hadd_all_w$wp_int)
 
-
-
-
-## Label trips based on species they caught
+### Deal with Group catch
+# Label trips based on species they caught (this code until drop duplicates isn't needed here)
 trip_species_composition <- cod_hadd_all_w %>%
   group_by(id_code) %>%
   summarize(
@@ -246,39 +169,26 @@ trip_species_composition <- trip_species_composition %>%
     has_cod & has_haddock  ~ "cod_and_hadd"
   ))
 
-#merge that in
+#merge in species composition
 cod_hadd_all_w <- left_join(cod_hadd_all_w, trip_species_composition, by = c("id_code"))
 
-table(cod_hadd_all_w$trip_category)
-
-######## DROP duplicate cod AND haddock trips
+## Drop duplicate cod AND haddock trips
 cod_hadd_all_w <- cod_hadd_all_w %>%
-  # Sort by wp_int in descending order
-  #arrange(desc(wp_int)) %>%   #sometimes same id_code has different wp_int, don't need to sort for trips
-  # Keep only the first (highest value) row for each id_code
   distinct(id_code, .keep_all = TRUE)
 
 
 
-
-####### Read in COD SITE LIST (stock and stat areas) #######
-##combinations of intsite, stock area, and stat area are not unique.. 
-#lou took the 1st unique obs in the group (should it be the most common stat area for each intsite?)
+### Read in Cod Site List (stock and stat areas) ###
 cod_site_list <- read.csv("data/raw/MRIP_COD_ALL_SITE_LIST.csv")
 names(cod_site_list) <- tolower(names(cod_site_list))
-n_distinct(cod_site_list$intsite)
-n_distinct(cod_site_list$nmfs_stock_area)
-n_distinct(cod_site_list$intsite, cod_site_list$nmfs_stat_area, cod_site_list$nmfs_stock_area)
-
-# lou did this and after merging he made nmfs_stat_area="NH" if state=="NH" 
 cod_site_list <- cod_site_list %>% filter(state %in% c("MA", "ME"))
 cod_site_list <- subset(cod_site_list, select = c(state, intsite, nmfs_stock_area, nmfs_stat_area))
+
+# Take 1st unique obs in the group 
 cod_site_list <- cod_site_list[order(cod_site_list$intsite, cod_site_list$nmfs_stock_area), ]
 cod_site_list <- cod_site_list %>% distinct(nmfs_stock_area, intsite, nmfs_stat_area, state, .keep_all = TRUE)
 
-cod_site_list %>% count(nmfs_stat_area)
-
-## WGOM according to stata code: 513 514 515 521 526 NH
+## WGOM: 513 514 515 521 526 NH
 cod_site_list <- cod_site_list %>%
   mutate(wgom = case_when(
     nmfs_stat_area == 513 | nmfs_stat_area == 514  ~ 1,
@@ -287,19 +197,13 @@ cod_site_list <- cod_site_list %>%
     TRUE ~ 0 # Catch-all for all other cases
   ))
 
-cod_site_list %>% count(wgom)
 
-
-## MERGE cod sites into trips on intsite
+## Merge cod sites in 
 cod_hadd_all_w <- left_join(cod_hadd_all_w, cod_site_list, by = c("state", "intsite"))
 
-# label NH trips as part of WGOM and fill in their stat area
+# label NH trips as part of WGOM and fill in their stat area as "NH"
 cod_hadd_all_w <- cod_hadd_all_w %>%
   mutate(wgom = if_else(state == "NH", 1, wgom))
-
-# NH has way more observations than MA and ME
-cod_hadd_all_w %>% count(state)
-
 cod_hadd_all_w$nmfs_stat_area <- as.character(cod_hadd_all_w$nmfs_stat_area)
 cod_hadd_all_w <- cod_hadd_all_w %>%
   mutate(nmfs_stat_area = if_else(state == "NH", "NH", nmfs_stat_area))
@@ -309,25 +213,13 @@ cod_hadd_all_w <- cod_hadd_all_w %>%
   filter(wgom == 1)
 
 
-
-## close-ish to lou now, esp for 2024 although more off for 2025 
-# 306k now to 232k, need to get to 231k
-sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2024 == 1], na.rm = TRUE)
-# 279k now to 221k, need to get to 198k
-sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2025_imp == 1], na.rm = TRUE)
-# 197k need to get to 197k
-sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$mode == "private"], na.rm = TRUE)
-# 198k need to get to 179k
-sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2025_imp == 1 & cod_hadd_all_w$mode == "private"], na.rm = TRUE)
-
-# catch is really close to lou. 267891.9 compared to 267885
-sum(cod_hadd_all_w$tot_cat[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$common == "atlanticcod"], na.rm = TRUE)
-# this matches perfectly
-sum(cod_hadd_all_w$tot_cat[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$common == "atlanticcod" & cod_hadd_all_w$mode == "private"], na.rm = TRUE)
+# Remove clutter in environment
+rm(cod_catch, cod_effort, cod_effort_catch, hadd_catch, hadd_effort, hadd_effort_catch,
+   cod_hadd_all, cod_site_list, trip_species_composition)
 
 
-
-## grab tsn codes and store as numeric
+### Other variables for our dataframe
+## grab tsn codes, create species_itis variable
 subset_values <- trip$tsn1[trip$prim1_common == "atlantic cod"]
 tsn_cod <- subset_values[!is.na(subset_values)][1]
 subset_values <- trip$tsn1[trip$prim1_common == "haddock"]
@@ -339,25 +231,24 @@ cod_hadd_all_w <- cod_hadd_all_w %>%
 
 cod_hadd_all_w$species_itis <- as.numeric(cod_hadd_all_w$species_itis)
 
+# Data_version is this when pulling MRIP and running this script on same day
+#cod_hadd_all_w$data_version <- Sys.Date()
+# otherwise use date from the Rds file read in at the top 
+cod_hadd_all_w$data_version <- as.Date(file_date)
 
 cod_hadd_all_w$stock_abbrev <- "WGOM"
-cod_hadd_all_w$data_version <- Sys.Date()
 cod_hadd_all_w$metric <- "directed trips"
-cod_hadd_all_w$value <- cod_hadd_all_w$dtrip
 cod_hadd_all_w$units <- "number of trips"
 cod_hadd_all_w$fishery <- "NE Groundfish"
 cod_hadd_all_w$wave <- as.numeric(cod_hadd_all_w$wave)
 cod_hadd_all_w$year <- as.numeric(cod_hadd_all_w$year)
 
-sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$year == 2024 & cod_hadd_all_w$state=="MA" 
-                         & cod_hadd_all_w$mode=="charter" & cod_hadd_all_w$wave==3], na.rm = TRUE)
-
 
 cod_hadd_trips <- cod_hadd_all_w %>%
   group_by(fishery, stock_abbrev, state, mode, data_version, year, wave, metric, units) %>%
   summarise(value = sum(dtrip, na.rm = TRUE))
-print(cod_hadd_trips)
 
+# Fill these in as NA for cod/haddock trips then reorder the columns
 cod_hadd_trips$species_itis <- NA
 cod_hadd_trips$common <- NA
 cod_hadd_trips <- cod_hadd_trips %>% 
@@ -366,14 +257,21 @@ cod_hadd_trips <- cod_hadd_trips %>%
 
 
 
-cod_hadd_trips <- cod_hadd_trips %>%
+
+
+
+
+
+
+# FY variables
+cod_hadd_trips1 <- cod_hadd_trips %>%
   mutate(fy2024 = case_when(
     year == 2024 & wave >= 3 ~ 1,
     year == 2025 & wave == 2 ~ 1,
     TRUE ~ 0 
   ))
 
-cod_hadd_trips <- cod_hadd_trips %>%
+cod_hadd_trips1 <- cod_hadd_trips1 %>%
   mutate(fy2025_imp = case_when(
     year == 2024 & wave == 2 ~ 1,
     year == 2024 & wave == 6 ~ 1,
@@ -383,30 +281,53 @@ cod_hadd_trips <- cod_hadd_trips %>%
     TRUE ~ 0 
   ))
 
-sum(cod_hadd_trips$value[cod_hadd_trips$fy2024 == 1], na.rm = TRUE)
-sum(cod_hadd_trips$value[cod_hadd_trips$fy2025_imp == 1], na.rm = TRUE)
+sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2024 == 1], na.rm = TRUE)
+sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2025_imp == 1], na.rm = TRUE)
+
+cod_hadd_trips1 <- cod_hadd_trips1 %>%
+  mutate(fy2024_current = case_when(
+    year == 2024 & wave == 3 ~ 1,
+    year == 2024 & wave == 4 ~ 1,
+    year == 2024 & wave == 5 ~ 1,  
+    TRUE ~ 0 
+  ))
+
+cod_hadd_trips1 <- cod_hadd_trips1 %>%
+  mutate(fy2025_current = case_when(
+    year == 2025 & wave == 3 ~ 1,
+    year == 2025 & wave == 4 ~ 1,
+    year == 2025 & wave == 5 ~ 1,  
+    TRUE ~ 0 
+  ))
 
 
-##issue for directed trips - theyre cod/haddock trips so what should common and species_itis be?
+# 232k, lou = 231k
+sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2024 == 1], na.rm = TRUE)
+# 221k, lou = 198k
+sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2025_imp == 1], na.rm = TRUE)
+# 197k, lou = 197k
+sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2024 == 1 & cod_hadd_trips1$mode == "private"], na.rm = TRUE)
+# 198k, lou =  179k
+sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2025_imp == 1 & cod_hadd_trips1$mode == "private"], na.rm = TRUE)
+
+##Note: If we use the older pull from 4/10, the 2024 directed trips match lou's but
+## 2025 does not because he was using older data. 
+# The 4/29 pull must have very slightly different 2024 trips compared to the 4/10 pull
+#mrip_statistics <- readRDS("~/GitHub/mrip_statistics_2026-04-10.Rds")
+
+
+
+
+
+# Make that row of the table with what you have for trips 
+# get directed trips by mode (and total for all modes) for FY2024 and FY2025, generate pct_diff_fy, pct_diff_current
+
 #### NOW A CLEAN SCRIPT,  then catch and catch per trip, then append and make the table we want and some plots
 ## does kim want a directed trips script now or wait for one with everything
 ## maybe she can look at a directed trips script and give you feedback on whether its horrible
 ## ask kim, should I just save this non clean script in my documents or my drive and then clean/rename this? whats NAA?
 
 
-##### ************* WHAT TO DO NEXT ****** ######
-#start from here, get directed trips by mode (and total for all modes) and by
-# wave (and totals for FY2024 and FY2025) and calculate the pct_different variables  
-# that lou has and format it for Kim, get her a clean script renamed directed_trips_tp.R
-# what was the format again? its in issues on github:
-# species_itis common stock_abbrev	mode	data_version	year	wave	metric	value	units state 
-# Then move on to catch and catch per trip
-# And ask for help from MY on next steps for directed trips
-# lou manually organized the microdata as survey data and weighted it, is that how MRIP does it?
-# does it have anything to do with there being so many NH rows?
-sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$state == "NH"], na.rm = TRUE)
-sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$state == "ME"], na.rm = TRUE)
-sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$state == "MA"], na.rm = TRUE)
 
 dtrips_annual <- data.frame(
   area = rep("wgom", times=5),
@@ -882,8 +803,7 @@ cod_df %>%
 
 
 
-## something to ask Sam Truesdall: Lou is using 'leader' to help ID trips but the
-# microdata function doesn't seem to pull leader. leader=group catch leader
+
 
 # need to deal with the WGOM mismatch issue with stock area
 ## and need to change 2025 to 2025 impute to match lou
