@@ -342,9 +342,10 @@ cod_hadd_all_w$species_itis <- as.numeric(cod_hadd_all_w$species_itis)
 
 cod_hadd_all_w$stock_abbrev <- "WGOM"
 cod_hadd_all_w$data_version <- Sys.Date()
-cod_hadd_all_w$metric <- "cod/haddock directed trips"
+cod_hadd_all_w$metric <- "directed trips"
 cod_hadd_all_w$value <- cod_hadd_all_w$dtrip
 cod_hadd_all_w$units <- "number of trips"
+cod_hadd_all_w$fishery <- "NE Groundfish"
 cod_hadd_all_w$wave <- as.numeric(cod_hadd_all_w$wave)
 cod_hadd_all_w$year <- as.numeric(cod_hadd_all_w$year)
 
@@ -353,9 +354,15 @@ sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$year == 2024 & cod_hadd_all_w$state=="MA
 
 
 cod_hadd_trips <- cod_hadd_all_w %>%
-  group_by(stock_abbrev, state, mode, data_version, year, wave, metric, units) %>%
+  group_by(fishery, stock_abbrev, state, mode, data_version, year, wave, metric, units) %>%
   summarise(value = sum(dtrip, na.rm = TRUE))
 print(cod_hadd_trips)
+
+cod_hadd_trips$species_itis <- NA
+cod_hadd_trips$common <- NA
+cod_hadd_trips <- cod_hadd_trips %>% 
+  select(fishery, common, species_itis, stock_abbrev, state, mode, data_version, year, wave, metric, value, units)
+
 
 
 
