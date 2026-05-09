@@ -257,10 +257,15 @@ cod_hadd_trips <- cod_hadd_trips %>%
 
 
 
+##### cod_hadd_trips is now in our format, will append with catch and catch per trip
+### Can stop here or see estimates by fishing year below
 
 
 
-
+##Note: If we use the older pull from 4/10, the 2024 directed trips match lou's but
+## 2025 does not because he was using older data when we ran his script to get yearly_mrip_stats.dta 
+# The 4/29 pull must have had a tiny update to 2024 trips compared to the 4/10 pull
+#mrip_statistics <- readRDS("~/GitHub/mrip_statistics_2026-04-10.Rds")
 
 
 # FY variables
@@ -301,25 +306,108 @@ cod_hadd_trips1 <- cod_hadd_trips1 %>%
   ))
 
 
-# 232k, lou = 231k
-sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2024 == 1], na.rm = TRUE)
-# 221k, lou = 198k
-sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2025_imp == 1], na.rm = TRUE)
-# 197k, lou = 197k
-sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2024 == 1 & cod_hadd_trips1$mode == "private"], na.rm = TRUE)
-# 198k, lou =  179k
-sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2025_imp == 1 & cod_hadd_trips1$mode == "private"], na.rm = TRUE)
 
-##Note: If we use the older pull from 4/10, the 2024 directed trips match lou's but
-## 2025 does not because he was using older data. 
-# The 4/29 pull must have very slightly different 2024 trips compared to the 4/10 pull
-#mrip_statistics <- readRDS("~/GitHub/mrip_statistics_2026-04-10.Rds")
+##### Top row of table 1
+pct_diff <- (((sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2025_imp == 1], na.rm = TRUE)) - 
+  (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2024 == 1], na.rm = TRUE))) /  
+    (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2024 == 1], na.rm = TRUE))) * 100
+pct_diff <- sprintf("%.1f%%", pct_diff)
+
+pct_diff2 <- (((sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2025_current == 1], na.rm = TRUE)) - 
+                (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2024_current == 1], na.rm = TRUE))) /  
+               (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2024_current == 1], na.rm = TRUE))) * 100
+pct_diff2 <- sprintf("%.1f%%", pct_diff2)
+
+fy2024 <- (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2024 == 1], na.rm = TRUE))
+fy2025_imp <- (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2025_imp == 1], na.rm = TRUE))
+fy2024_current <- (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2024_current == 1], na.rm = TRUE))
+fy2025_current <- (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2025_current == 1], na.rm = TRUE))
+fy2024 <- formatC(fy2024, format = "f", big.mark = ",", digits = 0)
+fy2025_imp <- formatC(fy2025_imp, format = "f", big.mark = ",", digits = 0)
+fy2024_current <- formatC(fy2024_current, format = "f", big.mark = ",", digits = 0)
+fy2025_current <- formatC(fy2025_current, format = "f", big.mark = ",", digits = 0)
+
+fy_trips <- data.frame(
+  fy2024 = c(fy2024),
+  fy2025_imp = c(fy2025_imp),
+  pct_diff = c(pct_diff),
+  fy2024_current = c(fy2024_current),
+  fy2025_current = c(fy2025_current),
+  pct_diff2 = c(pct_diff2),
+  row.names = c("Cod/haddock angler trips")
+)
+
+knitr::kable(fy_trips, caption = "Western Gulf of Maine Cod/Haddock Angler Trips")
+# try kableExtra package for styling
+
+
+##### Top row of table 2 (wave 5 estimates)
+w5_2024 <- (sum(cod_hadd_trips1$value[cod_hadd_trips1$year == 2024 & cod_hadd_trips1$wave == 5], na.rm = TRUE))
+w5_2025 <- (sum(cod_hadd_trips1$value[cod_hadd_trips1$year == 2025 & cod_hadd_trips1$wave == 5], na.rm = TRUE))
+w5_2024 <- formatC(w5_2024, format = "f", big.mark = ",", digits = 0)
+w5_2025 <- formatC(w5_2025, format = "f", big.mark = ",", digits = 0)
+
+w5_trips <- data.frame(
+  w5_2024 = c(w5_2024),
+  w5_2025 = c(w5_2025),
+  row.names = c("Cod/haddock angler trips")
+)
+
+knitr::kable(w5_trips, caption = "Wave 5 Western Gulf of Maine Cod/Haddock Angler Trips")
+
+
+##### Table with trips by mode
+pct_diff_h <- (((sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2025_imp == 1 & cod_hadd_trips1$mode == "headboat"], na.rm = TRUE)) - 
+                (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2024 == 1 & cod_hadd_trips1$mode == "headboat"], na.rm = TRUE))) /  
+               (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2024 == 1 & cod_hadd_trips1$mode == "headboat"], na.rm = TRUE))) * 100
+pct_diff_h <- sprintf("%.1f%%", pct_diff_h)
+
+pct_diff_c <- (((sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2025_imp == 1 & cod_hadd_trips1$mode == "charter"], na.rm = TRUE)) - 
+                  (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2024 == 1 & cod_hadd_trips1$mode == "charter"], na.rm = TRUE))) /  
+                 (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2024 == 1 & cod_hadd_trips1$mode == "charter"], na.rm = TRUE))) * 100
+pct_diff_c <- sprintf("%.1f%%", pct_diff_c)
+
+pct_diff_p <- (((sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2025_imp == 1 & cod_hadd_trips1$mode == "private"], na.rm = TRUE)) - 
+                  (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2024 == 1 & cod_hadd_trips1$mode == "private"], na.rm = TRUE))) /  
+                 (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2024 == 1 & cod_hadd_trips1$mode == "private"], na.rm = TRUE))) * 100
+pct_diff_p <- sprintf("%.1f%%", pct_diff_p)
+
+pct_diff_s <- (((sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2025_imp == 1 & cod_hadd_trips1$mode == "shore"], na.rm = TRUE)) - 
+                  (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2024 == 1 & cod_hadd_trips1$mode == "shore"], na.rm = TRUE))) /  
+                 (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2024 == 1 & cod_hadd_trips1$mode == "shore"], na.rm = TRUE))) * 100
+pct_diff_s <- sprintf("%.1f%%", pct_diff_s)
+
+fy2024_h <- (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2024 == 1 & cod_hadd_trips1$mode == "headboat"], na.rm = TRUE))
+fy2024_c <- (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2024 == 1 & cod_hadd_trips1$mode == "charter"], na.rm = TRUE))
+fy2024_p <- (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2024 == 1 & cod_hadd_trips1$mode == "private"], na.rm = TRUE))
+fy2024_s <- (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2024 == 1 & cod_hadd_trips1$mode == "shore"], na.rm = TRUE))
+fy2025_h <- (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2025_imp == 1 & cod_hadd_trips1$mode == "headboat"], na.rm = TRUE))
+fy2025_c <- (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2025_imp == 1 & cod_hadd_trips1$mode == "charter"], na.rm = TRUE))
+fy2025_p <- (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2025_imp == 1 & cod_hadd_trips1$mode == "private"], na.rm = TRUE))
+fy2025_s <- (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2025_imp == 1 & cod_hadd_trips1$mode == "shore"], na.rm = TRUE))
+
+fy2024_h <- formatC(fy2024_h, format = "f", big.mark = ",", digits = 0)
+fy2024_c <- formatC(fy2024_c, format = "f", big.mark = ",", digits = 0)
+fy2024_p <- formatC(fy2024_p, format = "f", big.mark = ",", digits = 0)
+fy2024_s <- formatC(fy2024_s, format = "f", big.mark = ",", digits = 0)
+fy2025_h <- formatC(fy2025_h, format = "f", big.mark = ",", digits = 0)
+fy2025_c <- formatC(fy2025_c, format = "f", big.mark = ",", digits = 0)
+fy2025_p <- formatC(fy2025_p, format = "f", big.mark = ",", digits = 0)
+fy2025_s <- formatC(fy2025_s, format = "f", big.mark = ",", digits = 0)
+
+fy_trips_mode <- data.frame(
+  fy2024 = c(fy2024_h, fy2024_c, fy2024_p, fy2024_s, fy2024),
+  fy2025 = c(fy2025_h, fy2025_c, fy2025_p, fy2025_s, fy2025_imp),
+  pct_diff = c(pct_diff_h, pct_diff_c, pct_diff_p, pct_diff_s, pct_diff),
+  row.names = c("Head", "Charter", "Private", "Shore", "Total")
+)
+
+knitr::kable(fy_trips_mode, caption = "Western Gulf of Maine Cod/Haddock Angler Trips by Mode")
 
 
 
 
-
-# Make that row of the table with what you have for trips 
+# Make that row of the table with what you have for trips. And table 2 with trips by mode 
 # get directed trips by mode (and total for all modes) for FY2024 and FY2025, generate pct_diff_fy, pct_diff_current
 
 #### NOW A CLEAN SCRIPT,  then catch and catch per trip, then append and make the table we want and some plots
