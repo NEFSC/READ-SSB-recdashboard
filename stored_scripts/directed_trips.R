@@ -410,26 +410,23 @@ knitr::kable(fy_trips_mode, caption = "Western Gulf of Maine Cod/Haddock Angler 
 
 
 
-### Send kim this script. should I pull to MY's branch? kind of want some of 
-# her feedback before he sees it. have her look on github in my branch? email a copy?
-# ask what I can do with this to make her job easier. I know it needs to be more automate-able
-
-# Now catch and catch per trip, then make the whole tables we want and some plots
-
-
-
-
-# run code above without drop duplicates on line 175, 
-# need to make rows for all the catch variables for the trips where there was no match in the catch data
-# then get all the catch stuff
-# catch per trip use trip species composition to get haddock trips separate from cod trips
 
 
 
 
 
 
-######### FIRST STAB AT CATCH need to put this somewhere and probably change somestuff
+
+
+
+
+
+
+
+
+
+
+######### FIRST STAB AT CATCH need to clean this up see you to do's down towards the end
 
 #### Cod effort ####
 # set typ to pull trips where cod were stated as primary target OR were landed-A,
@@ -703,12 +700,21 @@ cod_hadd_catch_long <- cod_hadd_catch_long %>%
 ###### LOOK HERE FOR TO DO's
 # now you can append to trips and add that stuff to the tables above
 #do that before kim looks?
-## needs cleanup, rename some dataframes so you don't have to repeat a ton of stuff
+## needs cleanup, rename some dataframes so you don't have to repeat a ton of code to get catch 
 # paste the catch data cleaning next to the trip data cleaning and see where things can be consolidated
-# for catch you didn't drop duplicate id_codes and you did some diff stuff to 
-# cod_had_all_w like making all the catch variables 0 and some tweaks before you collapsed down to cod_hadd_catch
+# for catch you didn't drop duplicate id_codes like at line 175 and you did  diff stuff to 
+# cod_had_all_w like making all the NA catch variables 0 and some tweaks before you collapsed down to cod_hadd_catch
 
 # and ask your question below about catch per trip in an issue
+
+# Append catch and catch per trip to cod_hadd_trips, then make the whole tables we want and some plots
+
+### Send kim a script once you've cleaned up. should I pull to MY's branch? kind of want 
+# her feedback before he sees it. have her look on github in my branch? email a copy?
+# ask what I can do with this to make her job easier. I know it needs to be more automate-able
+
+
+
 
 
 
@@ -739,6 +745,11 @@ cod_hadd_all_w <- cod_hadd_all_w %>%
     year == 2025 & wave == 5 ~ 1,
     TRUE ~ 0 
   ))
+
+# I am calculating catch per trip using trip_species_composition to get trips that 
+# had haddock catch (so haddock_only or cod_and_haddock trips) and trips that caught 
+# cod rather than dividing total catch by the cod/haddock angler trips
+
 # trips that had any cod catch:
 sum(cod_hadd_all_w$dtrip[cod_hadd_all_w$fy2024 == 1 & cod_hadd_all_w$common == "atlanticcod"], na.rm = TRUE)
 
