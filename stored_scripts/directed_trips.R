@@ -214,8 +214,8 @@ cod_hadd_all_w <- cod_hadd_all_w %>%
 
 
 # Remove clutter in environment
-rm(cod_catch, cod_effort, cod_effort_catch, hadd_catch, hadd_effort, hadd_effort_catch,
-   cod_hadd_all, cod_site_list, trip_species_composition)
+#rm(cod_catch, cod_effort, cod_effort_catch, hadd_catch, hadd_effort, hadd_effort_catch,
+#   cod_hadd_all, cod_site_list, trip_species_composition)
 
 
 ### Other variables for our dataframe
@@ -428,120 +428,6 @@ knitr::kable(fy_trips_mode, caption = "Western Gulf of Maine Cod/Haddock Angler 
 
 ######### FIRST STAB AT CATCH need to clean this up see you to do's down towards the end
 
-#### Cod effort ####
-# set typ to pull trips where cod were stated as primary target OR were landed-A,
-# unobserved-B1, or discarded-B2
-cod_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE', 
-                                  'STRAT_ID', 'PSU_ID', 'ID_CODE', 'LEADER'),
-                          microdata = mrip_statistics,
-                          dir_trip = list(comname = 'ATLANTIC COD',
-                                          typ = c('PRIM1', 'A', 'B1', 'B2')))|>
-  dplyr::filter(ST %in% c("25", "23", "33") # 25 is MA, 23 is ME, 33 is NH
-                & YEAR %in% c("2024", "2025"))
-
-names(cod_effort) <- tolower(names(cod_effort))
-cod_effort[] <- lapply(cod_effort, function(x) if(is.character(x)) tolower(x) else x)
-cod_effort <- subset(cod_effort, select = -c(dir_trip_typ, hrsf))
-
-
-#### Cod Catch ####
-cod_catch <- mrip_catch(comname = 'ATLANTIC COD', 
-                        dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'STRAT_ID', 
-                                'PSU_ID', 'ID_CODE', 'WP_INT'), 
-                        microdata = mrip_statistics, estimate_var = FALSE)
-
-## pull out estimates
-cod_catch <- cod_catch$estimates  |>
-  dplyr::filter(ST %in% c("25", "23", "33") & YEAR %in% c("2024", "2025"))
-
-names(cod_catch) <- tolower(names(cod_catch))
-cod_catch[] <- lapply(cod_catch, function(x) if(is.character(x)) tolower(x) else x)
-cod_catch <- subset(cod_catch, select = -c(se, cv))
-
-
-# Merge effort and catch
-cod_effort$source <- "effort"
-cod_catch$source <- "catch"
-cod_effort_catch <- left_join(cod_effort, cod_catch, 
-                              by = c("common", "year", "wave", "mode_fx", "st", 
-                                     "strat_id", "psu_id", "id_code"))
-
-## some trips without catch, keep them, will assign claim=0 down below
-cod_effort_catch %>% count(source.x, source.y)
-
-cod_effort_catch$date <- substr(cod_effort_catch$id_code, 6, 13)
-cod_effort_catch$month <- substr(cod_effort_catch$date, 5, 6)
-cod_effort_catch$day <- substr(cod_effort_catch$date, 7, 8)
-cod_effort_catch <- cod_effort_catch %>% filter(!(day %in% c("9x", "xx")))
-
-
-#### Haddock effort ####
-hadd_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE', 
-                                   'STRAT_ID', 'PSU_ID', 'ID_CODE', 'LEADER'),
-                           microdata = mrip_statistics,
-                           dir_trip = list(comname = 'HADDOCK',
-                                           typ = c('PRIM1', 'A', 'B1', 'B2')))|>
-  dplyr::filter(ST %in% c("25", "23", "33") # 25 is MA, 23 is ME, 33 is NH
-                & YEAR %in% c("2024", "2025"))
-
-names(hadd_effort) <- tolower(names(hadd_effort))
-hadd_effort[] <- lapply(hadd_effort, function(x) if(is.character(x)) tolower(x) else x)
-hadd_effort <- subset(hadd_effort, select = -c(dir_trip_typ, hrsf))
-
-
-#### Haddock catch ####
-hadd_catch <- mrip_catch(comname = 'HADDOCK', 
-                         dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'STRAT_ID', 
-                                 'PSU_ID', 'ID_CODE', 'WP_INT'), 
-                         microdata = mrip_statistics, estimate_var = FALSE)
-
-hadd_catch <- hadd_catch$estimates  |>
-  dplyr::filter(ST %in% c("25", "23", "33") & YEAR %in% c("2024", "2025"))
-
-names(hadd_catch) <- tolower(names(hadd_catch))
-hadd_catch[] <- lapply(hadd_catch, function(x) if(is.character(x)) tolower(x) else x)
-hadd_catch <- subset(hadd_catch, select = -c(se, cv))
-
-
-# Merge effort and catch
-hadd_effort$source <- "effort"
-hadd_catch$source <- "catch"
-hadd_effort_catch <- left_join(hadd_effort, hadd_catch, 
-                               by = c("common", "year", "wave", "mode_fx", "st", 
-                                      "strat_id", "psu_id", "id_code"))
-
-hadd_effort_catch$date <- substr(hadd_effort_catch$id_code, 6, 13)
-hadd_effort_catch$month <- substr(hadd_effort_catch$date, 5, 6)
-hadd_effort_catch$day <- substr(hadd_effort_catch$date, 7, 8)
-hadd_effort_catch <- hadd_effort_catch %>% filter(!(day %in% c("9x", "xx")))
-
-
-
-### APPEND cod and haddock ###
-cod_hadd_all <- rbind(cod_effort_catch, hadd_effort_catch)
-
-cod_hadd_all <- cod_hadd_all %>%
-  mutate(mode = case_when(
-    mode_fx == 3|mode_fx==2|mode_fx==1 ~ "shore",
-    mode_fx == 5 ~ "charter",
-    mode_fx == 7 ~ "private",
-    mode_fx == 4 ~ "headboat"
-  ))
-
-cod_hadd_all <- cod_hadd_all %>%
-  mutate(state = case_when(
-    st == "25" ~ "MA",
-    st == "33" ~ "NH",
-    st == "23" ~ "ME"
-  ))
-
-
-#For trips with no catch data, assign variable as claim and value=0 
-cod_hadd_all$value[is.na(cod_hadd_all$value)] <- 0
-cod_hadd_all$variable[is.na(cod_hadd_all$variable)] <- "claim"
-
-
-
 #### Wide out the catch variables 
 cod_hadd_all_w <- cod_hadd_all %>% spread(key = variable, value = value)
 
@@ -582,26 +468,6 @@ cod_hadd_all_w <- left_join(cod_hadd_all_w, trip_species_composition, by = c("id
 
 
 ### Read in Cod Site List (stock and stat areas) ###
-cod_site_list <- read.csv("data/raw/MRIP_COD_ALL_SITE_LIST.csv")
-names(cod_site_list) <- tolower(names(cod_site_list))
-cod_site_list <- cod_site_list %>% filter(state %in% c("MA", "ME"))
-cod_site_list <- subset(cod_site_list, select = c(state, intsite, nmfs_stock_area, nmfs_stat_area))
-
-# Take 1st unique obs in the group 
-cod_site_list <- cod_site_list[order(cod_site_list$intsite, cod_site_list$nmfs_stock_area), ]
-cod_site_list <- cod_site_list %>% distinct(nmfs_stock_area, intsite, nmfs_stat_area, state, .keep_all = TRUE)
-
-## WGOM: 513 514 515 521 526 NH
-cod_site_list <- cod_site_list %>%
-  mutate(wgom = case_when(
-    nmfs_stat_area == 513 | nmfs_stat_area == 514  ~ 1,
-    nmfs_stat_area == 515 | nmfs_stat_area == 521  ~ 1,
-    nmfs_stat_area == 526  ~ 1,
-    TRUE ~ 0 # Catch-all for all other cases
-  ))
-
-
-## Merge cod sites in 
 cod_hadd_all_w <- left_join(cod_hadd_all_w, cod_site_list, by = c("state", "intsite"))
 
 # label NH trips as part of WGOM and fill in their stat area as "NH"
@@ -623,11 +489,6 @@ cod_hadd_all_w <- cod_hadd_all_w %>%
 
 ### Other variables for our dataframe
 ## grab tsn codes, create species_itis variable
-subset_values <- trip$tsn1[trip$prim1_common == "atlantic cod"]
-tsn_cod <- subset_values[!is.na(subset_values)][1]
-subset_values <- trip$tsn1[trip$prim1_common == "haddock"]
-tsn_hadd <- subset_values[!is.na(subset_values)][1]
-
 cod_hadd_all_w <- cod_hadd_all_w %>%
   mutate(species_itis = ifelse(common == "atlanticcod", tsn_cod,
                                ifelse(common == "haddock", tsn_hadd, NA)))
@@ -690,7 +551,6 @@ sum(cod_hadd_catch1$catch[cod_hadd_catch1$fy2025_imp == 1 & cod_hadd_catch1$comm
 cod_hadd_catch_long <- cod_hadd_catch %>% 
   gather(key = "metric", value = "value", harvest, discards, catch, na.rm = T)
 
-view(cod_hadd_catch_long)
 
 cod_hadd_catch_long <- cod_hadd_catch_long %>% 
   select(fishery, common, species_itis, stock_abbrev, state, mode, data_version, year, wave, metric, value, units)
@@ -700,7 +560,8 @@ cod_hadd_catch_long <- cod_hadd_catch_long %>%
 ###### LOOK HERE FOR TO DO's
 # now you can append to trips and add that stuff to the tables above
 #do that before kim looks?
-## needs cleanup, rename some dataframes so you don't have to repeat a ton of code to get catch 
+## needs cleanup,  so you don't have to repeat a ton of code to get catch 
+#rename some dataframes like cod_hadd_all_w when doing catch
 # paste the catch data cleaning next to the trip data cleaning and see where things can be consolidated
 # for catch you didn't drop duplicate id_codes like at line 175 and you did  diff stuff to 
 # cod_had_all_w like making all the NA catch variables 0 and some tweaks before you collapsed down to cod_hadd_catch
