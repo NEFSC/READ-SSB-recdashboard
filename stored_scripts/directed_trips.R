@@ -480,7 +480,7 @@ cod_hadd_all_w2$species_itis <- as.numeric(cod_hadd_all_w2$species_itis)
 
 # Data_version is this when pulling MRIP and running this script on same day
 #cod_hadd_all_w$data_version <- Sys.Date()
-# otherwise use date from the Rds file read in at the top 
+# Otherwise use date from the Rds file read in at the top 
 cod_hadd_all_w2$data_version <- as.Date(file_date)
 
 cod_hadd_all_w2$stock_abbrev <- "WGOM"
@@ -497,6 +497,7 @@ cod_hadd_catch <- cod_hadd_all_w2 %>%
   summarise(harvest = sum(harvest, na.rm = TRUE),
             discards = sum(release, na.rm = TRUE),
             catch = sum(tot_cat, na.rm = TRUE))
+
 
 
 cod_hadd_catch1 <- cod_hadd_catch %>%
@@ -537,15 +538,21 @@ cod_hadd_catch_long <- cod_hadd_catch_long %>%
 
 
 
+# Make a df for catch per trip and add it into this below
+# maybe merge trips with catch and divide and add the right columns
+##append trips and catch
+#cod_haddock <- rbind(cod_hadd_trips, cod_hadd_catch_long)
+
 ###### LOOK HERE FOR TO DO's
 # now you can append to trips and add that stuff to the tables above
 #do that before kim looks?
 ## needs cleanup,  so you don't have to repeat a ton of code to get catch 
 # paste the catch data cleaning next to the trip data cleaning and see where things can be consolidated
 # for catch you didn't drop duplicate id_codes like at line 175 and you did  diff stuff to 
-# cod_had_all_w like making all the NA catch variables 0 and some tweaks before you collapsed down to cod_hadd_catch
+# make all the NA catch variables 0 and some tweaks before you collapsed down to cod_hadd_catch
+## get rid of trip species stuff in trips
 
-# and ask your question below about catch per trip in an issue
+# and ask  question below about catch per trip in an issue
 
 # Append catch and catch per trip to cod_hadd_trips, then make the whole tables we want and some plots
 
