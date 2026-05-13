@@ -8,7 +8,7 @@ library(tidyverse)
 
 
 # Run pull_mrip.R
-# Or, if you've pulled the data recently, read in but check the date in the file name
+# Or, if you've pulled the data recently, read in but check/adjust the date in the file name
 filename <- "data/raw/mrip_statistics_2026-04-29.Rds"
 mrip_statistics <- read_rds(filename)
 
@@ -153,7 +153,7 @@ cod_hadd_all_w$common <- gsub(" ", "", cod_hadd_all_w$common)
 
 
 ### Deal with Group catch
-# Label trips based on species they caught (this code until drop duplicates isn't needed here)
+# Label trips based on species they caught (this code until drop duplicates isn't necessary here)
 trip_species_composition <- cod_hadd_all_w %>%
   group_by(id_code) %>%
   summarize(
@@ -219,19 +219,8 @@ cod_hadd_all_w <- cod_hadd_all_w %>%
 
 
 ### Other variables for our dataframe
-## grab tsn codes, create species_itis variable
-subset_values <- trip$tsn1[trip$prim1_common == "atlantic cod"]
-tsn_cod <- subset_values[!is.na(subset_values)][1]
-subset_values <- trip$tsn1[trip$prim1_common == "haddock"]
-tsn_hadd <- subset_values[!is.na(subset_values)][1]
 
-cod_hadd_all_w <- cod_hadd_all_w %>%
-  mutate(species_itis = ifelse(common == "atlanticcod", tsn_cod,
-                        ifelse(common == "haddock", tsn_hadd, NA)))
-
-cod_hadd_all_w$species_itis <- as.numeric(cod_hadd_all_w$species_itis)
-
-# Data_version is this when pulling MRIP and running this script on same day
+# Data_version is this when pulling MRIP and running this script on same day:
 #cod_hadd_all_w$data_version <- Sys.Date()
 # otherwise use date from the Rds file read in at the top 
 cod_hadd_all_w$data_version <- as.Date(file_date)
@@ -257,10 +246,108 @@ cod_hadd_trips <- cod_hadd_trips %>%
 
 
 
-##### cod_hadd_trips is now in our format, will append with catch and catch per trip
-### Can stop here or see estimates by fishing year below
+###### CATCH and CATCH PER TRIP ###### 
+#### Wide out the catch variables 
+cod_hadd_all_w2 <- cod_hadd_all %>% spread(key = variable, value = value)
+
+cod_hadd_all_w2 <- rename(cod_hadd_all_w2, dtrip = n_trip)
+cod_hadd_all_w2$common <- gsub(" ", "", cod_hadd_all_w2$common)
+
+# Replace other missing catch variables with 0
+cod_hadd_all_w2$harvest[is.na(cod_hadd_all_w2$harvest)] <- 0
+cod_hadd_all_w2$release[is.na(cod_hadd_all_w2$release)] <- 0
+cod_hadd_all_w2$landing[is.na(cod_hadd_all_w2$landing)] <- 0
+cod_hadd_all_w2$tot_cat[is.na(cod_hadd_all_w2$tot_cat)] <- 0
+
+### Deal with Group catch
+# Label trips based on species they caught 
+trip_species_composition <- cod_hadd_all_w2 %>%
+  group_by(id_code) %>%
+  summarize(
+    has_cod = any(common == "atlanticcod"),
+    has_haddock = any(common == "haddock")
+  ) %>%
+  ungroup()
+
+trip_species_composition <- trip_species_composition %>%
+  mutate(trip_category = case_when(
+    has_cod & !has_haddock ~ "cod_only",
+    has_haddock & !has_cod ~ "hadd_only",
+    has_cod & has_haddock  ~ "cod_and_hadd"
+  ))
+
+#merge in species composition
+cod_hadd_all_w2 <- left_join(cod_hadd_all_w2, trip_species_composition, by = c("id_code"))
 
 
+### Read in Cod Site List (stock and stat areas) ###
+cod_hadd_all_w2 <- left_join(cod_hadd_all_w2, cod_site_list, by = c("state", "intsite"))
+
+# label NH trips as part of WGOM and fill in their stat area as "NH"
+cod_hadd_all_w2 <- cod_hadd_all_w2 %>%
+  mutate(wgom = if_else(state == "NH", 1, wgom))
+cod_hadd_all_w2$nmfs_stat_area <- as.character(cod_hadd_all_w2$nmfs_stat_area)
+cod_hadd_all_w2 <- cod_hadd_all_w2 %>%
+  mutate(nmfs_stat_area = if_else(state == "NH", "NH", nmfs_stat_area))
+
+## keep if WGOM
+cod_hadd_all_w2 <- cod_hadd_all_w2 %>% 
+  filter(wgom == 1)
+
+# Remove clutter in environment
+#rm(cod_catch, cod_effort, cod_effort_catch, hadd_catch, hadd_effort, hadd_effort_catch,
+#   cod_hadd_all, cod_site_list, trip_species_composition)
+
+
+### Other variables for our dataframe
+## grab tsn codes, create species_itis variable
+subset_values <- trip$tsn1[trip$prim1_common == "atlantic cod"]
+tsn_cod <- subset_values[!is.na(subset_values)][1]
+subset_values <- trip$tsn1[trip$prim1_common == "haddock"]
+tsn_hadd <- subset_values[!is.na(subset_values)][1]
+
+cod_hadd_all_w2 <- cod_hadd_all_w2 %>%
+  mutate(species_itis = ifelse(common == "atlanticcod", tsn_cod,
+                               ifelse(common == "haddock", tsn_hadd, NA)))
+
+cod_hadd_all_w2$species_itis <- as.numeric(cod_hadd_all_w2$species_itis)
+
+# Data_version is this when pulling MRIP and running this script on same day
+#cod_hadd_all_w$data_version <- Sys.Date()
+# Otherwise use date from the Rds file read in at the top 
+cod_hadd_all_w2$data_version <- as.Date(file_date)
+
+cod_hadd_all_w2$stock_abbrev <- "WGOM"
+cod_hadd_all_w2$units <- "number of fish"
+cod_hadd_all_w2$fishery <- "NE Groundfish"
+cod_hadd_all_w2$wave <- as.numeric(cod_hadd_all_w2$wave)
+cod_hadd_all_w2$year <- as.numeric(cod_hadd_all_w2$year)
+
+
+cod_hadd_all_w2 <- cod_hadd_all_w2 %>%
+  group_by(fishery, common, species_itis, stock_abbrev, state, mode, data_version, year, wave, units) %>%
+  summarise(harvest = sum(harvest, na.rm = TRUE),
+            discards = sum(release, na.rm = TRUE),
+            catch = sum(tot_cat, na.rm = TRUE))
+
+#Long out the catch variables, make metric column,  reorder columns
+cod_hadd_catch <- cod_hadd_all_w2 %>% 
+  gather(key = "metric", value = "value", harvest, discards, catch, na.rm = T)
+
+cod_hadd_catch <- cod_hadd_catch %>% 
+  select(fishery, common, species_itis, stock_abbrev, state, mode, data_version, year, wave, metric, value, units)
+
+
+#### Append trips and catch ####
+cod_haddock <- rbind(cod_hadd_trips, cod_hadd_catch)
+
+
+
+
+
+
+
+### Can stop here or see trip estimates by fishing year below
 
 ##Note: If we use the older pull from 4/10, the 2024 directed trips match lou's but
 ## 2025 does not because he was using older data when we ran his script to get yearly_mrip_stats.dta 
@@ -413,101 +500,18 @@ knitr::kable(fy_trips_mode, caption = "Western Gulf of Maine Cod/Haddock Angler 
 
 
 
-###### CATCH and CATCH PER TRIP ###### 
-
-#### Wide out the catch variables 
-cod_hadd_all_w2 <- cod_hadd_all %>% spread(key = variable, value = value)
-
-cod_hadd_all_w2 <- rename(cod_hadd_all_w2, dtrip = n_trip)
-#remove spaces in 'atlantic cod'
-cod_hadd_all_w2$common <- gsub(" ", "", cod_hadd_all_w2$common)
-
-# Replace other missing catch variables with 0
-cod_hadd_all_w2$harvest[is.na(cod_hadd_all_w2$harvest)] <- 0
-cod_hadd_all_w2$release[is.na(cod_hadd_all_w2$release)] <- 0
-cod_hadd_all_w2$landing[is.na(cod_hadd_all_w2$landing)] <- 0
-cod_hadd_all_w2$tot_cat[is.na(cod_hadd_all_w2$tot_cat)] <- 0
 
 
-### Deal with Group catch
-# Label trips based on species they caught (this code until drop duplicates isn't needed here)
-trip_species_composition <- cod_hadd_all_w2 %>%
-  group_by(id_code) %>%
-  summarize(
-    has_cod = any(common == "atlanticcod"),
-    has_haddock = any(common == "haddock")
-  ) %>%
-  ungroup()
 
-trip_species_composition <- trip_species_composition %>%
-  mutate(trip_category = case_when(
-    has_cod & !has_haddock ~ "cod_only",
-    has_haddock & !has_cod ~ "hadd_only",
-    has_cod & has_haddock  ~ "cod_and_hadd"
-  ))
-
-#merge in species composition
-cod_hadd_all_w2 <- left_join(cod_hadd_all_w2, trip_species_composition, by = c("id_code"))
-
-
-### Read in Cod Site List (stock and stat areas) ###
-cod_hadd_all_w2 <- left_join(cod_hadd_all_w2, cod_site_list, by = c("state", "intsite"))
-
-# label NH trips as part of WGOM and fill in their stat area as "NH"
+#### Grabbing the catch numbers to compare with Lou's numbers (have not added them into the tables like I did for trips)
 cod_hadd_all_w2 <- cod_hadd_all_w2 %>%
-  mutate(wgom = if_else(state == "NH", 1, wgom))
-cod_hadd_all_w2$nmfs_stat_area <- as.character(cod_hadd_all_w2$nmfs_stat_area)
-cod_hadd_all_w2 <- cod_hadd_all_w2 %>%
-  mutate(nmfs_stat_area = if_else(state == "NH", "NH", nmfs_stat_area))
-
-## keep if WGOM
-cod_hadd_all_w2 <- cod_hadd_all_w2 %>% 
-  filter(wgom == 1)
-
-
-# Remove clutter in environment
-#rm(cod_catch, cod_effort, cod_effort_catch, hadd_catch, hadd_effort, hadd_effort_catch,
-#   cod_hadd_all, cod_site_list, trip_species_composition)
-
-
-### Other variables for our dataframe
-## grab tsn codes, create species_itis variable
-cod_hadd_all_w2 <- cod_hadd_all_w2 %>%
-  mutate(species_itis = ifelse(common == "atlanticcod", tsn_cod,
-                               ifelse(common == "haddock", tsn_hadd, NA)))
-
-cod_hadd_all_w2$species_itis <- as.numeric(cod_hadd_all_w2$species_itis)
-
-# Data_version is this when pulling MRIP and running this script on same day
-#cod_hadd_all_w$data_version <- Sys.Date()
-# Otherwise use date from the Rds file read in at the top 
-cod_hadd_all_w2$data_version <- as.Date(file_date)
-
-cod_hadd_all_w2$stock_abbrev <- "WGOM"
-#do metric later
-#cod_hadd_all_w$metric <- "directed trips"
-cod_hadd_all_w2$units <- "number of fish"
-cod_hadd_all_w2$fishery <- "NE Groundfish"
-cod_hadd_all_w2$wave <- as.numeric(cod_hadd_all_w2$wave)
-cod_hadd_all_w2$year <- as.numeric(cod_hadd_all_w2$year)
-
-
-cod_hadd_catch <- cod_hadd_all_w2 %>%
-  group_by(fishery, common, species_itis, stock_abbrev, state, mode, data_version, year, wave, units) %>%
-  summarise(harvest = sum(harvest, na.rm = TRUE),
-            discards = sum(release, na.rm = TRUE),
-            catch = sum(tot_cat, na.rm = TRUE))
-
-
-
-cod_hadd_catch1 <- cod_hadd_catch %>%
   mutate(fy2024 = case_when(
     year == 2024 & wave >= 3 ~ 1,
     year == 2025 & wave == 2 ~ 1,
     TRUE ~ 0 
   ))
 
-cod_hadd_catch1 <- cod_hadd_catch1 %>%
+cod_hadd_all_w2 <- cod_hadd_all_w2 %>%
   mutate(fy2025_imp = case_when(
     year == 2024 & wave == 2 ~ 1,
     year == 2024 & wave == 6 ~ 1,
@@ -517,31 +521,31 @@ cod_hadd_catch1 <- cod_hadd_catch1 %>%
     TRUE ~ 0 
   ))
 
-#These are super close to lou, bet it would match with the 4/10 data
-sum(cod_hadd_catch1$catch[cod_hadd_catch1$fy2024 == 1 & cod_hadd_catch1$common == "atlanticcod"], na.rm = TRUE)
-sum(cod_hadd_catch1$catch[cod_hadd_catch1$fy2024 == 1 & cod_hadd_catch1$common == "haddock"], na.rm = TRUE)
-sum(cod_hadd_catch1$discards[cod_hadd_catch1$fy2024 == 1 & cod_hadd_catch1$common == "atlanticcod"], na.rm = TRUE)
-sum(cod_hadd_catch1$discards[cod_hadd_catch1$fy2024 == 1 & cod_hadd_catch1$common == "haddock"], na.rm = TRUE)
+#These are super close to lou, it would likely match with the 4/10 data
+sum(cod_hadd_all_w2$catch[cod_hadd_all_w2$fy2024 == 1 & cod_hadd_all_w2$common == "atlanticcod"], na.rm = TRUE)
+sum(cod_hadd_all_w2$catch[cod_hadd_all_w2$fy2024 == 1 & cod_hadd_all_w2$common == "haddock"], na.rm = TRUE)
+sum(cod_hadd_all_w2$discards[cod_hadd_all_w2$fy2024 == 1 & cod_hadd_all_w2$common == "atlanticcod"], na.rm = TRUE)
+sum(cod_hadd_all_w2$discards[cod_hadd_all_w2$fy2024 == 1 & cod_hadd_all_w2$common == "haddock"], na.rm = TRUE)
 
 #these wont match anyways
-sum(cod_hadd_catch1$catch[cod_hadd_catch1$fy2025_imp == 1 & cod_hadd_catch1$common == "atlanticcod"], na.rm = TRUE)
-sum(cod_hadd_catch1$catch[cod_hadd_catch1$fy2025_imp == 1 & cod_hadd_catch1$common == "haddock"], na.rm = TRUE)
+sum(cod_hadd_all_w2$catch[cod_hadd_all_w2$fy2025_imp == 1 & cod_hadd_all_w2$common == "atlanticcod"], na.rm = TRUE)
+sum(cod_hadd_all_w2$catch[cod_hadd_all_w2$fy2025_imp == 1 & cod_hadd_all_w2$common == "haddock"], na.rm = TRUE)
+
+
+cod_hadd_catch <- cod_hadd_catch %>%
+  mutate(fy2024 = case_when(
+    year == 2024 & wave >= 3 ~ 1,
+    year == 2025 & wave == 2 ~ 1,
+    TRUE ~ 0 
+  ))
+sum(cod_hadd_catch$value[cod_hadd_catch$fy2024 == 1 & cod_hadd_catch$common == "atlanticcod" & cod_hadd_catch$metric == "catch"], na.rm = TRUE)
 
 
 
-#Long out the catch variables, make metric column,  reorder columns
-cod_hadd_catch_long <- cod_hadd_catch %>% 
-  gather(key = "metric", value = "value", harvest, discards, catch, na.rm = T)
-
-cod_hadd_catch_long <- cod_hadd_catch_long %>% 
-  select(fishery, common, species_itis, stock_abbrev, state, mode, data_version, year, wave, metric, value, units)
 
 
+# Make a df for catch per trip 
 
-# Make a df for catch per trip and add it into this below
-# maybe merge trips with catch and divide and add the right columns
-##append trips and catch
-#cod_haddock <- rbind(cod_hadd_trips, cod_hadd_catch_long)
 
 ###### LOOK HERE FOR TO DO's
 # now you can append to trips and add that stuff to the tables above
@@ -564,14 +568,6 @@ cod_hadd_catch_long <- cod_hadd_catch_long %>%
 
 
 
-
-cod_hadd_catch_long <- cod_hadd_catch_long %>%
-  mutate(fy2024 = case_when(
-    year == 2024 & wave >= 3 ~ 1,
-    year == 2025 & wave == 2 ~ 1,
-    TRUE ~ 0 
-  ))
-sum(cod_hadd_catch_long$value[cod_hadd_catch_long$fy2024 == 1 & cod_hadd_catch_long$common == "atlanticcod" & cod_hadd_catch_long$metric == "catch"], na.rm = TRUE)
 
 
 
@@ -600,16 +596,16 @@ cod_hadd_all_w2 <- cod_hadd_all_w2 %>%
 # trips that had any cod catch:
 sum(cod_hadd_all_w2$dtrip[cod_hadd_all_w2$fy2024 == 1 & cod_hadd_all_w2$common == "atlanticcod"], na.rm = TRUE)
 
-sum(cod_hadd_catch_long$value[cod_hadd_catch_long$fy2024 == 1 & cod_hadd_catch_long$common == "atlanticcod" & cod_hadd_catch_long$metric == "catch"], na.rm = TRUE)
+sum(cod_hadd_catch$value[cod_hadd_catch$fy2024 == 1 & cod_hadd_catch$common == "atlanticcod" & cod_hadd_catch$metric == "catch"], na.rm = TRUE)
 
 #quick check on catch per trip cod 2024
 267891.9/117430.8
 # I got 2.28 but lou got 1.15
 267885/231963
 # lou divided cod catch by total cod and/or haddock trips not just trips that caught cod
-# create an issue and ask about that
 
-sum(cod_hadd_catch_long$value[cod_hadd_catch_long$fy2024 == 1 & cod_hadd_catch_long$common == "haddock" & cod_hadd_catch_long$metric == "catch"], na.rm = TRUE)
+
+sum(cod_hadd_catch$value[cod_hadd_catch$fy2024 == 1 & cod_hadd_catch$common == "haddock" & cod_hadd_catch$metric == "catch"], na.rm = TRUE)
 sum(cod_hadd_all_w2$dtrip[cod_hadd_all_w2$fy2024 == 1 & cod_hadd_all_w2$common == "haddock"], na.rm = TRUE)
 1385001/188674.3
 #lou:
