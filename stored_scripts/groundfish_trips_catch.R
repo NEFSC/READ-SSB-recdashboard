@@ -9,7 +9,12 @@ library(tidyverse)
 
 # Run pull_mrip.R
 # Or, if you've pulled the data recently, read in but adjust the date in the file name
-filename <- "data/raw/mrip_statistics_2026-04-29.Rds"
+```suggestion
+library("here")
+here::i_am("stored_scripts/groundfish_trips_catch.R")
+# Run pull_mrip.R
+# Or, if you've pulled the data recently, read in but adjust the date in the file name
+filename <- here("data","raw","mrip_statistics_2026-04-29.Rds")
 mrip_statistics <- read_rds(filename)
 
 # Extract the date if reading in a previous day's MRIP pull
