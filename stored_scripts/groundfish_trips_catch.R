@@ -5,20 +5,19 @@ library(dplyr)
 library(readr)
 library("mriptacklebox")
 library(tidyverse)
+library(here)
+library(glue)
+library(conflicted)
+conflicted::conflicts_prefer(dplyr::filter)
 
-
-# Run pull_mrip.R
-# Or, if you've pulled the data recently, read in but adjust the date in the file name
-```suggestion
-library("here")
 here::i_am("stored_scripts/groundfish_trips_catch.R")
 # Run pull_mrip.R
 # Or, if you've pulled the data recently, read in but adjust the date in the file name
-filename <- here("data","raw","mrip_statistics_2026-04-29.Rds")
+file_date<-"2026-04-29"
+
+filename <- here("data","raw",glue("mrip_statistics_{file_date}.Rds"))
 mrip_statistics <- read_rds(filename)
 
-# Extract the date if reading in a previous day's MRIP pull
-file_date <- str_extract(filename, "\\d{4}-\\d{2}-\\d{2}")
 
 
 # Load the elements in the list 
@@ -182,7 +181,7 @@ cod_hadd_all_w <- cod_hadd_all_w %>%
 
 
 ### Read in Cod Site List (stock and stat areas) ###
-cod_site_list <- read.csv("data/raw/MRIP_COD_ALL_SITE_LIST.csv")
+cod_site_list <- read.csv(here("data","raw","MRIP_COD_ALL_SITE_LIST.csv"))
 names(cod_site_list) <- tolower(names(cod_site_list))
 cod_site_list <- cod_site_list %>% filter(state %in% c("MA", "ME"))
 cod_site_list <- subset(cod_site_list, select = c(state, intsite, nmfs_stock_area, nmfs_stat_area))
@@ -338,6 +337,5 @@ cod_hadd_catch <- cod_hadd_catch %>%
 
 #### Append trips and catch ####
 cod_haddock <- rbind(cod_hadd_trips, cod_hadd_catch)
-
 
 
