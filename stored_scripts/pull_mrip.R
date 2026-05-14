@@ -21,7 +21,7 @@ library("tigris")
 library("here")
 library("glue")
 tacklebox_main_lib <- file.path(Sys.getenv("R_LIBS_USER"), "MRIPtacklebox_main_install")
-library("mriptacklebox",lib.loc = tacklebox_main_lib) 
+library("mriptacklebox",lib.loc = tacklebox_main_lib)
 library("conflicted")
 conflicts_prefer(dplyr::filter)  
 
@@ -71,9 +71,6 @@ write_rds(
 #   size = bind_rows(mrip_statistics_period1$size, mrip_statistics_period2$size),
 #   sizeb2 = bind_rows(mrip_statistics_period1$sizeb2, mrip_statistics_period2$sizeb2)
 # )
-# 
-
-
 
 #Unroll them like this
 

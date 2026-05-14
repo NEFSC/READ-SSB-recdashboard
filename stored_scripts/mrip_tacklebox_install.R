@@ -8,27 +8,16 @@
 # Because MRIPtacklebox is private, you will need a token/key registered. 
 # If MRIPtacklebox becomes public, add auth_token=NULL
 
-install.packages("usethis")
-install.packages("gitcreds")
-
-usethis::create_github_token()
-library("gitcreds")
-gitcreds_list_helpers()
-gitcreds::gitcreds_set()
-
-
 # Setup libraries
 tacklebox_main_lib <- file.path(Sys.getenv("R_LIBS_USER"), "MRIPtacklebox_main_install")
 tacklebox_dev_lib <- file.path(Sys.getenv("R_LIBS_USER"), "MRIPtacklebox_dev_install")
-# This lets you test development versions without affecting your main installation
-# Can easily switch between versions by commenting/uncommenting the relevant library() call
+
 
 dir.create(file.path(tacklebox_main_lib ), showWarnings = FALSE)
 dir.create(file.path(tacklebox_dev_lib ), showWarnings = FALSE)
 
 #install main  branch of mriptacklebox
-remotes::install_github("NEFSC/READ-PDB-mriptacklebox", lib=tacklebox_main_lib, dependencies = TRUE, force = TRUE)
-
+remotes::install_github("NEFSC/READ-PDB-mriptacklebox",lib=tacklebox_main_lib , dependencies = TRUE, force = TRUE)
 
 # Not run
 # sample code to in stall a install development branch of mriptacklebox
@@ -52,6 +41,3 @@ remotes::install_github("NEFSC/READ-PDB-mriptacklebox", lib=tacklebox_main_lib, 
 #tacklebox_dev_lib <- file.path(Sys.getenv("R_LIBS_USER"), "MRIPtacklebox_dev_install")
 #library(mriptacklebox,lib.loc = tacklebox_dev_lib )
 #########################################################
-
-
-
