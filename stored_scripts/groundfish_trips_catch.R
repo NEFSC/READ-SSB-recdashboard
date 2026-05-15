@@ -227,9 +227,7 @@ cod_site_list <- cod_site_list %>% distinct(nmfs_stock_area, intsite, nmfs_stat_
 ## WGOM: 513 514 515 521 526 NH
 cod_site_list <- cod_site_list %>%
   mutate(wgom = case_when(
-    nmfs_stat_area == 513 | nmfs_stat_area == 514  ~ 1,
-    nmfs_stat_area == 515 | nmfs_stat_area == 521  ~ 1,
-    nmfs_stat_area == 526  ~ 1,
+    nmfs_stat_area %in% c(513, 514, 515 ,521,526)  ~ 1,
     TRUE ~ 0 # Catch-all for all other cases
   ))
 
