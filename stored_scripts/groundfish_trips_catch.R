@@ -282,7 +282,7 @@ cod_hadd_all_w$data_version <- run_date
 cod_hadd_all_w$stock_abbrev <- "WGOM"
 cod_hadd_all_w$metric <- "directed trips"
 cod_hadd_all_w$units <- "number of trips"
-cod_hadd_all_w$fishery <- "NE Groundfish"
+cod_hadd_all_w$fishery <- fishery
 cod_hadd_all_w$wave <- as.numeric(cod_hadd_all_w$wave)
 cod_hadd_all_w$year <- as.numeric(cod_hadd_all_w$year)
 
