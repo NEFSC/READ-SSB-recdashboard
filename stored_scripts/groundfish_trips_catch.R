@@ -1,4 +1,14 @@
 ######  Directed trips and catch for WGOM Cod and Haddock  ######
+# Purpose: Builds a long-format data frame of directed trip counts and catch
+# (harvest, discards, total) for Atlantic Cod and Haddock in the Western Gulf
+# of Maine (WGOM), sourced from MRIP trip-level microdata.
+# Output object: cod_haddock
+# General strategy:
+#  1. Read in data
+#  2. Expand the survey data for trips and catch
+#  3. De-duplicate trips
+#  4. reshape and add descriptive columns
+
 
 # load packages
 library(dplyr)
@@ -8,15 +18,19 @@ library(tidyverse)
 library(here)
 library(glue)
 library(conflicted)
-conflicted::conflicts_prefer(dplyr::filter)
+conflicted::conflicts_prefer(dplyr::filter) # resolve conflict with stats::filter
 
 here::i_am("stored_scripts/groundfish_trips_catch.R")
+#######################################################################  
+######  Read in Data  ######
+#######################################################################  
+
 # Run pull_mrip.R
 # Or, if you've pulled the data recently, read in but adjust the date in the file name
-file_date<-"2026-04-29"
+file_date<-"2026-04-29" # date stamp of the MRIP data pull; used for file lookup and data_version field
 
 filename <- here("data","raw",glue("mrip_statistics_{file_date}.Rds"))
-mrip_statistics <- read_rds(filename)
+mrip_statistics <- read_rds(filename) # comes from get_mrip(), which returned a named list with elements: trip, catch, size, size_b2
 
 
 
@@ -33,6 +47,9 @@ names(catch) <- tolower(names(catch))
 catch[] <- lapply(catch, function(x) if(is.character(x)) tolower(x) else x)
 
 
+#######################################################################  
+######  Expand the survey data for trips  ######
+#######################################################################  
 
 #### Cod effort ####
 # set typ to pull trips where cod were stated as primary target OR were landed-A,
@@ -47,39 +64,42 @@ cod_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE',
 
 names(cod_effort) <- tolower(names(cod_effort))
 cod_effort[] <- lapply(cod_effort, function(x) if(is.character(x)) tolower(x) else x)
-cod_effort <- subset(cod_effort, select = -c(dir_trip_typ, hrsf))
+cod_effort <- subset(cod_effort, select = -c(dir_trip_typ, hrsf)) # drop: direction trip type flag and hours fished, not needed downstream
 
+#######################################################################  
+######  Expand the survey data for catch  ######
+#######################################################################  
 
 #### Cod Catch ####
 cod_catch <- mrip_catch(comname = 'ATLANTIC COD', 
                         dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'STRAT_ID', 
                                 'PSU_ID', 'ID_CODE', 'WP_INT'), 
-                        microdata = mrip_statistics, estimate_var = FALSE)
+                        microdata = mrip_statistics, estimate_var = FALSE) # estimate_var=FALSE skips variance estimation
 
 ## pull out estimates
-cod_catch <- cod_catch$estimates  |>
+cod_catch <- cod_catch$estimates  |> # $estimates holds catch records; $variance not extracted
   dplyr::filter(ST %in% c("25", "23", "33") & YEAR %in% c("2024", "2025"))
 
 names(cod_catch) <- tolower(names(cod_catch))
 cod_catch[] <- lapply(cod_catch, function(x) if(is.character(x)) tolower(x) else x)
-cod_catch <- subset(cod_catch, select = -c(se, cv))
+cod_catch <- subset(cod_catch, select = -c(se, cv)) # se and cv only populated when estimate_var=TRUE
 
 
 # Merge effort and catch
 cod_effort$source <- "effort"
 cod_catch$source <- "catch"
-cod_effort_catch <- left_join(cod_effort, cod_catch, 
+cod_effort_catch <- left_join(cod_effort, cod_catch, # left join: retains all effort rows; unmatched catch rows are NA
                               by = c("common", "year", "wave", "mode_fx", "st", 
                                      "strat_id", "psu_id", "id_code"))
 
 ## some trips without catch, keep them, will assign claim=0 down below
-cod_effort_catch %>% count(source.x, source.y)
+cod_effort_catch %>% count(source.x, source.y) # diagnostic: shows how many rows matched vs. effort-only
 
+# Parse interview date from id_code; positions 6-13 = YYYYMMDD
 cod_effort_catch$date <- substr(cod_effort_catch$id_code, 6, 13)
 cod_effort_catch$month <- substr(cod_effort_catch$date, 5, 6)
 cod_effort_catch$day <- substr(cod_effort_catch$date, 7, 8)
-cod_effort_catch <- cod_effort_catch %>% filter(!(day %in% c("9x", "xx")))
-
+cod_effort_catch <- cod_effort_catch %>% filter(!(day %in% c("9x", "xx"))) # drop records with imputed/unknown interview day
 
 #### Haddock effort ####
 hadd_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE', 
@@ -116,16 +136,20 @@ hadd_effort_catch <- left_join(hadd_effort, hadd_catch,
                               by = c("common", "year", "wave", "mode_fx", "st", 
                                      "strat_id", "psu_id", "id_code"))
 
+# Parse interview date from id_code; same logic as cod above
 hadd_effort_catch$date <- substr(hadd_effort_catch$id_code, 6, 13)
 hadd_effort_catch$month <- substr(hadd_effort_catch$date, 5, 6)
 hadd_effort_catch$day <- substr(hadd_effort_catch$date, 7, 8)
 hadd_effort_catch <- hadd_effort_catch %>% filter(!(day %in% c("9x", "xx")))
 
 
-
+#######################################################################  
+######  stack  data  ######
+#######################################################################  
 ### APPEND cod and haddock ###
 cod_hadd_all <- rbind(cod_effort_catch, hadd_effort_catch)
 
+# Recode numeric mode_fx to readable labels; mode_fx 1/2/3 = shore modes
 cod_hadd_all <- cod_hadd_all %>%
   mutate(mode = case_when(
     mode_fx == 3|mode_fx==2|mode_fx==1 ~ "shore",
@@ -134,6 +158,7 @@ cod_hadd_all <- cod_hadd_all %>%
     mode_fx == 4 ~ "headboat"
   ))
 
+# Recode FIPS state codes to abbreviations
 cod_hadd_all <- cod_hadd_all %>%
   mutate(state = case_when(
     st == "25" ~ "MA",
@@ -141,17 +166,22 @@ cod_hadd_all <- cod_hadd_all %>%
     st == "23" ~ "ME"
   ))
 
-cod_hadd_all <- rename(cod_hadd_all, dtrip = n_trip)
+cod_hadd_all <- rename(cod_hadd_all, dtrip = n_trip) # n_trip = estimated directed trips from mrip_effort()
 #remove spaces in 'atlantic cod'
 cod_hadd_all$common <- gsub(" ", "", cod_hadd_all$common)
 
 #For trips with no catch data, assign variable as claim and value=0 
+# "claim" = angler reported targeting the species but had no catch
 cod_hadd_all$value[is.na(cod_hadd_all$value)] <- 0
 cod_hadd_all$variable[is.na(cod_hadd_all$variable)] <- "claim"
 
+#######################################################################  
+######  Reshape, de-duplicate trips, handle group catch######
+#######################################################################  
 
 ###### DIRECTED TRIPS ######
 ## Wide out the catch variables 
+# Pivots long variable/value columns to wide; each catch category (claim, harvest, release, etc.) becomes a column
 cod_hadd_all_w <- cod_hadd_all %>% spread(key = variable, value = value)
 
 
@@ -174,16 +204,20 @@ trip_species_composition <- trip_species_composition %>%
 
 #merge in species composition
 cod_hadd_all_w <- left_join(cod_hadd_all_w, trip_species_composition, by = c("id_code"))
-
+##################################################################################
 ## Drop duplicate cod AND haddock trips
+# Trips appearing for both species (cod_and_hadd) would be double-counted; keep first row only
+##################################################################################
+
 cod_hadd_all_w <- cod_hadd_all_w %>%
   distinct(id_code, .keep_all = TRUE)
 
 
 ### Read in Cod Site List (stock and stat areas) ###
+# Maps MRIP interview sites (intsite) to NMFS stat areas; used to identify WGOM trips
 cod_site_list <- read.csv(here("data","raw","MRIP_COD_ALL_SITE_LIST.csv"))
 names(cod_site_list) <- tolower(names(cod_site_list))
-cod_site_list <- cod_site_list %>% filter(state %in% c("MA", "ME"))
+cod_site_list <- cod_site_list %>% filter(state %in% c("MA", "ME")) # NH handled separately by state rule below
 cod_site_list <- subset(cod_site_list, select = c(state, intsite, nmfs_stock_area, nmfs_stat_area))
 
 # Take 1st unique obs in the group 
@@ -204,6 +238,7 @@ cod_site_list <- cod_site_list %>%
 cod_hadd_all_w <- left_join(cod_hadd_all_w, cod_site_list, by = c("state", "intsite"))
 
 # label NH trips as part of WGOM and fill in their stat area as "NH"
+# NH sites are not in the site list so wgom would be NA without this override
 cod_hadd_all_w <- cod_hadd_all_w %>%
   mutate(wgom = if_else(state == "NH", 1, wgom))
 cod_hadd_all_w$nmfs_stat_area <- as.character(cod_hadd_all_w$nmfs_stat_area)
@@ -235,11 +270,13 @@ cod_hadd_all_w$wave <- as.numeric(cod_hadd_all_w$wave)
 cod_hadd_all_w$year <- as.numeric(cod_hadd_all_w$year)
 
 
+# Sum directed trips across all trips in each stratum cell
 cod_hadd_trips <- cod_hadd_all_w %>%
   group_by(fishery, stock_abbrev, state, mode, data_version, year, wave, metric, units) %>%
   summarise(value = sum(dtrip, na.rm = TRUE))
 
 # Fill these in as NA for cod/haddock trips then reorder the columns
+# Directed trips are not species-specific (mixed trips counted once); species fields set to NA
 cod_hadd_trips$species_itis <- NA
 cod_hadd_trips$common <- NA
 cod_hadd_trips <- cod_hadd_trips %>% 
@@ -250,6 +287,8 @@ cod_hadd_trips <- cod_hadd_trips %>%
 
 ###### CATCH and CATCH PER TRIP ###### 
 ## Wide out the catch variables 
+# Second wide pivot from cod_hadd_all — does NOT deduplicate by id_code,
+# so both cod and haddock rows survive for separate species-level catch totals
 cod_hadd_all_w2 <- cod_hadd_all %>% spread(key = variable, value = value)
 
 # Replace other missing catch variables with 0
@@ -278,6 +317,7 @@ cod_hadd_all_w2 <- left_join(cod_hadd_all_w2, trip_species_composition, by = c("
 
 
 ### Read in cod sites (stock and stat areas)
+# cod_site_list already built above; reused here for the catch data frame
 cod_hadd_all_w2 <- left_join(cod_hadd_all_w2, cod_site_list, by = c("state", "intsite"))
 
 # label NH trips as part of WGOM and fill in their stat area as "NH"
@@ -298,6 +338,7 @@ cod_hadd_all_w2 <- cod_hadd_all_w2 %>%
 
 ### Other variables for our dataframe
 ## grab tsn codes, create species_itis variable
+# Extract the first non-NA ITIS TSN for each species from the raw trip microdata
 subset_values <- trip$tsn1[trip$prim1_common == "atlantic cod"]
 tsn_cod <- subset_values[!is.na(subset_values)][1]
 subset_values <- trip$tsn1[trip$prim1_common == "haddock"]
@@ -321,6 +362,8 @@ cod_hadd_all_w2$wave <- as.numeric(cod_hadd_all_w2$wave)
 cod_hadd_all_w2$year <- as.numeric(cod_hadd_all_w2$year)
 
 
+# Sum catch components by species within each stratum cell
+# harvest = kept (A); discards = released (release/B1+B2); catch = tot_cat (harvest + discards)
 cod_hadd_all_w2 <- cod_hadd_all_w2 %>%
   group_by(fishery, common, species_itis, stock_abbrev, state, mode, data_version, year, wave, units) %>%
   summarise(harvest = sum(harvest, na.rm = TRUE),
@@ -336,6 +379,8 @@ cod_hadd_catch <- cod_hadd_catch %>%
 
 
 #### Append trips and catch ####
+# Final output: one long-format data frame combining directed trip counts and catch metrics
+# metric values: "directed trips", "harvest", "discards", "catch"
+# units vary by metric: "number of trips" (directed trips) vs "number of fish" (catch metrics)
 cod_haddock <- rbind(cod_hadd_trips, cod_hadd_catch)
-
 
