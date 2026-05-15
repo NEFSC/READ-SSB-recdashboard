@@ -19,8 +19,23 @@ library(here)
 library(glue)
 library(conflicted)
 conflicted::conflicts_prefer(dplyr::filter) # resolve conflict with stats::filter
-
 here::i_am("stored_scripts/groundfish_trips_catch.R")
+
+
+#######################################################################  
+###########OPTIONS
+# intended to help with "function-izing"
+#######################################################################  
+yearlist<-c("2024", "2025")
+statelist<- c("25", "23", "33") # 25 is MA, 23 is ME, 33 is NH
+common_name1<-'ATLANTIC COD'
+common_name2<-'HADDOCK'
+
+fishery<-"NE Groundfish"
+
+
+
+
 #######################################################################  
 ######  Read in Data  ######
 #######################################################################  
@@ -28,6 +43,9 @@ here::i_am("stored_scripts/groundfish_trips_catch.R")
 # Run pull_mrip.R
 # Or, if you've pulled the data recently, read in but adjust the date in the file name
 file_date<-"2026-04-29" # date stamp of the MRIP data pull; used for file lookup and data_version field
+run_date<-as.Date(file_date)
+
+
 
 filename <- here("data","raw",glue("mrip_statistics_{file_date}.Rds"))
 mrip_statistics <- read_rds(filename) # comes from get_mrip(), which returned a named list with elements: trip, catch, size, size_b2
@@ -57,11 +75,11 @@ catch[] <- lapply(catch, function(x) if(is.character(x)) tolower(x) else x)
 cod_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE', 
                                   'STRAT_ID', 'PSU_ID', 'ID_CODE', 'LEADER'),
                       microdata = mrip_statistics,
-                      dir_trip = list(comname = 'ATLANTIC COD',
+                      dir_trip = list(comname = common_name1,
                                       typ = c('PRIM1', 'A', 'B1', 'B2')))|>
-  dplyr::filter(ST %in% c("25", "23", "33") # 25 is MA, 23 is ME, 33 is NH
-                & YEAR %in% c("2024", "2025"))
-
+  filter(ST %in% statelist) |>
+  filter(YEAR %in% yearlist)
+                
 names(cod_effort) <- tolower(names(cod_effort))
 cod_effort[] <- lapply(cod_effort, function(x) if(is.character(x)) tolower(x) else x)
 cod_effort <- subset(cod_effort, select = -c(dir_trip_typ, hrsf)) # drop: direction trip type flag and hours fished, not needed downstream
@@ -71,14 +89,16 @@ cod_effort <- subset(cod_effort, select = -c(dir_trip_typ, hrsf)) # drop: direct
 #######################################################################  
 
 #### Cod Catch ####
-cod_catch <- mrip_catch(comname = 'ATLANTIC COD', 
+cod_catch <- mrip_catch(comname = common_name1, 
                         dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'STRAT_ID', 
                                 'PSU_ID', 'ID_CODE', 'WP_INT'), 
                         microdata = mrip_statistics, estimate_var = FALSE) # estimate_var=FALSE skips variance estimation
 
 ## pull out estimates
-cod_catch <- cod_catch$estimates  |> # $estimates holds catch records; $variance not extracted
-  dplyr::filter(ST %in% c("25", "23", "33") & YEAR %in% c("2024", "2025"))
+cod_catch <- cod_catch$estimates%>%
+  filter(ST %in% statelist) |>
+  filter(YEAR %in% yearlist)
+
 
 names(cod_catch) <- tolower(names(cod_catch))
 cod_catch[] <- lapply(cod_catch, function(x) if(is.character(x)) tolower(x) else x)
@@ -104,11 +124,11 @@ cod_effort_catch <- cod_effort_catch %>% filter(!(day %in% c("9x", "xx"))) # dro
 #### Haddock effort ####
 hadd_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE', 
                                   'STRAT_ID', 'PSU_ID', 'ID_CODE', 'LEADER'),
-                          microdata = mrip_statistics,
-                          dir_trip = list(comname = 'HADDOCK',
-                                          typ = c('PRIM1', 'A', 'B1', 'B2')))|>
-  dplyr::filter(ST %in% c("25", "23", "33") # 25 is MA, 23 is ME, 33 is NH
-                & YEAR %in% c("2024", "2025"))
+                      microdata = mrip_statistics,
+                      dir_trip = list(comname = common_name2,
+                                        typ = c('PRIM1', 'A', 'B1', 'B2')))|>
+                      filter(ST %in% statelist) |>
+                      filter(YEAR %in% yearlist)
 
 names(hadd_effort) <- tolower(names(hadd_effort))
 hadd_effort[] <- lapply(hadd_effort, function(x) if(is.character(x)) tolower(x) else x)
@@ -116,13 +136,14 @@ hadd_effort <- subset(hadd_effort, select = -c(dir_trip_typ, hrsf))
 
 
 #### Haddock catch ####
-hadd_catch <- mrip_catch(comname = 'HADDOCK', 
+hadd_catch <- mrip_catch(comname = common_name2, 
                         dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'STRAT_ID', 
                                 'PSU_ID', 'ID_CODE', 'WP_INT'), 
                         microdata = mrip_statistics, estimate_var = FALSE)
 
 hadd_catch <- hadd_catch$estimates  |>
-  dplyr::filter(ST %in% c("25", "23", "33") & YEAR %in% c("2024", "2025"))
+  filter(ST %in% statelist) |>
+  filter(YEAR %in% yearlist)
 
 names(hadd_catch) <- tolower(names(hadd_catch))
 hadd_catch[] <- lapply(hadd_catch, function(x) if(is.character(x)) tolower(x) else x)
@@ -258,7 +279,7 @@ cod_hadd_all_w <- cod_hadd_all_w %>%
 # Data_version is this when pulling MRIP and running this script on same day:
 #cod_hadd_all_w$data_version <- Sys.Date()
 # otherwise use date from the Rds file read in at the top 
-cod_hadd_all_w$data_version <- as.Date(file_date)
+cod_hadd_all_w$data_version <- run_date
 
 cod_hadd_all_w$stock_abbrev <- "WGOM"
 cod_hadd_all_w$metric <- "directed trips"
@@ -351,11 +372,11 @@ cod_hadd_all_w2$species_itis <- as.numeric(cod_hadd_all_w2$species_itis)
 # Data_version is this when pulling MRIP and running this script on same day
 #cod_hadd_all_w$data_version <- Sys.Date()
 # Otherwise use date from the Rds file read in at the top 
-cod_hadd_all_w2$data_version <- as.Date(file_date)
+cod_hadd_all_w2$data_version <- run_date
 
 cod_hadd_all_w2$stock_abbrev <- "WGOM"
 cod_hadd_all_w2$units <- "number of fish"
-cod_hadd_all_w2$fishery <- "NE Groundfish"
+cod_hadd_all_w2$fishery <- fishery
 cod_hadd_all_w2$wave <- as.numeric(cod_hadd_all_w2$wave)
 cod_hadd_all_w2$year <- as.numeric(cod_hadd_all_w2$year)
 
@@ -381,4 +402,11 @@ cod_hadd_catch <- cod_hadd_catch %>%
 # metric values: "directed trips", "harvest", "discards", "catch"
 # units vary by metric: "number of trips" (directed trips) vs "number of fish" (catch metrics)
 cod_haddock <- rbind(cod_hadd_trips, cod_hadd_catch)
+
+# look at it.
+cod_haddock %>% 
+    ungroup() %>%
+    group_by(metric) %>% 
+    summarise(value=sum(value))
+
 
