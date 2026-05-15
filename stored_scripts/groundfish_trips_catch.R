@@ -26,25 +26,23 @@ here::i_am("stored_scripts/groundfish_trips_catch.R")
 ###########OPTIONS
 # intended to help with "function-izing"
 #######################################################################  
-yearlist<-c("2024", "2025")
+
+yearlist<-c("2024", "2025") 
 statelist<- c("25", "23", "33") # 25 is MA, 23 is ME, 33 is NH
 common_name1<-'ATLANTIC COD'
 common_name2<-'HADDOCK'
 
 fishery<-"NE Groundfish"
 
+file_date<-"2026-04-29" # date stamp of the MRIP data pull; used for file lookup and data_version field
 
 
+
+run_date<-as.Date(file_date)
 
 #######################################################################  
 ######  Read in Data  ######
 #######################################################################  
-
-# Run pull_mrip.R
-# Or, if you've pulled the data recently, read in but adjust the date in the file name
-file_date<-"2026-04-29" # date stamp of the MRIP data pull; used for file lookup and data_version field
-run_date<-as.Date(file_date)
-
 
 
 filename <- here("data","raw",glue("mrip_statistics_{file_date}.Rds"))
