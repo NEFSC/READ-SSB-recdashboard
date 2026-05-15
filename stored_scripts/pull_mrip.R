@@ -30,7 +30,7 @@ conflicts_prefer(dplyr::filter)
 here::i_am("stored_scripts/pull_mrip.R")
 
 #get a data version
-data_version<-as.character(Sys.Date())
+data_vintage<-as.character(Sys.Date())
 
 # set directory of mrip data
 pd <- file.path(network_path,"mrfss","products","mrip_estim","Public_data_cal2018")
@@ -62,16 +62,15 @@ write_rds(
 #                typ = c('trip', 'catch', 'size', 'size_b2'), format = 'sas7bdat')
 #  }
 # 
-  
- 
- 
+
+
+
 #Unroll them like this
 
 #trip<-mrip_statistics$trip
 #catch<-mrip_statistics$catch
 #size<-mrip_statistics$size
 #size_b2<-mrip_statistics$size_b2
- 
- 
- 
- 
+
+
+
