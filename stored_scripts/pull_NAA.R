@@ -51,7 +51,7 @@ processed_data_path<-folder_info$id
 if(length(processed_data_path)>1){
   stop("more than 1 folder found.")
 }
-if(length(processed_data_path)>1){
+if(length(processed_data_path)<1){
   stop("no folders found")
 }
 
