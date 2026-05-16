@@ -11,7 +11,10 @@
 ## 2025 does not because he was using older data when we ran his script to get yearly_mrip_stats.dta 
 # The 4/29 pull must have had a tiny update to 2024 trips compared to the 4/10 pull
 # 4/10 pull is here on Tess's machine
-#mrip_statistics <- readRDS("~/GitHub/mrip_statistics_2026-04-10.Rds")
+# confirm that the numbers for this pull for FY2024 match what lou has. 
+# If we both pulled MRIP on same day and ran our respective code, it should match
+mrip_statistics <- readRDS("~/GitHub/mrip_statistics_2026-04-10.Rds")
+file_date<-"2026-04-10"
 
 
 # FY variables
