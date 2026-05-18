@@ -38,7 +38,7 @@ files_to_get<-list(CodProjectedNAA,CodHistoricalNAA,HaddockProjectedNAA,HaddockH
 
 #####################################################################################################
 # Connect to Google Drive
-drive_auth(cache = here(".secrets"), email = TRUE)
+drive_auth(cache = here(".secrets"), email = TRUE,  scopes = "https://www.googleapis.com/auth/drive")
 
 # Find the folder on google drive
 processed_data_path<-file.path("socialsci","RecreationalDST","2027_management_cycle_data","groundfishRDM","input_data")
