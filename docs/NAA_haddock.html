@@ -354,24 +354,39 @@ display: none;
 
 <div id="gom-haddock-numbers-at-age" class="section level1">
 <h1>GOM Haddock Numbers at age</h1>
-<p><strong>Description</strong>: Short Description of data set</p>
-<p><strong>Years available</strong>: What years of data are
-avialable</p>
+<p><strong>Description</strong>:</p>
+<p>Mean historical numbers at age.</p>
+<p>Simulated future numbers at age for Western Gulf of Maine Cod.</p>
+<p><strong>Years available</strong>:</p>
+<p>Mean historical numbers at age are provided through “this year.”</p>
+<p>Projected numbers at age are provided for the upcoming management
+year.</p>
 <div id="methods" class="section level2">
 <h2>Methods</h2>
 <div id="data-sources" class="section level3">
 <h3>Data sources</h3>
-<p>Where does the data come from. Who collects/maintains/owns the
-data.</p>
+<p>All are derived from the most recent stock assessment (<a href="https://apps-st.fisheries.noaa.gov/sis/docServlet?fileAction=download&amp;fileId=9882">2024
+Management Track</a>) that was used for providing specifications advice
+to fishery managers</p>
 </div>
 <div id="data-extraction" class="section level3">
 <h3>Data extraction</h3>
-<p>Where did we get this data. How do we access it.</p>
+<p>Inputs need for stock assessment were obtained from stock assessment
+scientists. This includes the “WHAM” model file weight-at-age excel
+file.</p>
 </div>
 <div id="data-analysisprocessing" class="section level3">
 <h3>Data analysis/Processing</h3>
-<p>Is there any analysis or processing that occurs. Links to code that
-does this.</p>
+<p><a href="https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim/get_haddock_assessment_data.R">Data
+processing code</a> can be seen in the groundfishRDM repository. In
+brief, for 2026 fishery management, we</p>
+<ol style="list-style-type: decimal">
+<li>We use using actual catch (in mt) for 2023 and 2024. We use 75%FMSY
+for 2025-2026 mortality.</li>
+<li>We project the stock forward and extract mean NAA through 2025.</li>
+<li>We simulate 500 draws of the Numbers-at-Age for each age class for
+2026.</li>
+</ol>
 </div>
 </div>
 </div>
