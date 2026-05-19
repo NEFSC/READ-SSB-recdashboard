@@ -1,6 +1,7 @@
 # WGOM Atlantic Cod Numbers at age
 
 **Description**: 
+
 Mean historical numbers at age.
 
 Simulated future numbers at age for Western Gulf of Maine Cod.
@@ -16,7 +17,7 @@ Projected numbers at age are provided for the upcoming management year.
 
 ### Data sources
 
-All are derived from the most recent stock assessment [2024 Management Track](https://apps-st.fisheries.noaa.gov/sis/docServlet?fileAction=download&fileId=10095) 
+All are derived from the most recent stock assessment ([2024 Management Track](https://apps-st.fisheries.noaa.gov/sis/docServlet?fileAction=download&fileId=10095))
 that was used for providing specifications advice to fishery managers
 
 ### Data extraction 
