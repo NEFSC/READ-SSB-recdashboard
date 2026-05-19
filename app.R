@@ -373,10 +373,11 @@ server <- function(input, output, session) {
       
       if (input$naa_period == "historical") {
         # Historical: one line per year, age on x-axis
-        n_years     <- length(unique(df$year))
+        n_years     <- length(unique(tail(sort(unique(df$year)), 5)))
         year_colors <- colorRampPalette(c("#C6E6F0", "#0085CA", "#003087"))(n_years)
         
-        plot_data <- df %>% mutate(year = factor(year))
+        plot_data <- df %>% mutate(year = factor(year, levels = tail(sort(unique(df$year)), 5))) %>%
+          filter(year %in% tail(sort(unique(df$year)), 5))
         
         g <- ggplot(plot_data, aes(x = age, y = naa, color = year, group = year)) +
           geom_line(linewidth = 0.7, alpha = 0.8) +
