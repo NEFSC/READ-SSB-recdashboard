@@ -274,12 +274,13 @@ ui <- page_fillable(
                   style = "background-color: #003087; color: white; padding: 8px 12px; margin: -20px -15px 15px -15px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
                   "Data Metric"
                 ),
+                ## Add documentation link here
                 selectInput(
                   "doc_metric", NULL,
-                  choices  = c("Catch-at-Length" = "length_doc"),
-                  selected = "length_doc",
+                  choices  = c("Catch-at-Length" = "length_doc", "Numbers-at-age" = "naa_doc"),
+                  selected = c("length_doc", "naa_doc"),
                   width    = "100%"
-                )
+                ),
               ),
               
               div(
@@ -560,7 +561,8 @@ server <- function(input, output, session) {
   
   output$documentation_content <- renderUI({
     doc_path <- switch(input$doc_metric,
-                       "length_doc" = "docs/catch-at-length.html")
+                       "length_doc" = "docs/catch-at-length.html", 
+                       "naa_doc" = "docs/NAA.html")
     tags$iframe(
       src      = doc_path,
       style    = "width: 100%; height: 800px; border: none;",
