@@ -1,4 +1,4 @@
-# Numbers at age
+# GOM Haddock Numbers at age
 
 **Description**: Short Description of data set
 
@@ -17,4 +17,3 @@ Where did we get this data. How do we access it.
 ### Data analysis/Processing
 
 Is there any analysis or processing that occurs. Links to code that does this. 
-

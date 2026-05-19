@@ -277,8 +277,9 @@ ui <- page_fillable(
                 ## Add documentation link here
                 selectInput(
                   "doc_metric", NULL,
-                  choices  = c("Catch-at-Length" = "length_doc", "Numbers-at-age" = "naa_doc"),
-                  selected = c("length_doc", "naa_doc"),
+                  choices  = c("Catch-at-Length" = "length_doc", "Cod Numbers-at-age" = "naa_cod_doc", 
+                               "Haddock Numbers-at-age" = "naa_hadd_doc"),
+                  selected = c("length_doc", "naa_cod_doc", "naa_hadd_doc"),
                   width    = "100%"
                 ),
               ),
@@ -554,7 +555,8 @@ server <- function(input, output, session) {
   output$documentation_content <- renderUI({
     doc_path <- switch(input$doc_metric,
                        "length_doc" = "docs/catch-at-length.html", 
-                       "naa_doc" = "docs/NAA.html")
+                       "naa_cod_doc" = "docs/NAA_cod.html", 
+                       "naa_hadd_doc" = "docs/NAA_haddock.html")
     tags$iframe(
       src      = doc_path,
       style    = "width: 100%; height: 800px; border: none;",
