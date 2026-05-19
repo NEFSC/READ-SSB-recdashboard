@@ -337,6 +337,12 @@ server <- function(input, output, session) {
     data
   })
   
+  stock_abbrev <- reactive({
+    switch(input$species,
+           "Atlantic Cod" = "WGOM",
+           "Haddock"      = "GOM"
+    )
+  })
   # ── NAA data selector ─────────────────────────────────────────────────────
   filtered_naa <- reactive({
     req(input$data_metric == "naa", input$species, input$naa_period)
@@ -354,7 +360,7 @@ server <- function(input, output, session) {
     if (input$data_metric == "naa") {
       req(input$species, input$naa_period)
       period_label <- ifelse(input$naa_period == "historical", "Historical", "Projected")
-      paste(input$species, "\u2014 Numbers-at-Age,", period_label)
+      paste(paste0( stock_abbrev()), input$species, "\u2014 Numbers-at-Age,", period_label)
     } else {
       metric_label <- switch(input$data_metric,
                              "length" = "Catch-at-Length",
@@ -462,7 +468,7 @@ server <- function(input, output, session) {
       
       if (input$naa_period == "historical") {
         df %>%
-          group_by(Year = year) %>%
+          group_by(Year = as.integer(year)) %>%
           summarise(
             `Total NAA`  = scales::comma(round(sum(naa, na.rm = TRUE), 0)),
             `Age 1`      = scales::comma(round(sum(naa[age == 1], na.rm = TRUE), 0)),
@@ -478,7 +484,7 @@ server <- function(input, output, session) {
           )
       } else {
         df %>%
-          group_by(Year = year, age) %>%
+          group_by(Year = as.integer(year), age) %>%
           summarise(median_naa = median(naa, na.rm = TRUE), .groups = "drop") %>%
           group_by(Year) %>%
           summarise(
