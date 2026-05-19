@@ -29,7 +29,7 @@ This includes the "WHAM" model file  and an ASAP3 model file.
 
 [Data processing code](https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim/get_cod_assessment_data.R) can be seen in the groundfishRDM repository. In brief, for 2026 fishery management, we
 
-1.  We use using actual catch (in mt) for 2023 and 2024. We use 75%FMSY for 2025-2026 mortality
-2.  We project the stock forward and extract mean NAA through 2025
+1.  We use using actual catch (in mt) for 2023 and 2024. We use 75%FMSY for 2025-2026 mortality.
+2.  We project the stock forward and extract mean NAA through 2025.
 3.  We simulate 500 draws of the Numbers-at-Age for each age class for 2026.
 
