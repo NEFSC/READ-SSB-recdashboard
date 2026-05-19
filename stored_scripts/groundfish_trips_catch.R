@@ -399,10 +399,10 @@ cod_hadd_catch <- cod_hadd_catch %>%
 # Final output: one long-format data frame combining directed trip counts and catch metrics
 # metric values: "directed trips", "harvest", "discards", "catch"
 # units vary by metric: "number of trips" (directed trips) vs "number of fish" (catch metrics)
-cod_haddock <- rbind(cod_hadd_trips, cod_hadd_catch)
+rec_trips_catch <- rbind(cod_hadd_trips, cod_hadd_catch)
 
 # look at it.
-cod_haddock %>% 
+rec_trips_catch %>% 
     ungroup() %>%
     group_by(metric) %>% 
     summarise(value=sum(value))
