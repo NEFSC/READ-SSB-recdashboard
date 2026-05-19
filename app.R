@@ -399,31 +399,23 @@ server <- function(input, output, session) {
                 axis.text.x = element_text(angle = 45, hjust = 1))
         
       } else {
-        # Projected: median line + 80% uncertainty ribbon, age on x-axis
+       
         plot_data <- df %>%
-          group_by(age) %>%
-          summarise(
-            median_naa = median(naa, na.rm = TRUE),
-            lo80       = quantile(naa, 0.10, na.rm = TRUE),
-            hi80       = quantile(naa, 0.90, na.rm = TRUE),
-            .groups = "drop"
-          )
+          mutate(age = factor(paste0("Age ", age),
+                              levels = paste0("Age ", sort(unique(df$age)))))
         
-        g <- ggplot(plot_data, aes(x = age)) +
-          geom_ribbon(aes(ymin = lo80, ymax = hi80), fill = "#5EB6D9", alpha = 0.3) +
-          geom_line(aes(y = median_naa), color = "#003087", linewidth = 1) +
-          geom_point(aes(y = median_naa), color = "#003087", size = 2.5) +
-          scale_x_continuous(breaks = sort(unique(df$age)),
-                             labels = paste0("Age ", sort(unique(df$age)))) +
+        g <- ggplot(plot_data, aes(x = age, y = naa)) +
+          theme_minimal(base_size = 12) +
+          geom_boxplot(fill = "#5EB6D9", color = "#003087", outlier.fill = "#5EB6D9",
+                       outlier.alpha = 0.1, outlier.color = "transparent") +
           scale_y_continuous(labels = scales::comma) +
           labs(x = "Age", y = "Numbers of Individuals",
-               caption = "Line = median across 500 replicates; shaded band = 80% interval") +
-          theme_minimal(base_size = 12) +
+               caption = "Boxes show distribution across 500 replicates") +
+          
           theme(axis.text.x = element_text(angle = 45, hjust = 1))
       }
       
-      ggplotly(g) %>%
-        plotly::layout(legend = list(title = list(text = "Year")))
+      
       
     } else {
       req(filtered_data())
@@ -471,7 +463,7 @@ server <- function(input, output, session) {
         df %>%
           group_by(Year = as.integer(year)) %>%
           summarise(
-            `Total NAA`  = scales::comma(round(sum(naa, na.rm = TRUE), 0)),
+            
             `Age 1`      = scales::comma(round(sum(naa[age == 1], na.rm = TRUE), 0)),
             `Age 2`      = scales::comma(round(sum(naa[age == 2], na.rm = TRUE), 0)),
             `Age 3`      = scales::comma(round(sum(naa[age == 3], na.rm = TRUE), 0)),
@@ -489,7 +481,7 @@ server <- function(input, output, session) {
           summarise(median_naa = median(naa, na.rm = TRUE), .groups = "drop") %>%
           group_by(Year) %>%
           summarise(
-            `Median Total NAA` = scales::comma(round(sum(median_naa), 0)),
+            
             `Median Age 1`     = scales::comma(round(sum(median_naa[age == 1]), 0)),
             `Median Age 2`     = scales::comma(round(sum(median_naa[age == 2]), 0)),
             `Median Age 3`     = scales::comma(round(sum(median_naa[age == 3]), 0)),
