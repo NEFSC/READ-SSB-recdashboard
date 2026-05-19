@@ -3,6 +3,7 @@ library(bslib)
 library(plotly)
 library(dplyr)
 library(tidyr)
+library(ggplot2)
 
 set.seed(123)
 generate_fish_data <- function() {
@@ -42,7 +43,25 @@ generate_fish_data <- function() {
 
 fish_data <- generate_fish_data()
 
+# ── Load NAA RDS files ────────────────────────────────────────────────────────
+# Helper: pivot wide age columns to long
+pivot_naa_long <- function(df) {
+  age_cols <- grep("^age\\d+$", names(df), value = TRUE)
+  df %>%
+    tidyr::pivot_longer(cols = all_of(age_cols),
+                        names_to  = "age",
+                        values_to = "naa") %>%
+    mutate(age = as.integer(sub("age", "", age)))
+}
 
+naa_data <- list(
+  cod_historical  = pivot_naa_long(readRDS(here::here("data", "main", "WGOM_Cod_historical_NAA_from_2024Assessment_2026-05-15.Rds"))),
+  cod_projected   = pivot_naa_long(readRDS(here::here("data", "main", "WGOM_Cod_projected_NAA_from_2024Assessment_2026-05-15.Rds"))),
+  hadd_historical = pivot_naa_long(readRDS(here::here("data", "main", "GOM_Haddock_historical_NAA_2024Assessment_2026-05-15.Rds"))),
+  hadd_projected  = pivot_naa_long(readRDS(here::here("data", "main", "GOM_Haddock_projected_NAA_2024Assessment_2026-05-15.Rds")))
+)
+
+# ── UI ────────────────────────────────────────────────────────────────────────
 ui <- page_fillable(
   theme = bs_theme(
     version = 5,
@@ -55,12 +74,9 @@ ui <- page_fillable(
   
   shinyjs::useShinyjs(),
   
-  # REMOVED: tags$input for current_tab — no longer needed since we use
-  # shinyjs::show/hide instead of conditionalPanel for the main panels.
-  # We keep Shiny.setInputValue for the download button conditionalPanel only.
   tags$input(id = "current_tab", type = "hidden", value = "overview"),
   
-  # Banner + Nav Bar — unchanged
+  # Banner + Nav Bar
   div(
     style = "
       background-color: #003087;
@@ -90,7 +106,6 @@ ui <- page_fillable(
         )
       ),
       
-      # This conditionalPanel is fine — it only controls simple button visibility
       conditionalPanel(
         condition = "input.current_tab == 'overview'",
         div(
@@ -126,21 +141,20 @@ ui <- page_fillable(
     }
   ")),
   
-  # CHANGE 1: Removed conditionalPanel wrapper — overview is now a plain div
-  # with id = "overview_panel" so shinyjs can target it directly.
-  # It starts visible (no hidden wrapper) since it is the default tab.
   div(id = "overview_panel",
       layout_sidebar(
         sidebar = sidebar(
           width = 280,
           style = "background-color: #ffffff; border-right: 1px solid #CBCFD1;",
           
-          div(
-            div(style = "background-color: #003087; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
-                "Stock"),
-            selectInput("species", NULL,
-                        choices = c("Atlantic Cod", "Haddock", "Summer Flounder", "Black Sea Bass", "Scup", "Bluefish"),
-                        selected = "Atlantic Cod")
+          # Stock selector — always visible; choices narrow to Cod/Haddock when NAA selected
+          div(id = "stock_selector",
+              div(style = "background-color: #003087; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
+                  "Stock"),
+              selectInput("species", NULL,
+                          choices = c("Atlantic Cod", "Haddock", "Summer Flounder",
+                                      "Black Sea Bass", "Scup", "Bluefish"),
+                          selected = "Atlantic Cod")
           ),
           
           div(
@@ -148,17 +162,25 @@ ui <- page_fillable(
             div(style = "background-color: #003087; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
                 "Data Metric"),
             selectInput("data_metric", NULL,
-                        choices = c("Catch-at-Length" = "length", "CPUE" = "cpue", "Average Weight" = "weight"),
+                        choices = c(
+                          "Catch-at-Length"  = "length",
+                          "CPUE"             = "cpue",
+                          "Average Weight"   = "weight",
+                          "Numbers-at-Age"   = "naa"
+                        ),
                         selected = "length")
           ),
           
-          div(
-            style = "margin-top: 15px;",
-            div(style = "background-color: #003087; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
-                "Fishing Mode"),
-            checkboxGroupInput("mode", NULL,
-                               choices = c("Shore", "Private/Rental Boat", "Party/Charter Boat"),
-                               selected = c("Shore", "Private/Rental Boat", "Party/Charter Boat"))
+          # Fishing Mode — hidden when NAA is selected
+          div(id = "fishing_mode_control",
+              div(
+                style = "margin-top: 15px;",
+                div(style = "background-color: #003087; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
+                    "Fishing Mode"),
+                checkboxGroupInput("mode", NULL,
+                                   choices  = c("Shore", "Private/Rental Boat", "Party/Charter Boat"),
+                                   selected = c("Shore", "Private/Rental Boat", "Party/Charter Boat"))
+              )
           ),
           
           conditionalPanel(
@@ -168,29 +190,45 @@ ui <- page_fillable(
               div(style = "background-color: #003087; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
                   "State"),
               checkboxGroupInput("state", NULL,
-                                 choices = c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC"),
+                                 choices  = c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC"),
                                  selected = c("MA", "RI", "CT", "NY", "NJ", "DE", "MD", "VA", "NC"))
             )
           ),
           
-          div(
-            style = "margin-top: 15px;",
-            div(style = "background-color: #003087; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
-                "Time Interval"),
-            radioButtons("time_interval", NULL,
-                         choices = c("Annual" = "annual", "By Wave (2-month periods)" = "wave"),
-                         selected = "annual"),
-            conditionalPanel(
-              condition = "input.time_interval == 'annual'",
-              checkboxGroupInput("years", "Select Years:", choices = 2020:2023, selected = 2020:2023)
-            ),
-            conditionalPanel(
-              condition = "input.time_interval == 'wave'",
-              selectInput("year_wave", "Select Year:", choices = 2020:2023, selected = 2023),
-              checkboxGroupInput("waves", "Select Waves:",
-                                 choices = setNames(1:6, paste("Wave", 1:6, c("(Jan-Feb)", "(Mar-Apr)", "(May-Jun)", "(Jul-Aug)", "(Sep-Oct)", "(Nov-Dec)"))),
-                                 selected = 1:6)
-            )
+          # Time Interval section — label always shown; contents swap
+          div(id = "time_interval_control",
+              div(
+                style = "margin-top: 15px;",
+                div(style = "background-color: #003087; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
+                    "Time Interval"),
+                
+                # Standard options (Annual / By Wave) — shown when metric != naa
+                div(id = "time_standard",
+                    radioButtons("time_interval", NULL,
+                                 choices  = c("Annual" = "annual", "By Wave (2-month periods)" = "wave"),
+                                 selected = "annual"),
+                    conditionalPanel(
+                      condition = "input.time_interval == 'annual'",
+                      checkboxGroupInput("years", "Select Years:", choices = 2020:2023, selected = 2020:2023)
+                    ),
+                    conditionalPanel(
+                      condition = "input.time_interval == 'wave'",
+                      selectInput("year_wave", "Select Year:", choices = 2020:2023, selected = 2023),
+                      checkboxGroupInput("waves", "Select Waves:",
+                                         choices  = setNames(1:6, paste("Wave", 1:6, c("(Jan-Feb)", "(Mar-Apr)", "(May-Jun)", "(Jul-Aug)", "(Sep-Oct)", "(Nov-Dec)"))),
+                                         selected = 1:6)
+                    )
+                ),
+                
+                # Historical / Projected — shown only when metric == naa; starts hidden
+                shinyjs::hidden(
+                  div(id = "time_naa",
+                      radioButtons("naa_period", NULL,
+                                   choices  = c("Historical" = "historical", "Projected" = "projected"),
+                                   selected = "historical")
+                  )
+                )
+              )
           )
         ),
         
@@ -212,10 +250,6 @@ ui <- page_fillable(
       )
   ),
   
-  # CHANGE 2: Removed conditionalPanel wrapper entirely. Removed the extra
-  # nested shinyjs::hidden() that was inside it. The documentation panel is
-  # now a single div with id = "documentation_panel" wrapped in
-  # shinyjs::hidden() so it starts hidden but is fully bound on load.
   shinyjs::hidden(
     div(id = "documentation_panel",
         style = "padding: 30px;",
@@ -240,15 +274,13 @@ ui <- page_fillable(
                   style = "background-color: #003087; color: white; padding: 8px 12px; margin: -20px -15px 15px -15px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
                   "Data Metric"
                 ),
+                ## Add documentation link here
                 selectInput(
-                  "doc_metric",
-                  NULL,
-                  choices = c(
-                    "Catch-at-Length" = "length_doc"
-                  ),
-                  selected = "length_doc",
-                  width = "100%"
-                )
+                  "doc_metric", NULL,
+                  choices  = c("Catch-at-Length" = "length_doc", "Numbers-at-age" = "naa_doc"),
+                  selected = c("length_doc", "naa_doc"),
+                  width    = "100%"
+                ),
               ),
               
               div(
@@ -263,12 +295,35 @@ ui <- page_fillable(
 )
 
 
+# ── Server ────────────────────────────────────────────────────────────────────
 server <- function(input, output, session) {
   
-  shiny::addResourcePath("docs", "docs")
+  shiny::addResourcePath("docs", here::here("docs"))
   
+  # ── React to metric switching ──────────────────────────────────────────────
+  observeEvent(input$data_metric, {
+    if (input$data_metric == "naa") {
+      # Narrow species choices to only those with NAA data
+      updateSelectInput(session, "species",
+                        choices  = c("Atlantic Cod", "Haddock"),
+                        selected = if (input$species %in% c("Atlantic Cod", "Haddock")) input$species else "Atlantic Cod")
+      shinyjs::hide("fishing_mode_control")
+      shinyjs::hide("time_standard")
+      shinyjs::show("time_naa")
+    } else {
+      updateSelectInput(session, "species",
+                        choices  = c("Atlantic Cod", "Haddock", "Summer Flounder",
+                                     "Black Sea Bass", "Scup", "Bluefish"),
+                        selected = input$species)
+      shinyjs::show("fishing_mode_control")
+      shinyjs::show("time_standard")
+      shinyjs::hide("time_naa")
+    }
+  })
+  
+  # ── Standard survey data ───────────────────────────────────────────────────
   filtered_data <- reactive({
-    req(input$species, input$mode)
+    req(input$data_metric != "naa", input$species, input$mode)
     
     data <- fish_data %>%
       filter(species == input$species, mode %in% input$mode)
@@ -280,83 +335,209 @@ server <- function(input, output, session) {
       req(input$year_wave, input$waves)
       data <- data %>% filter(year == as.numeric(input$year_wave), wave %in% as.numeric(input$waves))
     }
-    
     data
   })
   
-  output$plot_title <- renderText({
-    metric_label <- switch(input$data_metric,
-                           "length" = "Catch-at-Length",
-                           "cpue"   = "CPUE (fish per trip)",
-                           "weight" = "Average Weight (kg)")
-    paste(input$species, "-", metric_label)
+  stock_abbrev <- reactive({
+    switch(input$species,
+           "Atlantic Cod" = "WGOM",
+           "Haddock"      = "GOM"
+    )
+  })
+  # ── NAA data selector ─────────────────────────────────────────────────────
+  filtered_naa <- reactive({
+    req(input$data_metric == "naa", input$species, input$naa_period)
+    
+    key <- if (input$species == "Atlantic Cod") {
+      if (input$naa_period == "historical") "cod_historical" else "cod_projected"
+    } else {
+      if (input$naa_period == "historical") "hadd_historical" else "hadd_projected"
+    }
+    naa_data[[key]]
   })
   
+  # ── Plot title ────────────────────────────────────────────────────────────
+  output$plot_title <- renderText({
+    if (input$data_metric == "naa") {
+      req(input$species, input$naa_period)
+      period_label <- ifelse(input$naa_period == "historical", "Historical", "Projected")
+      paste(paste0( stock_abbrev()), input$species, "\u2014 Numbers-at-Age,", period_label)
+    } else {
+      metric_label <- switch(input$data_metric,
+                             "length" = "Catch-at-Length",
+                             "cpue"   = "CPUE (fish per trip)",
+                             "weight" = "Average Weight (kg)")
+      paste(input$species, "-", metric_label)
+    }
+  })
+  
+  # ── Main plot ─────────────────────────────────────────────────────────────
   plot_obj <- reactive({
-    req(filtered_data())
-    library(ggplot2)
     
-    time_var   <- if (input$time_interval == "annual") "year" else "wave"
-    time_label <- if (input$time_interval == "annual") "Year" else "Wave"
-    
-    metric_name <- switch(input$data_metric,
-                          "length" = "catch_count",
-                          "cpue"   = "cpue",
-                          "weight" = "weight_kg")
-    
-    x_label <- switch(input$data_metric,
-                      "length" = "Total Catch Count",
-                      "cpue"   = "CPUE (fish per trip)",
-                      "weight" = "Average Weight (kg)")
-    
-    plot_data <- filtered_data() %>% dplyr::filter(metric == metric_name)
-    max_time  <- max(plot_data[[time_var]], na.rm = TRUE)
-    max_data  <- plot_data %>% dplyr::filter(.data[[time_var]] == max_time)
-    max_mean  <- mean(max_data$value, na.rm = TRUE)
-    
-    g <- ggplot2::ggplot(max_data, ggplot2::aes(x = value)) +
-      ggplot2::geom_histogram(ggplot2::aes(y = ..density..), bins = 30,
-                              fill = "#5EB6D9", color = "#0085CA") +
-      ggplot2::geom_density(color = "red", fill = NA, size = 0.5) +
-      ggplot2::geom_vline(xintercept = max_mean, linetype = "dashed", size = 1) +
-      ggplot2::labs(x = x_label, y = "Density",
-                    title = paste("Distribution for", x_label, time_label, max_time)) +
-      ggplot2::theme_minimal()
-    
-    ggplotly(g)
+    if (input$data_metric == "naa") {
+      req(filtered_naa())
+      df <- filtered_naa()
+      
+      if (input$naa_period == "historical") {
+        # Historical: one line per year, age on x-axis
+        n_years     <- length(unique(tail(sort(unique(df$year)), 5)))
+        year_colors <- colorRampPalette(c("#C6E6F0", "#0085CA", "#003087"))(n_years)
+        
+        plot_data <- df %>% mutate(year = factor(year, levels = tail(sort(unique(df$year)), 5))) %>%
+          filter(year %in% tail(sort(unique(df$year)), 5))
+        
+        g <- ggplot(plot_data, aes(x = age, y = naa, color = year, group = year)) +
+          geom_line(linewidth = 0.7, alpha = 0.8) +
+          geom_point(size = 1.5, alpha = 0.8) +
+          scale_color_manual(values = year_colors, name = "Year") +
+          scale_x_continuous(breaks = sort(unique(df$age)),
+                             labels = paste0("Age ", sort(unique(df$age)))) +
+          scale_y_continuous(labels = scales::comma) +
+          labs(x = "Age", y = "Number of Individuals") +
+          theme_minimal(base_size = 12) +
+          theme(legend.position = "right",
+                axis.text.x = element_text(angle = 45, hjust = 1))
+        
+      } else {
+        # Projected: median line + 80% uncertainty ribbon, age on x-axis
+        plot_data <- df %>%
+          group_by(age) %>%
+          summarise(
+            median_naa = median(naa, na.rm = TRUE),
+            lo80       = quantile(naa, 0.10, na.rm = TRUE),
+            hi80       = quantile(naa, 0.90, na.rm = TRUE),
+            .groups = "drop"
+          )
+        
+        g <- ggplot(plot_data, aes(x = age)) +
+          geom_ribbon(aes(ymin = lo80, ymax = hi80), fill = "#5EB6D9", alpha = 0.3) +
+          geom_line(aes(y = median_naa), color = "#003087", linewidth = 1) +
+          geom_point(aes(y = median_naa), color = "#003087", size = 2.5) +
+          scale_x_continuous(breaks = sort(unique(df$age)),
+                             labels = paste0("Age ", sort(unique(df$age)))) +
+          scale_y_continuous(labels = scales::comma) +
+          labs(x = "Age", y = "Numbers of Individuals",
+               caption = "Line = median across 500 replicates; shaded band = 80% interval") +
+          theme_minimal(base_size = 12) +
+          theme(axis.text.x = element_text(angle = 45, hjust = 1))
+      }
+      
+      ggplotly(g) %>%
+        plotly::layout(legend = list(title = list(text = "Year")))
+      
+    } else {
+      req(filtered_data())
+      
+      time_var   <- if (input$time_interval == "annual") "year" else "wave"
+      time_label <- if (input$time_interval == "annual") "Year" else "Wave"
+      
+      metric_name <- switch(input$data_metric,
+                            "length" = "catch_count",
+                            "cpue"   = "cpue",
+                            "weight" = "weight_kg")
+      
+      x_label <- switch(input$data_metric,
+                        "length" = "Total Catch Count",
+                        "cpue"   = "CPUE (fish per trip)",
+                        "weight" = "Average Weight (kg)")
+      
+      plot_data <- filtered_data() %>% dplyr::filter(metric == metric_name)
+      max_time  <- max(plot_data[[time_var]], na.rm = TRUE)
+      max_data  <- plot_data %>% dplyr::filter(.data[[time_var]] == max_time)
+      max_mean  <- mean(max_data$value, na.rm = TRUE)
+      
+      g <- ggplot(max_data, aes(x = value)) +
+        geom_histogram(aes(y = after_stat(density)), bins = 30,
+                       fill = "#5EB6D9", color = "#0085CA") +
+        geom_density(color = "red", fill = NA, linewidth = 0.5) +
+        geom_vline(xintercept = max_mean, linetype = "dashed", linewidth = 1) +
+        labs(x = x_label, y = "Density",
+             title = paste("Distribution for", x_label, time_label, max_time)) +
+        theme_minimal()
+      
+      ggplotly(g)
+    }
   })
   
   output$main_plot <- renderPlotly({ plot_obj() })
   
+  # ── Summary table ─────────────────────────────────────────────────────────
   output$summary_table <- renderTable({
-    metric_name <- switch(input$data_metric,
-                          "length" = "catch_count",
-                          "cpue"   = "cpue",
-                          "weight" = "weight_kg")
-    time_var <- if (input$time_interval == "annual") "year" else "wave"
-    
-    filtered_data() %>%
-      filter(metric == metric_name) %>%
-      group_by(mode, .data[[time_var]]) %>%
-      summarise(Median = round(median(value, na.rm = TRUE), 2),
-                Q25    = round(quantile(value, 0.25, na.rm = TRUE), 2),
-                Q75    = round(quantile(value, 0.75, na.rm = TRUE), 2),
-                N      = n(), .groups = "drop") %>%
-      rename(!!time_var := .data[[time_var]])
+    if (input$data_metric == "naa") {
+      req(filtered_naa())
+      df <- filtered_naa()
+      
+      if (input$naa_period == "historical") {
+        df %>%
+          group_by(Year = as.integer(year)) %>%
+          summarise(
+            `Total NAA`  = scales::comma(round(sum(naa, na.rm = TRUE), 0)),
+            `Age 1`      = scales::comma(round(sum(naa[age == 1], na.rm = TRUE), 0)),
+            `Age 2`      = scales::comma(round(sum(naa[age == 2], na.rm = TRUE), 0)),
+            `Age 3`      = scales::comma(round(sum(naa[age == 3], na.rm = TRUE), 0)),
+            `Age 4`      = scales::comma(round(sum(naa[age == 4], na.rm = TRUE), 0)),
+            `Age 5`      = scales::comma(round(sum(naa[age == 5], na.rm = TRUE), 0)),
+            `Age 6`      = scales::comma(round(sum(naa[age == 6], na.rm = TRUE), 0)),
+            `Age 7`      = scales::comma(round(sum(naa[age == 7], na.rm = TRUE), 0)),
+            `Age 8`      = scales::comma(round(sum(naa[age == 8], na.rm = TRUE), 0)),
+            `Age 9`      = scales::comma(round(sum(naa[age == 9], na.rm = TRUE), 0)),
+            .groups = "drop"
+          )
+      } else {
+        df %>%
+          group_by(Year = as.integer(year), age) %>%
+          summarise(median_naa = median(naa, na.rm = TRUE), .groups = "drop") %>%
+          group_by(Year) %>%
+          summarise(
+            `Median Total NAA` = scales::comma(round(sum(median_naa), 0)),
+            `Median Age 1`     = scales::comma(round(sum(median_naa[age == 1]), 0)),
+            `Median Age 2`     = scales::comma(round(sum(median_naa[age == 2]), 0)),
+            `Median Age 3`     = scales::comma(round(sum(median_naa[age == 3]), 0)),
+            `Median Age 4`     = scales::comma(round(sum(median_naa[age == 4]), 0)),
+            `Median Age 5`     = scales::comma(round(sum(median_naa[age == 5]), 0)),
+            `Median Age 6`     = scales::comma(round(sum(median_naa[age == 6]), 0)),
+            `Median Age 7`     = scales::comma(round(sum(median_naa[age == 7]), 0)),
+            `Median Age 8`     = scales::comma(round(sum(median_naa[age == 8]), 0)),
+            `Median Age 9`     = scales::comma(round(sum(median_naa[age == 9]), 0)),
+            .groups = "drop"
+          )
+      }
+    } else {
+      metric_name <- switch(input$data_metric,
+                            "length" = "catch_count",
+                            "cpue"   = "cpue",
+                            "weight" = "weight_kg")
+      time_var <- if (input$time_interval == "annual") "year" else "wave"
+      
+      filtered_data() %>%
+        filter(metric == metric_name) %>%
+        group_by(mode, .data[[time_var]]) %>%
+        summarise(Median = round(median(value, na.rm = TRUE), 2),
+                  Q25    = round(quantile(value, 0.25, na.rm = TRUE), 2),
+                  Q75    = round(quantile(value, 0.75, na.rm = TRUE), 2),
+                  N      = n(), .groups = "drop") %>%
+        rename(!!time_var := .data[[time_var]])
+    }
   })
   
+  # ── Downloads ─────────────────────────────────────────────────────────────
   output$download_data <- downloadHandler(
-    filename = function() paste0("fishing_data_", gsub(" ", "_", input$species), "_", Sys.Date(), ".csv"),
-    content  = function(file) write.csv(filtered_data(), file, row.names = FALSE)
+    filename = function() paste0("data_", gsub(" ", "_", input$species), "_", Sys.Date(), ".csv"),
+    content  = function(file) {
+      if (input$data_metric == "naa") {
+        write.csv(filtered_naa(), file, row.names = FALSE)
+      } else {
+        write.csv(filtered_data(), file, row.names = FALSE)
+      }
+    }
   )
   
   output$download_plot <- downloadHandler(
-    filename = function() paste0("fishing_plot_", gsub(" ", "_", input$species), "_", Sys.Date(), ".png"),
+    filename = function() paste0("plot_", gsub(" ", "_", input$species), "_", Sys.Date(), ".png"),
     content  = function(file) plotly::save_image(plot_obj(), file)
   )
   
-  # CHANGE 3: nav_overview observer — correctly shows overview, hides docs,
-  # fires resize so Plotly recalculates its dimensions after becoming visible.
+  # ── Nav observers ─────────────────────────────────────────────────────────
   observeEvent(input$nav_overview, {
     shinyjs::show("overview_panel")
     shinyjs::hide("documentation_panel")
@@ -368,9 +549,6 @@ server <- function(input, output, session) {
     ")
   })
   
-  # CHANGE 4: nav_documentation observer — was a copy-paste of nav_overview
-  # so it was showing overview and hiding docs (the opposite of what it should
-  # do). Corrected to show docs and hide overview.
   observeEvent(input$nav_documentation, {
     shinyjs::hide("overview_panel")
     shinyjs::show("documentation_panel")
@@ -382,19 +560,14 @@ server <- function(input, output, session) {
   })
   
   output$documentation_content <- renderUI({
-    
     doc_path <- switch(input$doc_metric,
-                       "length_doc" = "docs/catch-at-length.html"
-    )
-    
+                       "length_doc" = "docs/catch-at-length.html", 
+                       "naa_doc" = "docs/NAA.html")
     tags$iframe(
-      src    = doc_path,
-      style  = "width: 100%; height: 800px; border: none;",
+      src      = doc_path,
+      style    = "width: 100%; height: 800px; border: none;",
       seamless = NA
     )
-    
-    # rmd_file <- switch(input$doc_metric, "length_doc" = "docs/catch-at-length.html")
-    # includeHTML(rmd_file)
   })
 }
 
