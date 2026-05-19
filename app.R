@@ -55,10 +55,10 @@ pivot_naa_long <- function(df) {
 }
 
 naa_data <- list(
-  cod_historical  = pivot_naa_long(readRDS(here::here("data", "main", "WGOM_Cod_historical_NAA_from_2024Assessment_2026-05-15.Rds"))),
-  cod_projected   = pivot_naa_long(readRDS(here::here("data", "main", "WGOM_Cod_projected_NAA_from_2024Assessment_2026-05-15.Rds"))),
-  hadd_historical = pivot_naa_long(readRDS(here::here("data", "main", "GOM_Haddock_historical_NAA_2024Assessment_2026-05-15.Rds"))),
-  hadd_projected  = pivot_naa_long(readRDS(here::here("data", "main", "GOM_Haddock_projected_NAA_2024Assessment_2026-05-15.Rds")))
+  cod_historical  = pivot_naa_long(readRDS(here::here("data", "main", "WGOM_Cod_historical_NAA_from_2024Assessment_2026-05-19.Rds"))),
+  cod_projected   = pivot_naa_long(readRDS(here::here("data", "main", "WGOM_Cod_projected_NAA_from_2024Assessment_2026-05-19.Rds"))),
+  hadd_historical = pivot_naa_long(readRDS(here::here("data", "main", "GOM_Haddock_historical_NAA_2024Assessment_2026-05-19.Rds"))),
+  hadd_projected  = pivot_naa_long(readRDS(here::here("data", "main", "GOM_Haddock_projected_NAA_2024Assessment_2026-05-19.Rds")))
 )
 
 # ── UI ────────────────────────────────────────────────────────────────────────
