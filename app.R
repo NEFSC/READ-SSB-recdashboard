@@ -385,7 +385,7 @@ server <- function(input, output, session) {
           scale_x_continuous(breaks = sort(unique(df$age)),
                              labels = paste0("Age ", sort(unique(df$age)))) +
           scale_y_continuous(labels = scales::comma) +
-          labs(x = "Age", y = "Numbers at Age (Individuals)") +
+          labs(x = "Age", y = "Number of Individuals") +
           theme_minimal(base_size = 12) +
           theme(legend.position = "right",
                 axis.text.x = element_text(angle = 45, hjust = 1))
@@ -408,7 +408,7 @@ server <- function(input, output, session) {
           scale_x_continuous(breaks = sort(unique(df$age)),
                              labels = paste0("Age ", sort(unique(df$age)))) +
           scale_y_continuous(labels = scales::comma) +
-          labs(x = "Age", y = "Numbers at Age (Individuals)",
+          labs(x = "Age", y = "Numbers of Individuals",
                caption = "Line = median across 500 replicates; shaded band = 80% interval") +
           theme_minimal(base_size = 12) +
           theme(axis.text.x = element_text(angle = 45, hjust = 1))
