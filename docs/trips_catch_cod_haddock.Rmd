@@ -1,0 +1,31 @@
+# WGOM Atlantic Cod and Haddock Trips and Catch
+
+**Description**: 
+
+Historical directed trips and catch for Western Gulf of Maine Cod and Haddock.
+
+**Years available**: 
+
+Trips and catch are provided for 2024 and 2025.  
+
+
+## Methods
+
+### Data sources
+
+Data are from the Marine Recreational Information Program  ([MRIP](https://www.fisheries.noaa.gov/insight/marine-recreational-information-program)).
+
+
+### Data extraction 
+
+Data were obtained using functions in the [mriptacklebox](https://github.com/NEFSC/READ-PDB-mriptacklebox) package that was created to process MRIP microdata. 
+
+### Data analysis/Processing
+
+[Data processing code](https://github.com/NEFSC/READ-SSB-recdashboard/blob/T1_Rec_Catch_Estimates/stored_scripts/groundfish_trips_catch.R) can be seen in the READ-SSB-recdashboard repository. 
+
+The code builds a long-format dataframe of directed trip counts and catch (harvest, discards, total) for Atlantic Cod and Haddock in the Western Gulf of Maine (WGOM).
+
+We pull trips where Cod or Haddock were caught or stated as the primary target by the angler. For trips, we ensure that trips that caught or targeted both Cod and Haddock are not double-counted. While catch is species specific, trips are not and represent a combined measure of Cod and/or Haddock trips. 
+
+For catch, we provide harvest (landed + unobserved), discards, and catch (harvest + discards) in numbers of fish. 
