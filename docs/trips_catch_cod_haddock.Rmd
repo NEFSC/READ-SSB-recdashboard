@@ -18,7 +18,7 @@ Data are from the Marine Recreational Information Program  ([MRIP](https://www.f
 
 ### Data extraction 
 
-Data were obtained using functions in the [mriptacklebox](https://github.com/NEFSC/READ-PDB-mriptacklebox) package that was created to process MRIP microdata. 
+Data were obtained using functions in the [mriptacklebox](https://github.com/NEFSC/READ-PDB-mriptacklebox) package that was created by the Population Dynamics Branch at the NEFSC to process MRIP microdata. 
 
 ### Data analysis/Processing
 
