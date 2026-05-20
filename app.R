@@ -378,7 +378,8 @@ server <- function(input, output, session) {
     if (input$data_metric == "naa") {
       req(filtered_naa())
       df <- filtered_naa()
-      
+      # Assemble y axis caption
+      yaxis_caption<-glue("{df$metric[1]} ({df$units[1]})") 
       if (input$naa_period == "historical") {
         # Historical: one line per year, age on x-axis
         n_years     <- length(unique(tail(sort(unique(df$year)), 5)))
@@ -394,7 +395,7 @@ server <- function(input, output, session) {
           scale_x_continuous(breaks = sort(unique(df$age)),
                              labels = paste0("Age ", sort(unique(df$age)))) +
           scale_y_continuous(labels = scales::comma) +
-          labs(x = "Age", y = "Number of Individuals") +
+          labs(x = "Age", y = yaxis_caption) +
           theme_minimal(base_size = 12) +
           theme(legend.position = "right",
                 axis.text.x = element_text(angle = 45, hjust = 1))
@@ -410,7 +411,7 @@ server <- function(input, output, session) {
           geom_boxplot(fill = "#5EB6D9", color = "#003087", outlier.fill = "#5EB6D9",
                        outlier.alpha = 0.1, outlier.color = "transparent") +
           scale_y_continuous(labels = scales::comma) +
-          labs(x = "Age", y = "Numbers of Individuals",
+          labs(x = "Age", y = yaxis_caption,
                caption = "Boxes show distribution across 500 replicates") +
           
           theme(axis.text.x = element_text(angle = 45, hjust = 1))
