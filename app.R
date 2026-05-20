@@ -57,8 +57,8 @@ pivot_naa_long <- function(df) {
 naa_data <- list(
   cod_historical  = pivot_naa_long(readRDS(here::here("data", "main", "WGOM_Cod_historical_NAA_from_2024Assessment_2026-05-19.Rds"))),
   cod_projected   = pivot_naa_long(readRDS(here::here("data", "main", "WGOM_Cod_projected_NAA_from_2024Assessment_2026-05-19.Rds"))),
-  hadd_historical = pivot_naa_long(readRDS(here::here("data", "main", "GOM_Haddock_historical_NAA_2024Assessment_2026-05-19.Rds"))),
-  hadd_projected  = pivot_naa_long(readRDS(here::here("data", "main", "GOM_Haddock_projected_NAA_2024Assessment_2026-05-19.Rds")))
+  haddock_historical = pivot_naa_long(readRDS(here::here("data", "main", "GOM_Haddock_historical_NAA_2024Assessment_2026-05-19.Rds"))),
+  haddock_projected  = pivot_naa_long(readRDS(here::here("data", "main", "GOM_Haddock_projected_NAA_2024Assessment_2026-05-19.Rds")))
 )
 
 # ── UI ────────────────────────────────────────────────────────────────────────
@@ -278,8 +278,8 @@ ui <- page_fillable(
                 selectInput(
                   "doc_metric", NULL,
                   choices  = c("Catch-at-Length" = "length_doc", "Cod Numbers-at-age" = "naa_cod_doc", 
-                               "Haddock Numbers-at-age" = "naa_hadd_doc"),
-                  selected = c("length_doc", "naa_cod_doc", "naa_hadd_doc"),
+                               "Haddock Numbers-at-age" = "naa_haddock_doc"),
+                  selected = c("length_doc", "naa_cod_doc", "naa_haddock_doc"),
                   width    = "100%"
                 ),
               ),
@@ -351,9 +351,9 @@ server <- function(input, output, session) {
     
     key <- if (input$species == "Atlantic Cod") {
       if (input$naa_period == "historical") "cod_historical" else "cod_projected"
-    } else {
-      if (input$naa_period == "historical") "hadd_historical" else "hadd_projected"
-    }
+    } else if(input$species == "Haddock") {
+      if (input$naa_period == "historical") "haddock_historical" else "haddock_projected"
+    } 
     naa_data[[key]]
   })
   
@@ -556,7 +556,7 @@ server <- function(input, output, session) {
     doc_path <- switch(input$doc_metric,
                        "length_doc" = "docs/catch-at-length.html", 
                        "naa_cod_doc" = "docs/NAA_cod.html", 
-                       "naa_hadd_doc" = "docs/NAA_haddock.html")
+                       "naa_hadddock_doc" = "docs/NAA_haddock.html")
     tags$iframe(
       src      = doc_path,
       style    = "width: 100%; height: 800px; border: none;",
