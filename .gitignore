@@ -1,2 +1,8 @@
-
+.Rhistory
 .Rproj.user
+.RData
+/data/*
+/cod_haddock/*
+/.secrets
+.RdataTmp
+.RDataTmp1
