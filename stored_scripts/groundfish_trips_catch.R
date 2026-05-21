@@ -1,6 +1,8 @@
-######  Directed trips and catch for WGOM Cod and Haddock  ######
-# Purpose: Builds a long-format data frame of directed trip counts and catch
-# (harvest, discards, total) for Atlantic Cod and Haddock in the Western Gulf
+# Name: groundfish_trips_catch.R
+# Inputs: mrip_statistics_{file_date}.Rds, MRIP_COD_ALL_SITE_LIST.csv
+# Outputs: rec_trips_catch
+# Description: Builds a long-format data frame of directed trip counts and catch 
+# (harvest, discards, total) for Atlantic Cod and Haddock in the Western Gulf 
 # of Maine (WGOM), sourced from MRIP trip-level microdata.
 # Output object: cod_haddock
 # General strategy:
@@ -44,7 +46,7 @@ run_date<-as.Date(file_date)
 ######  Read in Data  ######
 #######################################################################  
 
-
+# NOTE: glue and here are used to dynamically locate the file. Ensure the raw folder exists.
 filename <- here("data","raw",glue("mrip_statistics_{file_date}.Rds"))
 mrip_statistics <- read_rds(filename) # comes from get_mrip(), which returned a named list with elements: trip, catch, size, size_b2
 
@@ -68,8 +70,8 @@ catch[] <- lapply(catch, function(x) if(is.character(x)) tolower(x) else x)
 #######################################################################  
 
 #### Cod effort ####
-# set typ to pull trips where cod were stated as primary target OR were landed-A,
-# unobserved-B1, or discarded-B2
+# typ = c('PRIM1', 'A', 'B1', 'B2') captures directed trips where cod was 
+# the primary target OR was caught (kept, unobserved dead, or released)
 cod_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE', 
                                   'STRAT_ID', 'PSU_ID', 'ID_CODE', 'LEADER'),
                       microdata = mrip_statistics,
@@ -87,10 +89,11 @@ cod_effort <- subset(cod_effort, select = -c(dir_trip_typ, hrsf)) # drop: direct
 #######################################################################  
 
 #### Cod Catch ####
+# estimate_var=FALSE speeds up processing by skipping variance/SE/CV calculation
 cod_catch <- mrip_catch(comname = common_name1, 
                         dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'STRAT_ID', 
                                 'PSU_ID', 'ID_CODE', 'WP_INT'), 
-                        microdata = mrip_statistics, estimate_var = FALSE) # estimate_var=FALSE skips variance estimation
+                        microdata = mrip_statistics, estimate_var = FALSE) 
 
 ## pull out estimates
 cod_catch <- cod_catch$estimates%>%
@@ -205,7 +208,8 @@ cod_hadd_all_w <- cod_hadd_all %>% spread(key = variable, value = value)
 
 
 ## Deal with Group catch
-# Label trips based on species caught (this code until drop duplicates isn't necessary here)
+# Label trips based on species caught 
+# NOTE: doing this before distinct() isn't strictly necessary but is safe.
 trip_species_composition <- cod_hadd_all_w %>%
   group_by(id_code) %>%
   summarize(
@@ -225,7 +229,8 @@ trip_species_composition <- trip_species_composition %>%
 cod_hadd_all_w <- left_join(cod_hadd_all_w, trip_species_composition, by = c("id_code"))
 ##################################################################################
 ## Drop duplicate cod AND haddock trips
-# Trips appearing for both species (cod_and_hadd) would be double-counted; keep first row only
+# distinct() keeps the first occurrence of an id_code.
+# This prevents double-counting effort for trips that caught/targeted both species.
 ##################################################################################
 
 cod_hadd_all_w <- cod_hadd_all_w %>%
@@ -240,6 +245,7 @@ cod_site_list <- cod_site_list %>% filter(state %in% c("MA", "ME")) # NH handled
 cod_site_list <- subset(cod_site_list, select = c(state, intsite, nmfs_stock_area, nmfs_stat_area))
 
 # Take 1st unique obs in the group 
+# Sorting guarantees consistent retention during distinct() deduplication.
 cod_site_list <- cod_site_list[order(cod_site_list$intsite, cod_site_list$nmfs_stock_area), ]
 cod_site_list <- cod_site_list %>% distinct(nmfs_stock_area, intsite, nmfs_stat_area, state, .keep_all = TRUE)
 
@@ -267,7 +273,7 @@ cod_hadd_all_w <- cod_hadd_all_w %>%
   filter(wgom == 1)
 
 
-# Remove clutter in environment
+# Remove clutter in environment.  Keeping the workspace clean is good practice for memory, but these are commented out. 
 #rm(cod_catch, cod_effort, cod_effort_catch, hadd_catch, hadd_effort, hadd_effort_catch,
 #   cod_hadd_all, cod_site_list, trip_species_composition)
 
@@ -388,6 +394,7 @@ cod_hadd_all_w2 <- cod_hadd_all_w2 %>%
             catch = sum(tot_cat, na.rm = TRUE))
 
 #Long out the catch variables, make metric column,  reorder columns
+# gather() pivots data back to long, creating separate rows for harvest/discards/catch estimates
 cod_hadd_catch <- cod_hadd_all_w2 %>% 
   gather(key = "metric", value = "value", harvest, discards, catch, na.rm = T)
 

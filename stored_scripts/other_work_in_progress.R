@@ -1,8 +1,15 @@
+# Name: other_work_in_progress.R
+# Inputs: cod_hadd_trips, cod_hadd_all_w2 (from groundfish_trips_catch.R), mrip_statistics_2026-04-10.Rds
+# Outputs: Formatting tables (fy_trips, w5_trips, fy_trips_mode)
+# Dependencies: None
+# Description: Calculates estimates by fishing year using outputs from groundfish_trips_catch.R. 
+# Includes validation checks against external estimates and outlines catch-per-trip development.
+
 ## separating out lower half of groundfish_trips_catch.R
 ## This file (messily) calculates estimates by fishing year and has some notes and
 # some to-do items for Tess
 
-# First need to run groundfish_trips_catch.R
+# NOTE: Dependency. First need to run groundfish_trips_catch.R to instantiate data objects.
 
 
 
@@ -13,11 +20,15 @@
 # 4/10 pull is here on Tess's machine
 # confirm that the numbers for this pull for FY2024 match what lou has. 
 # If we both pulled MRIP on same day and ran our respective code, it should match
+
+
+# NOTE: Hardcoded path limits reproducibility. Prefer here::here().
 mrip_statistics <- readRDS("~/GitHub/mrip_statistics_2026-04-10.Rds")
 file_date<-"2026-04-10"
 
 
 # FY variables
+# Define Fishing Year (FY) boundaries. FY starts May 1 (Wave 3).
 cod_hadd_trips1 <- cod_hadd_trips %>%
   mutate(fy2024 = case_when(
     year == 2024 & wave >= 3 ~ 1,
@@ -25,6 +36,7 @@ cod_hadd_trips1 <- cod_hadd_trips %>%
     TRUE ~ 0 
   ))
 
+# Proxies FY2025 by replacing missing wave 2 with 2024 wave 2, and missing wave 6 with 2024 wave 6.
 cod_hadd_trips1 <- cod_hadd_trips1 %>%
   mutate(fy2025_imp = case_when(
     year == 2024 & wave == 2 ~ 1,
@@ -38,6 +50,7 @@ cod_hadd_trips1 <- cod_hadd_trips1 %>%
 sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2024 == 1], na.rm = TRUE)
 sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2025_imp == 1], na.rm = TRUE)
 
+# Subset explicitly to current available 2024/2025 waves to compute 1:1 comparisons
 cod_hadd_trips1 <- cod_hadd_trips1 %>%
   mutate(fy2024_current = case_when(
     year == 2024 & wave == 3 ~ 1,
@@ -57,6 +70,7 @@ cod_hadd_trips1 <- cod_hadd_trips1 %>%
 
 
 ##### Top row of table 1
+# Calculate Year on Year percentage difference for imputed FY and current known waves
 pct_diff <- (((sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2025_imp == 1], na.rm = TRUE)) - 
                 (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2024 == 1], na.rm = TRUE))) /  
                (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2024 == 1], na.rm = TRUE))) * 100
@@ -71,6 +85,7 @@ fy2024 <- (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2024 == 1], na.rm = TRUE)
 fy2025_imp <- (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2025_imp == 1], na.rm = TRUE))
 fy2024_current <- (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2024_current == 1], na.rm = TRUE))
 fy2025_current <- (sum(cod_hadd_trips1$value[cod_hadd_trips1$fy2025_current == 1], na.rm = TRUE))
+# Format numeric aggregates as strings with commas
 fy2024 <- formatC(fy2024, format = "f", big.mark = ",", digits = 0)
 fy2025_imp <- formatC(fy2025_imp, format = "f", big.mark = ",", digits = 0)
 fy2024_current <- formatC(fy2024_current, format = "f", big.mark = ",", digits = 0)
