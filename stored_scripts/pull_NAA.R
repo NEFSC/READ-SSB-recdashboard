@@ -33,11 +33,11 @@ readin<-FALSE
 # stubs of output save files
 # no wildcards, because googledrive doesn't like that
 # NOTE: These exact string stubs will be used for both regex matching and dynamic variable assignment
-CodProjectedNAA<-"WGOM_Cod_projected_NAA_from_2024Assessment"
-CodHistoricalNAA<-"WGOM_Cod_historical_NAA_from_2024Assessment"
+CodProjectedNAA<-"WGOM_Cod_projected_NAA"
+CodHistoricalNAA<-"WGOM_Cod_historical_NAA"
 
-HaddockProjectedNAA<-glue("GOM_Haddock_projected_NAA_2024Assessment")
-HaddockHistoricalNAA<-glue("GOM_Haddock_historical_NAA_2024Assessment")
+HaddockProjectedNAA<-glue("GOM_Haddock_projected_NAA")
+HaddockHistoricalNAA<-glue("GOM_Haddock_historical_NAA")
 
 files_to_get<-list(CodProjectedNAA,CodHistoricalNAA,HaddockProjectedNAA,HaddockHistoricalNAA)
 
