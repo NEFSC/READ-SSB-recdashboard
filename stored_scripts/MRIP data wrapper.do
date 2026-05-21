@@ -1,4 +1,11 @@
+/* Purpose -- pull data from the mrip directory to the local repo 
+Must be called by "compile GOM trips and catch.do"
 
+This exists in the groundfishRDM repo and was put into this one to facilitate testing.
+
+Eventually it should be removed, but we will keep it around for now.
+
+*/
 
 
 *This section only needs to be run once after new MRIP data enters the repo
