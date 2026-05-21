@@ -64,10 +64,10 @@ parse_metric_naa <- function(df) {
 
 
 naa_data <- list(
-  cod_historical  = parse_metric(readRDS(here::here("data", "main", "WGOM_Cod_historical_NAA_2026-05-21.Rds"))),
-  cod_projected   = parse_metric(readRDS(here::here("data", "main", "WGOM_Cod_projected_NAA_2026-05-21.Rds"))),
-  haddock_historical = parse_metric(readRDS(here::here("data", "main", "GOM_Haddock_historical_NAA_2026-05-21.Rds"))),
-  haddock_projected  = parse_metric(readRDS(here::here("data", "main", "GOM_Haddock_projected_NAA_2026-05-21.Rds")))
+  cod_historical  = parse_metric_naa(readRDS(here::here("data", "main", "WGOM_Cod_historical_NAA_2026-05-21.Rds"))),
+  cod_projected   = parse_metric_naa(readRDS(here::here("data", "main", "WGOM_Cod_projected_NAA_2026-05-21.Rds"))),
+  haddock_historical = parse_metric_naa(readRDS(here::here("data", "main", "GOM_Haddock_historical_NAA_2026-05-21.Rds"))),
+  haddock_projected  = parse_metric_naa(readRDS(here::here("data", "main", "GOM_Haddock_projected_NAA_2026-05-21.Rds")))
 )
 
 # ── UI ────────────────────────────────────────────────────────────────────────
