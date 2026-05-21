@@ -8,7 +8,7 @@ Simulated future numbers at age for Western Gulf of Maine Cod.
 
 **Years available**: 
 
-Mean historical numbers at age are provided through "this year."  
+Mean historical numbers at age are provided for the most recent 5 years.  
 
 Projected numbers at age are provided for the upcoming management year.
 

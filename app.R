@@ -53,12 +53,22 @@ pivot_naa_long <- function(df) {
                         values_to = "naa") %>%
     mutate(age = as.integer(sub("age", "", age)))
 }
+# Helper: parse the metric field to deal with NAA
+
+parse_metric_naa <- function(df) {
+  df %>%
+    mutate(age = as.integer(str_split_i(metric,pattern=" of Age " ,-1)),
+    metric_parsed = str_split_i(metric,pattern=" of Age " ,-2)     
+    )
+}
+
+
 
 naa_data <- list(
-  cod_historical  = pivot_naa_long(readRDS(here::here("data", "main", "WGOM_Cod_historical_NAA_from_2024Assessment_2026-05-19.Rds"))),
-  cod_projected   = pivot_naa_long(readRDS(here::here("data", "main", "WGOM_Cod_projected_NAA_from_2024Assessment_2026-05-19.Rds"))),
-  haddock_historical = pivot_naa_long(readRDS(here::here("data", "main", "GOM_Haddock_historical_NAA_2024Assessment_2026-05-19.Rds"))),
-  haddock_projected  = pivot_naa_long(readRDS(here::here("data", "main", "GOM_Haddock_projected_NAA_2024Assessment_2026-05-19.Rds")))
+  cod_historical  = parse_metric_naa(readRDS(here::here("data", "main", "WGOM_Cod_historical_NAA_2026-05-21.Rds"))),
+  cod_projected   = parse_metric_naa(readRDS(here::here("data", "main", "WGOM_Cod_projected_NAA_2026-05-21.Rds"))),
+  haddock_historical = parse_metric_naa(readRDS(here::here("data", "main", "GOM_Haddock_historical_NAA_2026-05-21.Rds"))),
+  haddock_projected  = parse_metric_naa(readRDS(here::here("data", "main", "GOM_Haddock_projected_NAA_2026-05-21.Rds")))
 )
 
 # ── UI ────────────────────────────────────────────────────────────────────────
@@ -379,7 +389,7 @@ server <- function(input, output, session) {
       req(filtered_naa())
       df <- filtered_naa()
       # Assemble y axis label
-      yaxis_label<-glue("{df$metric[1]} ({df$units[1]})") 
+      yaxis_label<-glue("{df$metric_parsed[1]} at Age ({df$units[1]})") 
       if (input$naa_period == "historical") {
         # Historical: one line per year, age on x-axis
         n_years     <- length(unique(tail(sort(unique(df$year)), 5)))
@@ -388,7 +398,7 @@ server <- function(input, output, session) {
         plot_data <- df %>% mutate(year = factor(year, levels = tail(sort(unique(df$year)), 5))) %>%
           filter(year %in% tail(sort(unique(df$year)), 5))
         
-        g <- ggplot(plot_data, aes(x = age, y = naa, color = year, group = year)) +
+        g <- ggplot(plot_data, aes(x = age, y = value, color = year, group = year)) +
           geom_line(linewidth = 0.7, alpha = 0.8) +
           geom_point(size = 1.5, alpha = 0.8) +
           scale_color_manual(values = year_colors, name = "Year") +
@@ -406,7 +416,7 @@ server <- function(input, output, session) {
           mutate(age = factor(paste0("Age ", age),
                               levels = paste0("Age ", sort(unique(df$age)))))
         
-        g <- ggplot(plot_data, aes(x = age, y = naa)) +
+        g <- ggplot(plot_data, aes(x = age, y = value)) +
           theme_minimal(base_size = 12) +
           geom_boxplot(fill = "#5EB6D9", color = "#003087", outlier.fill = "#5EB6D9",
                        outlier.alpha = 0.1, outlier.color = "transparent") +
@@ -466,21 +476,22 @@ server <- function(input, output, session) {
           group_by(Year = as.integer(year)) %>%
           summarise(
             
-            `Age 1`      = scales::comma(round(sum(naa[age == 1], na.rm = TRUE), 0)),
-            `Age 2`      = scales::comma(round(sum(naa[age == 2], na.rm = TRUE), 0)),
-            `Age 3`      = scales::comma(round(sum(naa[age == 3], na.rm = TRUE), 0)),
-            `Age 4`      = scales::comma(round(sum(naa[age == 4], na.rm = TRUE), 0)),
-            `Age 5`      = scales::comma(round(sum(naa[age == 5], na.rm = TRUE), 0)),
-            `Age 6`      = scales::comma(round(sum(naa[age == 6], na.rm = TRUE), 0)),
-            `Age 7`      = scales::comma(round(sum(naa[age == 7], na.rm = TRUE), 0)),
-            `Age 8`      = scales::comma(round(sum(naa[age == 8], na.rm = TRUE), 0)),
-            `Age 9`      = scales::comma(round(sum(naa[age == 9], na.rm = TRUE), 0)),
+            `Age 1`      = scales::comma(round(sum(value[age == 1], na.rm = TRUE), 0)),
+            `Age 2`      = scales::comma(round(sum(value[age == 2], na.rm = TRUE), 0)),
+            `Age 3`      = scales::comma(round(sum(value[age == 3], na.rm = TRUE), 0)),
+            `Age 4`      = scales::comma(round(sum(value[age == 4], na.rm = TRUE), 0)),
+            `Age 5`      = scales::comma(round(sum(value[age == 5], na.rm = TRUE), 0)),
+            `Age 6`      = scales::comma(round(sum(value[age == 6], na.rm = TRUE), 0)),
+            `Age 7`      = scales::comma(round(sum(value[age == 7], na.rm = TRUE), 0)),
+            `Age 8`      = scales::comma(round(sum(value[age == 8], na.rm = TRUE), 0)),
+            `Age 9`      = scales::comma(round(sum(value[age == 9], na.rm = TRUE), 0)),
             .groups = "drop"
-          )
+          ) %>% 
+          arrange(-Year)
       } else {
         df %>%
           group_by(Year = as.integer(year), age) %>%
-          summarise(median_naa = median(naa, na.rm = TRUE), .groups = "drop") %>%
+          summarise(median_naa = median(value, na.rm = TRUE), .groups = "drop") %>%
           group_by(Year) %>%
           summarise(
             
