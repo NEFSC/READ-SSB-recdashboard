@@ -3,6 +3,13 @@
 /* the "dashboard_path" global must be defined before running this code. The easiest way 
 is to do so in your stata profile.do that is executed at startup. It should point to the the root of the dashboard repository */
 
+/* this is a based on some of Lou's code and is intended to provide some intuition to getting the data and doing survey commands in stata. 
+
+This exists in the groundfishRDM repo and was put into the dashboard to facilitate testing and verify code works as intended.
+*/
+
+
+
 /* user written command dependencies
 
 ssc install xsvmat

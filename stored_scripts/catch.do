@@ -1,3 +1,11 @@
+/* Purpose -- compute catch of WGOM cod and gom haddock.
+
+This exists in the groundfishRDM repo and was put into the dashboard to facilitate testing and verify code works as intended
+Eventually it should be removed, but we will keep it around for now.
+
+*/
+
+
 
 ****************************
 * Catch of cod and haddock WGOM (model unit)
