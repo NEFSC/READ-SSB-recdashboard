@@ -53,6 +53,7 @@ pivot_naa_long <- function(df) {
                         values_to = "naa") %>%
     mutate(age = as.integer(sub("age", "", age)))
 }
+# Helper: parse the metric field to deal with NAA
 
 parse_metric_naa <- function(df) {
   df %>%
