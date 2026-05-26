@@ -36,4 +36,7 @@ WGOM trips are defined as any Maine or Massachusetts trips taken in statistical 
 
 Haddock stocks are assessed in different stock areas than Cod. Haddock are assessed in the Gulf of Maine (GOM), which corresponds to statistical areas 511, 512, 513, 514, and 515. Cod are assessed in the WGOM stock area (ie, statistical areas 513, 514, 515, 521, and 526). 
 
+![Northeast Atlantic Cod Statistical Areas with Stock Areas](stat_areas.jpg)
+<br>
+
 The dataframe created by this code limits trips (and catch) for both Cod and Haddock to the WGOM. No Haddock were caught in the GOM areas outside of the WGOM (511 and 512) in 2024 and 2025. Additionally, very few Haddock are caught in statistical areas 521 and 526 (892 fish caught there in FY2024).
