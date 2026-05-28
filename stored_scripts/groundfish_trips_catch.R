@@ -308,7 +308,7 @@ cod_hadd_trips <- cod_hadd_trips %>%
 
 
 
-###### CATCH and CATCH PER TRIP ###### 
+###### CATCH ###### 
 ## Wide out the catch variables 
 # Second wide pivot from cod_hadd_all — does NOT deduplicate by id_code,
 # so both cod and haddock rows survive for separate species-level catch totals
@@ -386,10 +386,12 @@ cod_hadd_all_w2$year <- as.numeric(cod_hadd_all_w2$year)
 
 
 # Sum catch components by species within each stratum cell
-# harvest = kept (A); discards = released (release/B1+B2); catch = tot_cat (harvest + discards)
+# harvest = kept + unobserved (A+B1); discards = released alive (B2); catch = tot_cat (harvest + discards)
+# harvest is A+B1 although the mrip data calls it 'landing'. Below we rename landing as harvest.
+# B1 'unobserved' is dead fish not available to the interviewer (ie, dead discards, fileted, given away)
 cod_hadd_all_w2 <- cod_hadd_all_w2 %>%
   group_by(fishery, common, species_itis, stock_abbrev, state, mode, data_version, year, wave, units) %>%
-  summarise(harvest = sum(harvest, na.rm = TRUE),
+  summarise(harvest = sum(landing, na.rm = TRUE),
             discards = sum(release, na.rm = TRUE),
             catch = sum(tot_cat, na.rm = TRUE))
 
