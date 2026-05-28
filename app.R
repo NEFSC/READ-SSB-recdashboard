@@ -58,7 +58,7 @@ pivot_naa_long <- function(df) {
 parse_metric_naa <- function(df) {
   df %>%
     mutate(age = as.integer(str_split_i(metric,pattern=" of Age " ,-1)),
-    metric_parsed = str_split_i(metric,pattern=" of Age " ,-2)     
+           metric_parsed = str_split_i(metric,pattern=" of Age " ,-2)     
     )
 }
 
@@ -288,8 +288,9 @@ ui <- page_fillable(
                 selectInput(
                   "doc_metric", NULL,
                   choices  = c("Catch-at-Length" = "length_doc", "Cod Numbers-at-age" = "naa_cod_doc", 
-                               "Haddock Numbers-at-age" = "naa_haddock_doc"),
-                  selected = c("length_doc", "naa_cod_doc", "naa_haddock_doc"),
+                               "Haddock Numbers-at-age" = "naa_haddock_doc", 
+                               "Directed Trips and Catch" = "trips_catch_cod_haddock_doc"),
+                  selected = c("length_doc", "naa_cod_doc", "naa_haddock_doc", "trips_catch_cod_haddock_doc"),
                   width    = "100%"
                 ),
               ),
@@ -411,7 +412,7 @@ server <- function(input, output, session) {
                 axis.text.x = element_text(angle = 45, hjust = 1))
         
       } else {
-       
+        
         plot_data <- df %>%
           mutate(age = factor(paste0("Age ", age),
                               levels = paste0("Age ", sort(unique(df$age)))))
@@ -568,7 +569,8 @@ server <- function(input, output, session) {
     doc_path <- switch(input$doc_metric,
                        "length_doc" = "docs/catch-at-length.html", 
                        "naa_cod_doc" = "docs/NAA_cod.html", 
-                       "naa_hadddock_doc" = "docs/NAA_haddock.html")
+                       "naa_hadddock_doc" = "docs/NAA_haddock.html",
+                       "trips_catch_cod_haddock_doc" = "docs/trips_catch_cod_haddock.html")
     tags$iframe(
       src      = doc_path,
       style    = "width: 100%; height: 800px; border: none;",

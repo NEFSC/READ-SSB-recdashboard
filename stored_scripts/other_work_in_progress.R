@@ -201,6 +201,8 @@ sum(cod_hadd_all_w2$catch[cod_hadd_all_w2$fy2024 == 1 & cod_hadd_all_w2$common =
 sum(cod_hadd_all_w2$catch[cod_hadd_all_w2$fy2024 == 1 & cod_hadd_all_w2$common == "haddock"], na.rm = TRUE)
 sum(cod_hadd_all_w2$discards[cod_hadd_all_w2$fy2024 == 1 & cod_hadd_all_w2$common == "atlanticcod"], na.rm = TRUE)
 sum(cod_hadd_all_w2$discards[cod_hadd_all_w2$fy2024 == 1 & cod_hadd_all_w2$common == "haddock"], na.rm = TRUE)
+sum(cod_hadd_all_w2$harvest[cod_hadd_all_w2$fy2024 == 1 & cod_hadd_all_w2$common == "atlanticcod"], na.rm = TRUE)
+sum(cod_hadd_all_w2$harvest[cod_hadd_all_w2$fy2024 == 1 & cod_hadd_all_w2$common == "haddock"], na.rm = TRUE)
 
 sum(cod_hadd_all_w2$catch[cod_hadd_all_w2$fy2025_imp == 1 & cod_hadd_all_w2$common == "atlanticcod"], na.rm = TRUE)
 sum(cod_hadd_all_w2$catch[cod_hadd_all_w2$fy2025_imp == 1 & cod_hadd_all_w2$common == "haddock"], na.rm = TRUE)
@@ -271,7 +273,45 @@ cod_hadd_all_w2 <- cod_hadd_all_w2 %>%
 
 
 
+# messing around
+
+cod_effort_catch <- cod_effort_catch %>%
+  mutate(cat_over_trip = ifelse(n_trip == 0 | is.na(value) | is.na(n_trip), 0, value / n_trip))
+
+cod_effort_catch %>%
+  filter(variable == "tot_cat") %>% 
+  group_by(mode_fx) %>%
+  summarise(cat_over_trip = mean(cat_over_trip, na.rm = TRUE))
 
 
+my_summary <- cod_effort_catch %>%
+  filter(variable == "tot_cat") %>%
+  summarize(
+    mean_cot = mean(cat_over_trip, na.rm = TRUE),
+    total_count = n()
+  )
+
+print(my_summary)
+
+cod_effort_catch <- cod_effort_catch %>%
+  mutate(fy2024 = case_when(
+    year == 2024 & wave >= 3 ~ 1,
+    year == 2025 & wave == 2 ~ 1,
+    TRUE ~ 0 
+  ))
+
+my_summary <- cod_effort_catch %>%
+  filter(variable == "tot_cat", mode_fx == 7, fy2024 == 1) %>%
+  summarize(
+    mean_cot = mean(cat_over_trip, na.rm = TRUE),
+    total_count = n()
+  )
+
+print(my_summary)
+
+
+cod_effort_catch   %>% 
+  filter(variable == "tot_cat") %>%
+  count(cat_over_trip) %>% print(n = Inf)
 
 
