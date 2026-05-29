@@ -315,3 +315,15 @@ cod_effort_catch   %>%
   count(cat_over_trip) %>% print(n = Inf)
 
 
+
+
+catch1 <- catch  |>   
+  dplyr::filter(st %in% c("25", "23", "33") & year %in% c("2024", "2025") 
+                & common %in% c("atlantic cod", "haddock"))
+
+
+
+
+
+
+
