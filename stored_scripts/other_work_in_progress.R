@@ -322,7 +322,12 @@ catch1 <- catch  |>
                 & common %in% c("atlantic cod", "haddock"))
 
 
+cod_hadd_all_w1 <- cod_hadd_all_w  |>   # may need to replace |> in this row with  %>%
+  dplyr::filter(ST %in% c("25", "23", "33") & YEAR %in% c("2024", "2025"))
 
+nrow(subset(cod_hadd_all_w, year == 2025 & wave <= 5 & mode!= "shore"))
+
+nrow(subset(cod_hadd_all_w, year == 2024 & wave == 6 & mode!= "shore"))
 
 
 
