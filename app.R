@@ -7,43 +7,6 @@ library(ggplot2)
 library(stringr)
 
 set.seed(123)
-generate_fish_data <- function() {
-  species <- c("Atlantic Cod", "Haddock", "Summer Flounder", "Black Sea Bass", "Scup", "Bluefish")
-  modes <- c("Shore", "Private/Rental Boat", "Party/Charter Boat")
-  years <- 2020:2023
-  waves <- 1:6
-  
-  data <- expand.grid(
-    species   = species,
-    mode      = modes,
-    year      = years,
-    wave      = waves,
-    length_cm = seq(20, 80, by = 5)
-  )
-  
-  data$catch_count <- rpois(nrow(data), lambda = sample(10:50, nrow(data), replace = TRUE))
-  data$weight_kg   <- round(data$length_cm * 0.015 + rnorm(nrow(data), 0, 0.3), 2)
-  data$cpue        <- round(runif(nrow(data), 0.1, 2.5), 2)
-  
-  data %>%
-    tidyr::pivot_longer(
-      cols      = c(catch_count, weight_kg, cpue),
-      names_to  = "metric",
-      values_to = "value"
-    ) %>%
-    mutate(
-      data_version = "v1.0",
-      units = dplyr::case_when(
-        metric == "catch_count" ~ "number of fish",
-        metric == "weight_kg"   ~ "kg",
-        metric == "cpue"        ~ "fish per trip"
-      )
-    ) %>%
-    select(species, mode, data_version, year, wave, metric, value, units)
-}
-
-fish_data <- generate_fish_data()
-
 # ── Load trip_catch CSV ───────────────────────────────────────────────────────
 trip_catch_raw <- tryCatch(
   read.csv(here::here("data/main/trip_catch.csv"), stringsAsFactors = FALSE),
@@ -137,7 +100,7 @@ ui <- page_fillable(
           style  = "display: block; vertical-align: top; margin: 0; padding: 0;"
         ),
         div(
-          h3("Recreational Fisheries Dashboard - PROTOTYPE - Fake Data",
+          h3("Recreational Fisheries DST Dashboard",
              style = "color: white; margin: 0; padding: 0; font-weight: 700; font-size: 18px; line-height: 1;"),
           div("Northeast & Mid-Atlantic Region",
               style = "color: #C6E6F0; font-size: 11px; margin: 0; padding: 0; line-height: 1;")
@@ -203,11 +166,8 @@ ui <- page_fillable(
                 "Data Metric"),
             selectInput("data_metric", NULL,
                         choices = c(
-                          "Catch-at-Length"  = "length",
-                          "CPUE"             = "cpue",
-                          "Average Weight"   = "weight",
                           "Numbers-at-Age"   = "naa",
-                          "Directed Trips"   = "trips",
+                          "Total Trips"      = "trips",
                           "Catch"            = "catch_tc"
                         ),
                         selected = "length")
@@ -477,22 +437,6 @@ server <- function(input, output, session) {
     }
   })
   
-  # ── Standard fish data reactive ────────────────────────────────────────────
-  filtered_data <- reactive({
-    req(input$data_metric %in% c("length", "cpue", "weight"), input$species, input$mode)
-    
-    data <- fish_data %>% filter(species == input$species, mode %in% input$mode)
-    
-    if (input$time_interval == "annual") {
-      req(input$years)
-      data <- data %>% filter(year %in% as.numeric(input$years))
-    } else {
-      req(input$year_wave, input$waves)
-      data <- data %>% filter(year == as.numeric(input$year_wave), wave %in% as.numeric(input$waves))
-    }
-    data
-  })
-  
   # ── NAA reactive ───────────────────────────────────────────────────────────
   stock_abbrev <- reactive({
     switch(input$species, "Atlantic Cod" = "WGOM", "Haddock" = "GOM")
@@ -687,35 +631,7 @@ server <- function(input, output, session) {
         theme(axis.text.x = element_text(angle = 35, hjust = 1), legend.position = "right")
       
       return(ggplotly(g, tooltip = "text"))
-      
-      # ── Standard length/cpue/weight ──
-    } else {
-      req(filtered_data())
-      time_var   <- if (input$time_interval == "annual") "year" else "wave"
-      time_label <- if (input$time_interval == "annual") "Year" else "Wave"
-      
-      metric_name <- switch(input$data_metric,
-                            "length" = "catch_count", "cpue" = "cpue", "weight" = "weight_kg")
-      x_label <- switch(input$data_metric,
-                        "length" = "Total Catch Count",
-                        "cpue"   = "CPUE (fish per trip)",
-                        "weight" = "Average Weight (kg)")
-      
-      plot_data <- filtered_data() %>% filter(metric == metric_name)
-      max_time  <- max(plot_data[[time_var]], na.rm = TRUE)
-      max_data  <- plot_data %>% filter(.data[[time_var]] == max_time)
-      max_mean  <- mean(max_data$value, na.rm = TRUE)
-      
-      g <- ggplot(max_data, aes(x = value)) +
-        geom_histogram(aes(y = after_stat(density)), bins = 30, fill = "#5EB6D9", color = "#0085CA") +
-        geom_density(color = "red", fill = NA, linewidth = 0.5) +
-        geom_vline(xintercept = max_mean, linetype = "dashed", linewidth = 1) +
-        labs(x = x_label, y = "Density",
-             title = paste("Distribution for", x_label, time_label, max_time)) +
-        theme_minimal()
-      
-      return(ggplotly(g))
-    }
+    } 
   })
   
   output$main_plot <- renderPlotly({ plot_obj() })
