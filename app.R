@@ -166,9 +166,9 @@ ui <- page_fillable(
                 "Data Metric"),
             selectInput("data_metric", NULL,
                         choices = c(
-                          "Numbers-at-Age"   = "naa",
-                          "Total Trips"      = "trips",
-                          "Catch"            = "catch_tc"
+                          "Numbers-at-Age"         = "naa",
+                          "Directed Trips - MRIP"  = "trips",
+                          "Catch - MRIP"           = "catch_tc"
                         ),
                         selected = "length")
           ),
@@ -180,8 +180,8 @@ ui <- page_fillable(
                 div(style = "background-color: #003087; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
                     "Fishing Mode"),
                 checkboxGroupInput("mode", NULL,
-                                   choices  = c("Shore", "Private/Rental Boat", "Party/Charter Boat"),
-                                   selected = c("Shore", "Private/Rental Boat", "Party/Charter Boat"))
+                                   choices  = c("Shore", "Private", "For Hire"),
+                                   selected = c("Shore", "Private", "For Hire"))
               )
           ),
           
@@ -279,7 +279,8 @@ ui <- page_fillable(
           ),
           card(
             style = "border: 1px solid #CBCFD1; border-radius: 3px;",
-            card_header("Data Summary",
+            # ── CHANGED: use separate table_title output instead of reusing plot_title ──
+            card_header(textOutput("table_title"),
                         style = "background-color: #003087; color: white; font-weight: 700; font-size: 13px;"),
             tableOutput("summary_table")
           )
@@ -356,6 +357,9 @@ server <- function(input, output, session) {
     if (is_tc) {
       shinyjs::hide("fishing_mode_control")
       shinyjs::show("tc_mode_control")
+    } else if (is_naa) {
+      shinyjs::hide("fishing_mode_control")
+      shinyjs::hide("tc_mode_control")
     } else {
       shinyjs::show("fishing_mode_control")
       shinyjs::hide("tc_mode_control")
@@ -399,7 +403,6 @@ server <- function(input, output, session) {
   })
   
   # ── Dynamic year/wave selectors (shared by standard + trips/catch) ──────────
-  # Derive available years from whichever dataset is active
   active_years <- reactive({
     if (input$data_metric %in% c("trips")) {
       sort(unique(trips_data$year))
@@ -415,17 +418,10 @@ server <- function(input, output, session) {
     checkboxGroupInput("years", "Select Years:", choices = yrs, selected = yrs)
   })
   
-  output$year_wave_ui <- renderUI({
-    yrs <- active_years()
-    selectInput("year_wave", "Select Year:", choices = yrs, selected = max(yrs))
-  })
-  
   output$wave_selector_ui <- renderUI({
     if (input$data_metric %in% c("trips", "catch_tc")) {
-      # Determine available waves for selected year
       df <- if (input$data_metric == "trips") trips_data else catch_data
-      req(input$year_wave)
-      avail_waves <- sort(unique(df$wave[df$year == as.integer(input$year_wave)]))
+      avail_waves <- sort(unique(df$wave))
       wave_names  <- setNames(avail_waves, paste("Wave", avail_waves))
       checkboxGroupInput("waves", "Select Waves:", choices = wave_names, selected = avail_waves)
     } else {
@@ -459,8 +455,8 @@ server <- function(input, output, session) {
       req(input$years)
       df <- df %>% filter(year %in% as.numeric(input$years))
     } else {
-      req(input$year_wave, input$waves)
-      df <- df %>% filter(year == as.numeric(input$year_wave), wave %in% as.numeric(input$waves))
+      req(input$waves, input$years)
+      df <- df %>% filter(year %in% as.numeric(input$years), wave %in% as.numeric(input$waves))
     }
     df
   })
@@ -469,7 +465,6 @@ server <- function(input, output, session) {
   filtered_catch_tc <- reactive({
     req(input$data_metric == "catch_tc", input$tc_mode, input$species)
     
-    # Map species input to the common name used in catch_data
     species_map <- c("Atlantic Cod" = "Atlanticcod", "Haddock" = "Haddock")
     selected_common <- species_map[[input$species]]
     
@@ -479,14 +474,16 @@ server <- function(input, output, session) {
       req(input$years)
       df <- df %>% filter(year %in% as.numeric(input$years))
     } else {
-      req(input$year_wave, input$waves)
-      df <- df %>% filter(year == as.numeric(input$year_wave), wave %in% as.numeric(input$waves))
+      req(input$waves, input$years)
+      df <- df %>% filter(year %in% as.numeric(input$years), wave %in% as.numeric(input$waves))
     }
     df
   })
   
-  # ── Plot title ─────────────────────────────────────────────────────────────
-  output$plot_title <- renderText({
+  # ── Plot title reactive (shared by both headers) ───────────────────────────
+  # ── CHANGED: extracted into a reactive so both plot and table headers
+  #             can reference the same logic without duplicating code ──────────
+  plot_title_text <- reactive({
     switch(input$data_metric,
            "naa" = {
              req(input$species, input$naa_period)
@@ -507,6 +504,10 @@ server <- function(input, output, session) {
            }
     )
   })
+  
+  # ── CHANGED: both outputs draw from the same reactive ─────────────────────
+  output$plot_title  <- renderText({ plot_title_text() })
+  output$table_title <- renderText({ plot_title_text() })
   
   # ── Main plot ──────────────────────────────────────────────────────────────
   plot_obj <- reactive({
@@ -555,23 +556,27 @@ server <- function(input, output, session) {
       df    <- filtered_trips()
       grp   <- if (input$time_interval == "annual") "year" else "wave"
       y_lab <- if (nrow(df) > 0) df$units[1] else "number of trips"
-      
+
       plot_data <- df %>%
-        group_by(mode, x_val = !!sym(grp)) %>%
+        group_by(mode, x_val = !!sym(grp), year) %>%
         summarise(total = sum(value, na.rm = TRUE), .groups = "drop") %>%
         mutate(x_label = if (grp == "wave") paste0("Wave ", x_val) else as.character(x_val),
                x_label = factor(x_label, levels = unique(x_label[order(x_val)])),
+               year    = factor(year),
                mode    = factor(mode, levels = c("for_hire", "private", "shore"),
                                 labels = c("For Hire", "Private", "Shore")))
-      
+
       g <- ggplot(plot_data,
-                  aes(x = x_label, y = total, fill = mode,
+                  aes(x = x_label, y = total, fill = mode, alpha = year,
                       text = paste0("Mode: ", mode,
                                     "<br>", tools::toTitleCase(grp), ": ", x_label,
-                                    "<br>Value: ", scales::comma(round(total, 0))))) +
+                                    "<br>Value: ", scales::comma(round(total, 0)))))  +
         geom_col(position = "dodge", width = 0.7) +
+        scale_alpha_manual(values = setNames(
+          seq(0.5, 1, length.out = length(unique(plot_data$year))),
+          levels(plot_data$year)), name = "Year") +
         scale_fill_manual(values = c("For Hire" = "#003087", "Private" = "#5EB6D9", "Shore" = "#C6E6F0"),
-                          name = "Mode") +
+                           name = "Mode") +
         scale_y_continuous(labels = scales::comma) +
         labs(x = tools::toTitleCase(grp), y = y_lab) +
         theme_minimal(base_size = 12) +
@@ -581,6 +586,7 @@ server <- function(input, output, session) {
       
       # ── Catch (CSV) ──
     } else if (input$data_metric == "catch_tc") {
+      
       req(filtered_catch_tc())
       df    <- filtered_catch_tc()
       grp   <- if (input$time_interval == "annual") "year" else "wave"
@@ -591,44 +597,94 @@ server <- function(input, output, session) {
         m == "shore" ~ "Shore", TRUE ~ tools::toTitleCase(m)
       )
       
-      # Stacked bars: harvest + discards summed across selected modes
-      bars <- df %>%
-        filter(metric %in% c("harvest", "discards")) %>%
-        group_by(x_val = .data[[grp]], metric) %>%
-        summarise(total = sum(value, na.rm = TRUE), .groups = "drop") %>%
-        mutate(x_label = if (grp == "wave") paste0("Wave ", x_val) else as.character(x_val),
-               x_label = factor(x_label, levels = unique(x_label[order(x_val)])),
-               metric  = factor(tools::toTitleCase(metric),
-                                levels = c("Harvest", "Discards")))
-      
-      # Points: total catch summed across selected modes
-      pts <- df %>%
-        filter(metric == "catch") %>%
-        group_by(x_val = .data[[grp]]) %>%
-        summarise(total = sum(value, na.rm = TRUE), .groups = "drop") %>%
-        mutate(x_label = if (grp == "wave") paste0("Wave ", x_val) else as.character(x_val),
-               x_label = factor(x_label, levels = levels(bars$x_label)))
-      
-      g <- ggplot() +
-        geom_col(data = bars,
-                 aes(x = x_label, y = total, fill = metric,
-                     text = paste0(metric, "<br>",
-                                   tools::toTitleCase(grp), ": ", x_label,
-                                   "<br>Value: ", scales::comma(round(total, 0)))),
-                 position = "stack", width = 0.65) +
-        geom_point(data = pts,
-                   aes(x = x_label, y = total,
-                       text = paste0("Total Catch<br>",
+      if (grp == "wave") {
+        
+        bars <- df %>%
+          filter(metric %in% c("harvest", "discards")) %>%
+          group_by(x_val = .data[[grp]], year, metric) %>%
+          summarise(total = sum(value, na.rm = TRUE), .groups = "drop") %>%
+          mutate(x_label = factor(paste0("Wave ", x_val),
+                                  levels = unique(paste0("Wave ", sort(unique(x_val))))),
+                 year    = factor(year),
+                 metric  = factor(tools::toTitleCase(metric),
+                                  levels = c("Harvest", "Discards"))) %>%
+          arrange(x_label, year, metric) %>%
+          group_by(x_label, year) %>%
+          mutate(ymax = cumsum(total),
+                 ymin = ymax - total) %>%
+          ungroup()
+        
+        year_levels <- levels(bars$year)
+        n_years     <- length(year_levels)
+        bar_width   <- 0.35
+        offsets     <- setNames(seq(-bar_width * (n_years - 1) / 2,
+                                    bar_width * (n_years - 1) / 2,
+                                    length.out = n_years),
+                                year_levels)
+        
+        bars <- bars %>%
+          mutate(x_num   = as.integer(x_label),
+                 x_mid   = x_num + offsets[as.character(year)],
+                 x_left  = x_mid - bar_width / 2,
+                 x_right = x_mid + bar_width / 2)
+        
+        g <- ggplot() +
+          geom_rect(data = bars,
+                    aes(xmin = x_left, xmax = x_right, ymin = ymin, ymax = ymax,
+                        fill = metric, alpha = year,
+                        text = paste0(metric, "<br>Wave: ", x_label,
+                                      "<br>Year: ", year,
+                                      "<br>Value: ", scales::comma(round(total, 0))))) +
+          scale_x_continuous(breaks = seq_along(levels(bars$x_label)),
+                             labels = levels(bars$x_label)) +
+          scale_fill_manual(values = c("Harvest" = "#003087", "Discards" = "#5EB6D9"),
+                            name = NULL) +
+          scale_alpha_manual(values = setNames(seq(1, 0.45, length.out = n_years), year_levels),
+                             name = "Year") +
+          scale_y_continuous(labels = scales::comma) +
+          labs(x = "Wave", y = y_lab) +
+          theme_minimal(base_size = 12) +
+          theme(axis.text.x = element_text(angle = 35, hjust = 1), legend.position = "right")
+        
+      } else {
+        
+        bars <- df %>%
+          filter(metric %in% c("harvest", "discards")) %>%
+          group_by(x_val = .data[[grp]], metric) %>%
+          summarise(total = sum(value, na.rm = TRUE), .groups = "drop") %>%
+          mutate(x_label = if (grp == "wave") paste0("Wave ", x_val) else as.character(x_val),
+                 x_label = factor(x_label, levels = unique(x_label[order(x_val)])),
+                 metric  = factor(tools::toTitleCase(metric),
+                                  levels = c("Harvest", "Discards")))
+        
+        pts <- df %>%
+          filter(metric == "catch") %>%
+          group_by(x_val = .data[[grp]]) %>%
+          summarise(total = sum(value, na.rm = TRUE), .groups = "drop") %>%
+          mutate(x_label = if (grp == "wave") paste0("Wave ", x_val) else as.character(x_val),
+                 x_label = factor(x_label, levels = levels(bars$x_label)))
+        
+        g <- ggplot() +
+          geom_col(data = bars,
+                   aes(x = x_label, y = total, fill = metric,
+                       text = paste0(metric, "<br>",
                                      tools::toTitleCase(grp), ": ", x_label,
                                      "<br>Value: ", scales::comma(round(total, 0)))),
-                   shape = 21, size = 3.5, fill = "white", color = "#323C46", stroke = 1.2) +
-        scale_fill_manual(values = c("Harvest" = "#003087", "Discards" = "#5EB6D9"),
-                          name = NULL) +
-        scale_y_continuous(labels = scales::comma) +
-        labs(x = tools::toTitleCase(grp), y = y_lab,
-             caption = "Bars = Harvest + Discards; Points = Total Catch") +
-        theme_minimal(base_size = 12) +
-        theme(axis.text.x = element_text(angle = 35, hjust = 1), legend.position = "right")
+                   position = "stack", width = 0.65) +
+          geom_point(data = pts,
+                     aes(x = x_label, y = total,
+                         text = paste0("Total Catch<br>",
+                                       tools::toTitleCase(grp), ": ", x_label,
+                                       "<br>Value: ", scales::comma(round(total, 0)))),
+                     shape = 21, size = 3.5, fill = "white", color = "#323C46", stroke = 1.2) +
+          scale_fill_manual(values = c("Harvest" = "#003087", "Discards" = "#5EB6D9"),
+                            name = NULL) +
+          scale_y_continuous(labels = scales::comma) +
+          labs(x = tools::toTitleCase(grp), y = y_lab,
+               caption = "Bars = Harvest + Discards; Points = Total Catch") +
+          theme_minimal(base_size = 12) +
+          theme(axis.text.x = element_text(angle = 35, hjust = 1), legend.position = "right")
+      }
       
       return(ggplotly(g, tooltip = "text"))
     } 
@@ -700,9 +756,9 @@ server <- function(input, output, session) {
         )) %>%
         group_by(Year = year, Wave = wave, Mode) %>%
         summarise(
-          Harvest      = scales::comma(round(sum(value[metric == "harvest"],  na.rm = TRUE), 0)),
-          Discards     = scales::comma(round(sum(value[metric == "discards"], na.rm = TRUE), 0)),
-          `Total Catch` = scales::comma(round(sum(value[metric == "catch"],   na.rm = TRUE), 0)),
+          Harvest       = scales::comma(round(sum(value[metric == "harvest"],  na.rm = TRUE), 0)),
+          Discards      = scales::comma(round(sum(value[metric == "discards"], na.rm = TRUE), 0)),
+          `Total Catch` = scales::comma(round(sum(value[metric == "catch"],    na.rm = TRUE), 0)),
           .groups = "drop"
         ) %>%
         arrange(Year, Wave, Mode)
