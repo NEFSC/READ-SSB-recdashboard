@@ -36,7 +36,7 @@ common_name2<-'HADDOCK'
 
 fishery<-"NE Groundfish"
 
-file_date<-"2026-04-29" # date stamp of the MRIP data pull; used for file lookup and data_version field
+file_date<-"2026-06-09" # date stamp of the MRIP data pull; used for file lookup and data_version field
 
 
 
@@ -415,7 +415,7 @@ write.csv(rec_trips_catch, file = here("data/main/trip_catch.csv"))
 # look at it.
 rec_trips_catch %>% 
     ungroup() %>%
-    group_by(metric) %>% 
+    group_by(metric, year, common) %>% 
     summarise(value=sum(value))
 
 
