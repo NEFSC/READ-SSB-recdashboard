@@ -37,7 +37,7 @@ common_name2<-'HADDOCK'
 
 fishery<-"NE Groundfish"
 
-file_date<-"2026-04-29" # date stamp of the MRIP data pull; used for file lookup and data_version field
+file_date<-"2026-06-09" # date stamp of the MRIP data pull; used for file lookup and data_version field
 
 
 
@@ -411,12 +411,16 @@ cod_hadd_catch <- cod_hadd_catch %>%
 # units vary by metric: "number of trips" (directed trips) vs "number of fish" (catch metrics)
 rec_trips_catch <- rbind(cod_hadd_trips, cod_hadd_catch)
 
+# Add in a column for source
+rec_trips_catch <- rec_trips_catch %>%
+  mutate(source = "MRIP")
+
 write.csv(rec_trips_catch, file = here("data/main/trip_catch.csv"))
 
 # look at it.
 rec_trips_catch %>% 
     ungroup() %>%
-    group_by(metric) %>% 
+    group_by(metric, year, common) %>% 
     summarise(value=sum(value))
 
 
