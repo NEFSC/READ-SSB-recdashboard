@@ -57,6 +57,29 @@ naa_data <- list(
   haddock_projected  = parse_metric_naa(readRDS(here::here("data", "main", "GOM_Haddock_projected_NAA_2026-05-21.Rds")))
 )
 
+# ── Load Catch-per-Trip RDS ───────────────────────────────────────────────────
+# NEW METRIC: leaves all other metrics untouched. Modes are mapped to the same
+# for_hire/private/shore vocabulary used by the trips/catch controls, and common
+# names are title-cased to match the existing species_map ("Atlanticcod"/"Haddock").
+cpt_raw <- tryCatch(
+  readRDS(here::here("data", "main", "catch_per_trip_2026-06-15.Rds")),
+  error = function(e) readRDS("data/main/catch_per_trip_2026-06-15.Rds")
+)
+
+cpt_data <- cpt_raw %>%
+  mutate(
+    year   = as.integer(year),
+    wave   = as.integer(wave),
+    month  = as.integer(month),
+    common = tools::toTitleCase(common),
+    mode   = dplyr::case_when(
+      mode %in% c("fh", "charter", "headboat") ~ "for_hire",
+      mode == "pr" ~ "private",
+      mode == "sh" ~ "shore",
+      TRUE ~ mode
+    )
+  )
+
 # ── Colour palettes ───────────────────────────────────────────────────────────
 mode_colors_tc <- c("for_hire" = "#003087",
                     "private"  = "#5EB6D9",
@@ -159,16 +182,17 @@ ui <- page_fillable(
                           selected = "Atlantic Cod")
           ),
           
-          # Data Metric — now includes Trips and Catch
+          # Data Metric — now includes Trips, Catch, and Catch per Trip
           div(
             style = "margin-top: 15px;",
             div(style = "background-color: #003087; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
                 "Data Metric"),
             selectInput("data_metric", NULL,
                         choices = c(
-                          "Numbers-at-Age"         = "naa",
-                          "Directed Trips - MRIP"  = "trips",
-                          "Catch - MRIP"           = "catch_tc"
+                          "Numbers-at-Age"              = "naa",
+                          "Directed Trips - MRIP"       = "trips",
+                          "Catch - MRIP"                = "catch_tc",
+                          "Catch-per-trip - Simulated"  = "cpt"
                         ),
                         selected = "length")
           ),
@@ -185,7 +209,7 @@ ui <- page_fillable(
               )
           ),
           
-          # Fishing Mode — for trips/catch CSV metrics
+          # Fishing Mode — for trips/catch/catch-per-trip CSV metrics
           div(id = "tc_mode_control",
               div(
                 style = "margin-top: 15px;",
@@ -263,6 +287,15 @@ ui <- page_fillable(
                       radioButtons("naa_period", NULL,
                                    choices  = c("Historical" = "historical", "Projected" = "projected"),
                                    selected = "historical")
+                  )
+                ),
+                
+                # Catch-per-trip time options — explore by month (and by mode via the
+                # Fishing Mode control above). Year + month pickers are data-driven.
+                shinyjs::hidden(
+                  div(id = "time_cpt",
+                      uiOutput("cpt_year_ui"),
+                      uiOutput("cpt_month_ui")
                   )
                 )
               )
@@ -345,12 +378,15 @@ server <- function(input, output, session) {
   
   # ── Sidebar visibility logic ───────────────────────────────────────────────
   observeEvent(input$data_metric, {
-    is_naa     <- input$data_metric == "naa"
-    is_tc      <- input$data_metric %in% c("trips", "catch_tc")
-    is_catch   <- input$data_metric == "catch_tc"
+    is_naa      <- input$data_metric == "naa"
+    is_cpt      <- input$data_metric == "cpt"
+    # tc_mode_control (for_hire/private/shore) is shared by trips, catch, and cpt
+    is_tc       <- input$data_metric %in% c("trips", "catch_tc", "cpt")
+    # species limited to cod/haddock for catch and catch-per-trip
+    is_catch    <- input$data_metric %in% c("catch_tc", "cpt")
     is_standard <- !is_naa && !is_tc
     
-    # Stock selector — hide for trips only; show for catch_tc (limited to cod/haddock)
+    # Stock selector — hide for trips only; show for catch_tc / cpt (cod/haddock)
     if (input$data_metric == "trips") shinyjs::hide("stock_selector") else shinyjs::show("stock_selector")
     
     # Fishing mode controls — mutually exclusive sets
@@ -368,7 +404,7 @@ server <- function(input, output, session) {
     # Catch type sub-selector — no longer needed (always shows all metrics in chart)
     shinyjs::hide("catch_metric_control")
     
-    # Fishery selector — only for trips (catch shows all species across fisheries)
+    # Fishery selector — only for trips (catch / cpt show all species across fisheries)
     if (input$data_metric == "trips") {
       shinyjs::show("fishery_control")
       updateSelectInput(session, "tc_fishery",
@@ -380,16 +416,16 @@ server <- function(input, output, session) {
       shinyjs::hide("fishery_control")
     }
     
-    # Time interval: NAA vs standard/tc
+    # Time interval: NAA vs catch-per-trip vs standard/tc
     if (is_naa) {
-      shinyjs::hide("time_standard")
-      shinyjs::show("time_naa")
+      shinyjs::hide("time_standard"); shinyjs::show("time_naa");  shinyjs::hide("time_cpt")
+    } else if (is_cpt) {
+      shinyjs::hide("time_standard"); shinyjs::hide("time_naa");  shinyjs::show("time_cpt")
     } else {
-      shinyjs::show("time_standard")
-      shinyjs::hide("time_naa")
+      shinyjs::show("time_standard"); shinyjs::hide("time_naa");  shinyjs::hide("time_cpt")
     }
     
-    # Species choices — NAA and catch_tc limited to cod/haddock; standard gets all
+    # Species choices — NAA / catch / cpt limited to cod/haddock; standard gets all
     if (is_naa || is_catch) {
       updateSelectInput(session, "species",
                         choices  = c("Atlantic Cod", "Haddock"),
@@ -431,6 +467,19 @@ server <- function(input, output, session) {
                                                           "(Jul-Aug)", "(Sep-Oct)", "(Nov-Dec)"))),
                          selected = 1:6)
     }
+  })
+  
+  # ── Catch-per-trip year/month selectors (data-driven) ──────────────────────
+  output$cpt_year_ui <- renderUI({
+    yrs <- sort(unique(cpt_data$year))
+    checkboxGroupInput("cpt_years", "Select Years:", choices = yrs, selected = yrs)
+  })
+  
+  output$cpt_month_ui <- renderUI({
+    mos <- sort(unique(cpt_data$month))
+    checkboxGroupInput("cpt_months", "Select Months:",
+                       choices  = setNames(mos, month.name[mos]),
+                       selected = mos)
   })
   
   # ── NAA reactive ───────────────────────────────────────────────────────────
@@ -480,6 +529,21 @@ server <- function(input, output, session) {
     df
   })
   
+  # ── Catch-per-trip reactive ────────────────────────────────────────────────
+  filtered_cpt <- reactive({
+    req(input$data_metric == "cpt", input$tc_mode, input$species,
+        input$cpt_years, input$cpt_months)
+    
+    species_map <- c("Atlantic Cod" = "Atlanticcod", "Haddock" = "Haddock")
+    selected_common <- species_map[[input$species]]
+    
+    cpt_data %>%
+      filter(common == selected_common,
+             mode  %in% input$tc_mode,
+             year  %in% as.numeric(input$cpt_years),
+             month %in% as.numeric(input$cpt_months))
+  })
+  
   # ── Plot title reactive (shared by both headers) ───────────────────────────
   # ── CHANGED: extracted into a reactive so both plot and table headers
   #             can reference the same logic without duplicating code ──────────
@@ -494,6 +558,10 @@ server <- function(input, output, session) {
            "catch_tc" = {
              req(input$species)
              paste(input$species, "\u2014 Catch")
+           },
+           "cpt" = {
+             req(input$species)
+             paste(input$species, "\u2014 Catch per Trip")
            },
            {
              metric_label <- switch(input$data_metric,
@@ -687,6 +755,53 @@ server <- function(input, output, session) {
       }
       
       return(ggplotly(g, tooltip = "text"))
+      
+      # ── Catch per Trip ──
+      # By month (x-axis) and by mode (colour). Point = median catch per trip;
+      # error bar spans min–max. Multiple selected years are faceted.
+    } else if (input$data_metric == "cpt") {
+      
+      req(filtered_cpt())
+      df    <- filtered_cpt()
+      y_lab <- if (nrow(df) > 0) paste0("catch per trip (", df$units[1], ")") else "catch per trip"
+      
+      plot_data <- df %>%
+        mutate(metric = dplyr::recode(metric,
+                                      "min catch per trip"    = "min",
+                                      "median catch per trip" = "median",
+                                      "max catch per trip"    = "max")) %>%
+        tidyr::pivot_wider(names_from = metric, values_from = value) %>%
+        mutate(month_label = factor(month.abb[month], levels = month.abb[sort(unique(month))]),
+               year        = factor(year),
+               mode        = factor(mode, levels = c("for_hire", "private", "shore"),
+                                    labels = c("For Hire", "Private", "Shore")))
+      
+      pd <- position_dodge(width = 0.5)
+      
+      g <- ggplot(plot_data,
+                  aes(x = month_label, y = median, color = mode, group = mode,
+                      text = paste0("Mode: ", mode,
+                                    "<br>Month: ", month_label,
+                                    "<br>Year: ", year,
+                                    "<br>Median: ", scales::comma(round(median, 2)),
+                                    "<br>Min: ",    scales::comma(round(min, 2)),
+                                    "<br>Max: ",    scales::comma(round(max, 2))))) +
+        geom_errorbar(aes(ymin = min, ymax = max), width = 0.25, position = pd, alpha = 0.6) +
+        #geom_line(position = pd, linewidth = 0.6, alpha = 0.8) +
+        geom_point(position = pd, size = 2.2) +
+        scale_color_manual(values = c("For Hire" = "#003087", "Private" = "#5EB6D9", "Shore" = "#C6E6F0"),
+                           name = "Mode") +
+        scale_y_continuous(labels = scales::comma) +
+        labs(x = "Month", y = y_lab,
+             caption = "Points = median catch per trip; bars span min\u2013max") +
+        theme_minimal(base_size = 12) +
+        theme(axis.text.x = element_text(angle = 35, hjust = 1), legend.position = "right")
+      
+      if (length(unique(plot_data$year)) > 1) {
+        g <- g + facet_wrap(~ year)
+      }
+      
+      return(ggplotly(g, tooltip = "text"))
     } 
   })
   
@@ -763,6 +878,29 @@ server <- function(input, output, session) {
         ) %>%
         arrange(Year, Wave, Mode)
       
+    } else if (input$data_metric == "cpt") {
+      req(filtered_cpt())
+      filtered_cpt() %>%
+        mutate(Mode = dplyr::case_when(
+                 mode == "for_hire" ~ "For Hire",
+                 mode == "private"  ~ "Private",
+                 mode == "shore"    ~ "Shore",
+                 TRUE ~ tools::toTitleCase(mode)),
+               metric = dplyr::recode(metric,
+                 "min catch per trip"    = "Min",
+                 "median catch per trip" = "Median",
+                 "max catch per trip"    = "Max")) %>%
+        tidyr::pivot_wider(id_cols = c(year, month, Mode),
+                           names_from = metric, values_from = value) %>%
+        transmute(Year   = year,
+                  Month  = factor(month.name[month], levels = month.name),
+                  Mode,
+                  Min    = round(Min, 2),
+                  Median = round(Median, 2),
+                  Max    = round(Max, 2)) %>%
+        arrange(Year, Month, Mode) %>%
+        mutate(Month = as.character(Month))
+      
     } else {
       metric_name <- switch(input$data_metric,
                             "length" = "catch_count", "cpue" = "cpue", "weight" = "weight_kg")
@@ -786,6 +924,7 @@ server <- function(input, output, session) {
                    "naa"      = filtered_naa(),
                    "trips"    = filtered_trips(),
                    "catch_tc" = filtered_catch_tc(),
+                   "cpt"      = filtered_cpt(),
                    filtered_data())
       write.csv(df, file, row.names = FALSE)
     }
