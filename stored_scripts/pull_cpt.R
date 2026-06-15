@@ -53,7 +53,12 @@ rdb_catch_per_trip <- read_rds(temp_path)
 if (file.exists(temp_path)) {
   file.remove(temp_path)
 }
+#get a data version
+data_vintage<-as.character(Sys.Date())
 
+write_rds(
+  rdb_catch_per_trip,
+  file=here("data","raw",glue("catch_per_trip_{data_vintage}.Rds")) )
 
 
 ## To download and save to data/main folder rather than using temporary file:
