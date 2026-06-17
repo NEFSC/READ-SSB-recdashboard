@@ -3,13 +3,17 @@
 
 **Description**: 
 
-Mean historical numbers at age.
+Historical numbers at age (mean) of Gulf of Maine haddock.  Depending on 
+the timing of the most recent stock assessment, these contain a mix of 
+assessment estimates and a "bridge" to current regulatory year. The bridging is
+performed in a manner consistent with the stock projections, but may be updated with
+realized commercial and recreational removals. 
 
 Simulated future numbers at age for Gulf of Maine Haddock
 
 **Years available**: 
 
-Mean historical numbers at age are provided for the most recent 5 years.  
+Mean historical numbers at age are provided for the most recent 3 years.  
 
 Projected numbers at age are provided for the upcoming management year.
 
@@ -32,6 +36,7 @@ This includes the "WHAM" model file weight-at-age excel file.
 
 1.  We use using actual catch (in mt) for 2023 and 2024. We use 75%FMSY for 2025-2026 mortality.
 2.  We project the stock forward and extract mean NAA through 2025.
-3.  We simulate 500 draws of the Numbers-at-Age for each age class for 2026.
+3.  We simulate 500 draws of the Numbers-at-Age for each age class for 2026 based on 
+the mean and standard deviations from WHAM.
 
 
