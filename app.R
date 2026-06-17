@@ -189,10 +189,10 @@ ui <- page_fillable(
                 "Data Metric"),
             selectInput("data_metric", NULL,
                         choices = c(
-                          "Numbers-at-Age"              = "naa",
-                          "Directed Trips - MRIP"       = "trips",
-                          "Catch - MRIP"                = "catch_tc",
-                          "Catch-per-trip - Simulated"  = "cpt"
+                          "Numbers at Age - 2024 Assessment"     = "naa",
+                          "Directed Trips - MRIP"                = "trips",
+                          "Catch - MRIP"                         = "catch_tc",
+                          "Catch per trip - model intermediate"  = "cpt"
                         ),
                         selected = "length")
           ),
@@ -348,9 +348,9 @@ ui <- page_fillable(
                 ),
                 selectInput(
                   "doc_metric", NULL,
-                  choices  = c("Catch-at-Length"          = "length_doc",
-                               "Cod Numbers-at-age"       = "naa_cod_doc",
-                               "Haddock Numbers-at-age"   = "naa_haddock_doc",
+                  choices  = c("Catch at Length"          = "length_doc",
+                               "Cod Numbers at age"       = "naa_cod_doc",
+                               "Haddock Numbers at age"   = "naa_haddock_doc",
                                "Directed Trips and Catch" = "trips_catch_cod_haddock_doc"),
                   selected = "length_doc",
                   width    = "100%"
@@ -551,7 +551,7 @@ server <- function(input, output, session) {
     switch(input$data_metric,
            "naa" = {
              req(input$species, input$naa_period)
-             paste(stock_abbrev(), input$species, "\u2014 Numbers-at-Age,",
+             paste(stock_abbrev(), input$species, "\u2014 Numbers at Age,",
                    ifelse(input$naa_period == "historical", "Historical", "Projected"))
            },
            "trips" = paste("Directed Trips \u2014", input$tc_fishery),
@@ -565,7 +565,7 @@ server <- function(input, output, session) {
            },
            {
              metric_label <- switch(input$data_metric,
-                                    "length" = "Catch-at-Length",
+                                    "length" = "Catch at Length",
                                     "cpue"   = "CPUE (fish per trip)",
                                     "weight" = "Average Weight (kg)")
              paste(input$species, "-", metric_label)
