@@ -32,6 +32,11 @@ We then compute the mean catch per trip at the month-mode level for each of our 
 
 Finally, we take the median, min, and max of these 100 draws of simulated mean catch per trip at the month-mode level and format the data for the dashboard [here](https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim/rdb_processing_catch_per_trip.do). Catch per trip is in number of fish and includes harvest and discards (ie, A + B1 + B2 in MRIP).
 
+Am i overcomplicating this. 
+Short version:
+We simulate 100 draws of mean catch per trip for each mode-month combination based on the mean and standard errors computed from the MRIP data, imputing the standard errors when necessary and accounting for correlation between harvest and discards. 
+
+We take the median, min, and max of these 100 draws of simulated mean catch per trip at the month-mode level and format the data for the dashboard [here](https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim/rdb_processing_catch_per_trip.do). Catch per trip is in number of fish and includes harvest and discards (ie, A + B1 + B2 in MRIP).
 
 ####  Western Gulf of Maine 
 
