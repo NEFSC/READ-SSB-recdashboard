@@ -3,7 +3,7 @@
 
 **Description**: 
 
-Simulated catch per trip for Western Gulf of Maine (WGOM) Atlantic Cod and Haddock. We provide the median, minimum, and maximum of 100 draws of simulated mean catch per trip at the mode-month level for WGOM Cod and Haddock. 
+Simulated catch per trip for Western Gulf of Maine (WGOM) Atlantic Cod and Haddock. We provide the median, minimum, and maximum of 100 draws of simulated mean catch per trip at the mode-month level. 
 
 **Years available**: 
 
@@ -18,7 +18,7 @@ We use catch and effort data from the Marine Recreational Information Program  (
 
 ### Data extraction 
 
-We pull trips from MRIP where Cod or Haddock were caught or stated as the primary target by the angler. Not sure what to put here..
+We pull trips from MRIP where Cod or Haddock were caught or stated as the primary target by the angler. 
 
 ### Data analysis/Processing
 
@@ -28,17 +28,17 @@ First, we compute the mean and standard error of the MRIP harvest per trip, disc
 
 Next, we use the data generated in the previous step to simulate random draws of harvest per trip and discards per trip, accounting for correlation in harvest and discards [here](https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim/copula_modeling_calibration.R). These are used to create our daily catch draw data for the model and simulate total catch [here](https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim/calibration_catch_per_trip_part2.do). 
 
-We then compute the mean catch per trip at the month-mode level for each of our 100 draws of daily catch draw data [here](https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim/compare_calibration_data_to_MRIP.do). 
+We then compute the mean catch per trip at the month-mode level for each of our 100 iterations of daily catch draw data [here](https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim/compare_calibration_data_to_MRIP.do). 
 
-Finally, we take the median, min, and max of these 100 draws of simulated mean catch per trip at the month-mode level and format the data for the dashboard [here](https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim/rdb_processing_catch_per_trip.do). Catch per trip is in number of fish and includes harvest and discards (ie, A + B1 + B2 in MRIP) .
+Finally, we take the median, min, and max of these 100 draws of simulated mean catch per trip at the month-mode level and format the data for the dashboard [here](https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim/rdb_processing_catch_per_trip.do). Catch per trip is in number of fish and includes harvest and discards (ie, A + B1 + B2 in MRIP).
 
 
 ####  Western Gulf of Maine 
 
-Copied over. Not sure this is needed here.
+Copied over. do we need this here?
 
 WGOM trips are defined as any Maine or Massachusetts trips taken in statistical areas 513, 514, 515, 521, and 526, as well as any trips taken from New Hampshire. While we do not know exactly where someone fished, we assume fishing occurred in the statistical area closest to the MRIP intercept site where the data was collected. 
 
 Haddock stocks are assessed in different stock areas than Cod. Haddock are assessed in the Gulf of Maine (GOM) stock area, which corresponds to statistical areas 511, 512, 513, 514, and 515. Cod are assessed in the WGOM stock area (ie, statistical areas 513, 514, 515, 521, and 526). 
 
-The dataframe created by this code limits trips (and catch) for both Cod and Haddock to the WGOM. No Haddock were caught in the GOM areas outside of the WGOM (511 and 512) in 2024 and 2025. Additionally, very few Haddock are caught in statistical areas 521 and 526 (892 fish caught there in FY2024).
+We limit the data for both Cod and Haddock to the WGOM. No Haddock were caught in the GOM areas outside of the WGOM (511 and 512) in 2024 and 2025. Additionally, very few Haddock are caught in statistical areas 521 and 526.
