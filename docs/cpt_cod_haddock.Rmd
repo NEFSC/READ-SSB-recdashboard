@@ -26,7 +26,7 @@ We pull trips from MRIP where Cod or Haddock were caught or stated as the primar
 
 First, we compute the mean and standard error of the MRIP harvest per trip, discards per trip, and catch per trip at the mode-month level for Cod and Haddock. When the standard error is missing for a strata, we impute it based on other recent historical data and using a different aggregation level ([code](https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim/calibration_catch_per_trip_part1.do)). 
 
-Next, we use the data generated in the previous step to simulate random draws of harvest per trip and discards per trip, accounting for correlation in harvest and discards [here](https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim/copula_modeling_calibration.R). These are used to create our daily catch draw data for the model and simulate total catch [here](https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim/calibration_catch_per_trip_part2.do). 
+Next, we use the data generated in the previous step to simulate random draws of harvest per trip and discards per trip, accounting for correlation in harvest and discards [here](https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim/copula_modeling_calibration.R). These are used to create our baseline catch per trip distribution and our daily catch draw data which the model uses to simulate total catch [here](https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim/calibration_catch_per_trip_part2.do). 
 
 We then compute the mean catch per trip at the mode-month level for each of our 100 iterations of daily catch draw data [here](https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim/compare_calibration_data_to_MRIP.do). 
 
@@ -34,7 +34,7 @@ Finally, we take the median, min, and max of these 100 draws of simulated mean c
 
  
 Short version:
-We simulate 100 draws of mean catch per trip for each mode-month combination based on the mean and standard errors computed from the MRIP data, imputing the standard errors when necessary and accounting for correlation between harvest and discards. 
+We simulate 100 draws of mean catch per trip for each mode-month combination based on the mean and standard errors computed from the MRIP data, imputing the standard errors when necessary. 
 
 We take the median, min, and max of these 100 draws of simulated mean catch per trip for each mode-month combination and format the data for the dashboard [here](https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim/rdb_processing_catch_per_trip.do). Catch per trip is in number of fish and includes harvest and discards.
 
