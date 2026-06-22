@@ -32,17 +32,6 @@ closest to the MRIP intercept site where the data was collected.
 
 [Data processing code](https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim) can be seen in the groundfishRDM repository.
 
-(Short version):
-
-We simulate 100 draws of mean catch per trip for each mode-month combination based on the 
-mean and standard errors computed from the MRIP data, imputing the standard errors when necessary. 
-
-We then take the median, min, and max of these 100 draws of mean catch per trip for each 
-mode-month combination and format the data for the dashboard [here](https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim/rdb_processing_catch_per_trip.do). 
-Catch per trip is in number of fish and includes harvest and discards.
-
-(More detailed version):
-
 First, we compute the mean and standard error of the MRIP harvest per trip, discards per trip, 
 and catch per trip at the mode-month level for Cod and Haddock. When the standard error is missing 
 for a strata, we impute it based on other recent historical data and using a different aggregation 
