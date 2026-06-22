@@ -28,6 +28,8 @@ areas 513, 514, 515, 521, and 526, as well as any trips taken from New Hampshire
 not know exactly where someone fished, we assume fishing occurred in the statistical area 
 closest to the MRIP intercept site where the data was collected. 
 
+![Northeast Atlantic Cod Statistical Areas with Stock Areas](stat_areas.jpg)
+
 ### Data analysis/Processing
 
 [Data processing code](https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim) can be seen in the groundfishRDM repository.
