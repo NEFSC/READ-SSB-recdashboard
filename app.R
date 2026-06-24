@@ -351,7 +351,8 @@ ui <- page_fillable(
                   choices  = c("Catch at Length"          = "length_doc",
                                "Cod Numbers at age"       = "naa_cod_doc",
                                "Haddock Numbers at age"   = "naa_haddock_doc",
-                               "Directed Trips and Catch" = "trips_catch_cod_haddock_doc"),
+                               "Directed Trips and Catch" = "trips_catch_cod_haddock_doc",
+                               "Catch per Trip"           = "cpt_cod_haddock_doc"),
                   selected = "length_doc",
                   width    = "100%"
                 )
@@ -962,7 +963,8 @@ server <- function(input, output, session) {
                        "length_doc"                  = "docs/catch-at-length.html",
                        "naa_cod_doc"                 = "docs/NAA_cod.html",
                        "naa_haddock_doc"             = "docs/NAA_haddock.html",
-                       "trips_catch_cod_haddock_doc" = "docs/trips_catch_cod_haddock.html")
+                       "trips_catch_cod_haddock_doc" = "docs/trips_catch_cod_haddock.html",
+                       "cpt_cod_haddock_doc"         = "docs/cpt_cod_haddock.html")
     tags$iframe(src = doc_path, style = "width: 100%; height: 800px; border: none;", seamless = NA)
   })
 }
