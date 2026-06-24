@@ -1,10 +1,11 @@
-# WGOM Cod and Haddock Catch per Trip
+# WGOM Cod and GOM Haddock Catch per Trip
 
 
 **Description**: 
 
-Simulated catch per trip for Western Gulf of Maine (WGOM) Atlantic Cod and Haddock. We provide the 
-median, minimum, and maximum of 100 draws of simulated mean catch per trip at the mode-month level. 
+Simulated catch per trip for Western Gulf of Maine (WGOM) Atlantic Cod and Gulf of 
+Maine (GOM) Haddock. We provide the median, minimum, and maximum of 100 draws of 
+simulated mean catch per trip at the mode-month level. 
 
 **Years available**: 
 
@@ -23,10 +24,13 @@ to simulate catch per trip.
 ### Data extraction 
 
 We pull trips from MRIP where Cod or Haddock were caught or stated as the primary target by 
-the angler. WGOM trips are defined as any Maine or Massachusetts trips taken in statistical 
-areas 513, 514, 515, 521, and 526, as well as any trips taken from New Hampshire. While we do 
-not know exactly where someone fished, we assume fishing occurred in the statistical area 
-closest to the MRIP intercept site where the data was collected. 
+the angler. While we do not know exactly where someone fished, we assume fishing occurred in 
+the statistical area closest to the MRIP intercept site where the data was collected. 
+
+We limit trips to the WGOM, which are defined as any Maine or Massachusetts trips taken in 
+statistical areas 513, 514, 515, 521, and 526, as well as any trips taken from New Hampshire. 
+GOM Haddock are assessed in statistical areas 513, 514, 515, 511, and 512, but no Haddock are caught in 
+areas 511 and 512 while very few Haddock are caught in areas 521 and 526. 
 
 ![Northeast Atlantic Cod Statistical Areas with Stock Areas](stat_areas.jpg)
 
