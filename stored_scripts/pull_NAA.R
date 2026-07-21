@@ -32,7 +32,7 @@ sfsbsb_processed_data_path<-file.path("socialsci","RecreationalDST","2028_manage
 
 #Set this to TRUE if you want to download the files and read them into memory. FALSE otherwise
 # NOTE: Toggles whether downloaded files are immediately loaded into the global environment
-readin<-TRUE
+readin<-FALSE
 
 #####################################################################################################
 # stubs of output save files
