@@ -80,4 +80,6 @@ write_rds(
 )
 
 
+#cleanup
+rm(folder_info, latest_file, folder_files)
 
