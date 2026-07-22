@@ -1,0 +1,30 @@
+# Summer Flouder Numbers at age
+
+**Description**: 
+
+Historical numbers at age (mean) in thousands.  
+
+Projected Numbers at age contain individual draws for the upcoming regulatory cycle to give insight into variability.
+
+**Years available**: 
+
+Mean historical numbers at age are provided for the 2024  
+
+Projected numbers at age are provided for the one year.
+
+
+## Methods
+
+### Data sources
+
+All are derived from the most recent stock assessment ([2025 Management Track](https://apps-st.fisheries.noaa.gov/sis/docServlet?fileAction=download&fileId=10337))
+that was used for providing specifications advice to fishery managers
+
+### Data extraction 
+
+Inputs need for stock assessment were obtained from stock assessment scientists. 
+
+### Data analysis/Processing
+
+[Data processing code](https://github.com/kimberly-bastille/flukeRDM/blob/main/Code/pre_sim/rdb_processing_NAA.do)can be seen in the flukeRDM repository. In brief, for 2026 fishery management, we obtained NAA straight from the stock assessment projection
+
