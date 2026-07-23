@@ -1,0 +1,63 @@
+# WGOM Atlantic Cod and GOM Haddock Catch at Length 
+
+**Description**: 
+
+This dataset contains the proportions of fish caught at length in inches for
+Western Gulf of Maine (WGOM) Atlantic Cod and Gulf of Maine (GOM) Haddock by season.
+The 'summer' season is May - August and the 'winter' is September - April. 
+We provide the medians of 101 random draws of the observed proportions caught at length 
+and the fitted (i.e., smoothed) proportions. 
+
+**Years available**: 
+
+The data are for the baseline regulatory year, also called the calibration year. 
+For the 2026 management cycle, catch at length was simulated using data for 
+waves 1-5 of 2025 and wave 6 of 2024.
+
+## Methods
+
+### Data sources
+
+Where does the data come from. Who collects/maintains/owns the data.
+
+We get data on catch, effort, and numbers of fish caught at length from the Marine 
+Recreational Information Program ([MRIP](https://www.fisheries.noaa.gov/insight/marine-recreational-information-program)). 
+MRIP provides a sample of the numbers of fish harvested at length and a sample of fish 
+discarded at length, the latter of which comes from headboat observations. 
+
+### Data extraction 
+
+Where did we get this data. How do we access it. 
+
+### Data analysis/Processing
+
+[Data processing code](https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim) 
+is in the groundfishRDM repository. 
+
+We use the samples of the number of fish discarded at length and harvested at length 
+to get probability distributions for both by season for each species. Next, we multiply 
+the harvest at length probability distribution by 101 draws of simulated total harvest 
+and we multiply the discards at length probability distribution by 101 draws of simulated 
+total discards. The simulated total numbers of fish harvested and discarded are based on 
+random draws of simulated directed trips and simulated harvest- and discards per trip. 
+
+We add the simulated total harvest and discards at length to get 101 draws of total 
+numbers of fish caught at length, and then convert the numbers to proportions which form the 
+'observed' catch at length distribution draws. We then apply a smoothing procedure to 
+these to get fitted probabilities. We take the medians of these 101 draws of observed 
+and fitted catch at length proportions by season for cod and haddock.  
+
+The metric column in the raw data has the season and the length of the fish in inches. 
+We receive the fish lengths in centimeters and convert them to inches, which is why
+the lengths are non-integers in the raw data. 
+
+Do I need to talk about how we got the fitted probabilities? 
+We fit the observed catch at length probabilities to a gamma distribution using the 
+Maximum Overlap Method to avoid non-convergence. 
+
+Mention that it's the fitted probabilities that go into the model?
+
+Call observed something else? But what?
+
+(lou mentioned that discards at length are unweighted for cod but they are weighted for haddock bs thats
+what the stock assessment ppl do. does that matter here?)
