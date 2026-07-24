@@ -21,8 +21,8 @@ waves 1-5 of 2025 and wave 6 of 2024.
 
 We get data on catch, effort, and numbers of fish caught at length from the Marine 
 Recreational Information Program ([MRIP](https://www.fisheries.noaa.gov/insight/marine-recreational-information-program)). 
-MRIP provides a sample of fish harvested at length and a sample of fish 
-discarded at length, the latter of which comes from headboat observations. 
+MRIP provides length data for a sample of harvested fish and for a sample of discarded 
+fish, the latter of which comes from headboat observations. 
 
 ### Data extraction 
 
@@ -49,7 +49,7 @@ random draws of simulated directed trips and simulated harvest- and discards per
 We add the simulated total harvest and discards at length to get 101 draws of total 
 numbers of fish caught at length, and then convert the numbers to proportions which form the 
 'observed' catch at length distribution draws. We then fit these observed probabilities 
-to a gamma distribution to get a smoothed distribution. These fitted probabilities are fed into 
+to a gamma distribution to get smoothed distributions. These fitted probabilities are fed into 
 the model. Finally, for the dashboard we take the medians of the 101 draws of observed 
 and fitted catch at length probabilities by season for cod and haddock.  
 
