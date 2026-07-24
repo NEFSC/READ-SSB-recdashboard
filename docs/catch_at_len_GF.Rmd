@@ -2,8 +2,8 @@
 
 **Description**: 
 
-This dataset contains the proportions of fish caught at length in inches for
-Western Gulf of Maine (WGOM) Atlantic Cod and Gulf of Maine (GOM) Haddock by season.
+This data contains the proportions of fish caught at length in inches by season for
+Western Gulf of Maine (WGOM) Atlantic Cod and Gulf of Maine (GOM) Haddock.
 The 'summer' season is May - August and the 'winter' is September - April. 
 We provide the medians of 101 random draws of the observed proportions caught at length 
 and the fitted (i.e., smoothed) proportions. 
@@ -11,6 +11,7 @@ and the fitted (i.e., smoothed) proportions.
 **Years available**: 
 
 The data are for the baseline regulatory year, also called the calibration year. 
+Baseline simulated catch at length is based on the most recent 6 waves of data. 
 For the 2026 management cycle, catch at length was simulated using data for 
 waves 1-5 of 2025 and wave 6 of 2024.
 
@@ -18,16 +19,20 @@ waves 1-5 of 2025 and wave 6 of 2024.
 
 ### Data sources
 
-Where does the data come from. Who collects/maintains/owns the data.
-
 We get data on catch, effort, and numbers of fish caught at length from the Marine 
 Recreational Information Program ([MRIP](https://www.fisheries.noaa.gov/insight/marine-recreational-information-program)). 
-MRIP provides a sample of the numbers of fish harvested at length and a sample of fish 
-discarded at length, the latter of which comes from headboat observations. 
 
 ### Data extraction 
 
-Where did we get this data. How do we access it. 
+MRIP provides a sample of fish harvested at length and a sample of fish 
+discarded at length, the latter of which comes from headboat observations. 
+
+The data is limited to the WGOM, which includes any Maine or Massachusetts trips taken in 
+statistical areas 513, 514, 515, 521, and 526, as well as any trips taken from New Hampshire. 
+GOM Haddock are assessed in statistical areas 513, 514, 515, 511, and 512, but no Haddock 
+are caught in areas 511 and 512 while very few Haddock are caught in areas 521 and 526. 
+
+![Northeast Atlantic Cod Statistical Areas with Stock Areas](stat_areas.jpg)
 
 ### Data analysis/Processing
 
@@ -44,7 +49,7 @@ random draws of simulated directed trips and simulated harvest- and discards per
 We add the simulated total harvest and discards at length to get 101 draws of total 
 numbers of fish caught at length, and then convert the numbers to proportions which form the 
 'observed' catch at length distribution draws. We then fit these observed probabilities 
-to a gamma distribution to get a smoothed distribution. These fitted probabilities are fed in 
+to a gamma distribution to get a smoothed distribution. These fitted probabilities are fed into 
 the model. Finally, we take the medians of the 101 draws of observed and fitted catch at 
 length probabilities by season for cod and haddock.  
 
@@ -54,10 +59,7 @@ the lengths are non-integers in the raw data.
 
 More on how we got the fitted probabilities? 
 We fit the observed catch at length probabilities to a gamma distribution using the 
-Maximum Overlap Method to avoid non-convergence. 
- think you can ignore the MOM
-
-Mention that it's the fitted probabilities that go into the model?
+Maximum Overlap Method to avoid non-convergence. dont think you need this
 
 Call observed something else? But what?
 
