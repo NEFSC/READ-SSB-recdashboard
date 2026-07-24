@@ -14,7 +14,7 @@ The data are for the baseline regulatory year, also called the calibration year.
 Baseline simulated catch at length is based on the most recent 6 waves of data. 
 For the 2026 management cycle, catch at length was simulated using data for 
 waves 1-5 of 2025 and wave 6 of 2024.  
-For the 2026 management cycle, catch at length will be simulated using data for 
+For the 2027 management cycle, catch at length will be simulated using data for 
 waves 1-5 of 2026 and wave 6 of 2025.
 
 ## Methods
