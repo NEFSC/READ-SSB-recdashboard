@@ -348,12 +348,12 @@ ui <- page_fillable(
                 ),
                 selectInput(
                   "doc_metric", NULL,
-                  choices  = c("Catch at Length"          = "length_doc",
-                               "Cod Numbers at age"       = "naa_cod_doc",
+                  choices  = c("Cod Numbers at age"       = "naa_cod_doc",
                                "Haddock Numbers at age"   = "naa_haddock_doc",
                                "Directed Trips and Catch" = "trips_catch_cod_haddock_doc", 
-                               "Catch per trip"           = "cpt_cod_haddock_doc"),
-                  selected = "length_doc",
+                               "Catch per trip"           = "cpt_cod_haddock_doc",
+                               "Catch at length"          = "catch_at_len_doc"),
+                  selected = "catch_at_len_doc",
                   width    = "100%"
                 )
               ),
@@ -979,7 +979,7 @@ server <- function(input, output, session) {
   
   output$documentation_content <- renderUI({
     doc_path <- switch(input$doc_metric,
-                       "length_doc"                  = "docs/catch-at-length.html",
+                       "catch_at_len_doc"            = "docs/catch_at_len_GF.html",
                        "naa_cod_doc"                 = "docs/NAA_cod.html",
                        "naa_haddock_doc"             = "docs/NAA_haddock.html",
                        "trips_catch_cod_haddock_doc" = "docs/trips_catch_cod_haddock.html", 
