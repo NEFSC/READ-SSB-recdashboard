@@ -43,21 +43,23 @@ random draws of simulated directed trips and simulated harvest- and discards per
 
 We add the simulated total harvest and discards at length to get 101 draws of total 
 numbers of fish caught at length, and then convert the numbers to proportions which form the 
-'observed' catch at length distribution draws. We then apply a smoothing procedure to 
-these to get fitted probabilities. We take the medians of these 101 draws of observed 
-and fitted catch at length proportions by season for cod and haddock.  
+'observed' catch at length distribution draws. We then fit these observed probabilities 
+to a gamma distribution to get a smoothed distribution. These fitted probabilities are fed in 
+the model. Finally, we take the medians of the 101 draws of observed and fitted catch at 
+length probabilities by season for cod and haddock.  
 
 The metric column in the raw data has the season and the length of the fish in inches. 
 We receive the fish lengths in centimeters and convert them to inches, which is why
 the lengths are non-integers in the raw data. 
 
-Do I need to talk about how we got the fitted probabilities? 
+More on how we got the fitted probabilities? 
 We fit the observed catch at length probabilities to a gamma distribution using the 
 Maximum Overlap Method to avoid non-convergence. 
+ think you can ignore the MOM
 
 Mention that it's the fitted probabilities that go into the model?
 
 Call observed something else? But what?
 
-(lou mentioned that discards at length are unweighted for cod but they are weighted for haddock bs thats
-what the stock assessment ppl do. does that matter here?)
+(lou mentioned that discards at length are unweighted for cod but they are weighted for haddock bc thats
+what the stock assessment ppl do. does that matter here? I think probably not)
