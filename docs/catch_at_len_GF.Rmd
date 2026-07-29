@@ -9,8 +9,9 @@ We provide the medians of 101 random draws of the observed proportions caught at
 and the fitted (i.e., smoothed) proportions for the baseline year. 
 
 We also provide the median fitted projected catch at length probability distribution 
-across 101 draws. The projected catch at length distribution is based on the baseline 
-catch at length distribution and the projected numbers at age from the stock assessment. 
+across 101 draws for the upcoming management cycle. The projected catch at length 
+distribution is based on the baseline catch at length distribution and the projected 
+numbers at age from the stock assessment. 
 
 **Years available**: 
 
