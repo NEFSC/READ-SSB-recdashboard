@@ -82,6 +82,5 @@ to the projected numbers at length to get the projected catch at length in numbe
 We convert the projected catch at length numbers to probabilities and then fit the 
 probabilities to a gamma distribution to get the projected fitted probabilities (i.e., a smoothed distribution). 
 
-Finally, we take the median fitted projected catch at length probabilities   
-across 101 draws by season and species to display in the recDST data dashboard. 
-The lengths are in inches.
+Finally, we take the median fitted projected catch at length probabilities across 101 draws 
+by season and species to display in the recDST data dashboard. The lengths are in inches.
