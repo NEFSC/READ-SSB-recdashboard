@@ -6,6 +6,9 @@ Historical numbers at age (mean) in thousands.
 
 Projected Numbers at age contain 100 individual draws for the upcoming regulatory year to give insight into variability.
 
+Summer Flounder has 7 age classes (Age 1 to Age 6 and Age 7+).
+
+
 **Years available**: 
 
 Mean historical numbers at age are provided for 2024.  
