@@ -207,7 +207,7 @@ ui <- page_fillable(
                 "Data Metric"),
             selectInput("data_metric", NULL,
                         choices = c(
-                          "Numbers at Age - 2024 Assessment"     = "naa",
+                          "Numbers at Age - Stock Assessment"    = "naa",
                           "Directed Trips - MRIP"                = "trips",
                           "Catch - MRIP"                         = "catch_tc",
                           "Catch per trip - model intermediate"  = "cpt"
