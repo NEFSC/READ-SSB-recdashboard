@@ -207,10 +207,10 @@ ui <- page_fillable(
                 "Data Metric"),
             selectInput("data_metric", NULL,
                         choices = c(
-                          "Numbers-at-Age"              = "naa",
-                          "Directed Trips - MRIP"       = "trips",
-                          "Catch - MRIP"                = "catch_tc",
-                          "Catch-per-trip - Simulated"  = "cpt"
+                          "Numbers at Age - 2024 Assessment"     = "naa",
+                          "Directed Trips - MRIP"                = "trips",
+                          "Catch - MRIP"                         = "catch_tc",
+                          "Catch per trip - model intermediate"  = "cpt"
                         ),
                         selected = "length")
           ),
@@ -366,15 +366,15 @@ ui <- page_fillable(
                 ),
                 selectInput(
                   "doc_metric", NULL,
-                  choices  = c("Catch-at-Length"                 = "length_doc",
-                               "Cod Numbers-at-age"              = "naa_cod_doc",
-                               "Haddock Numbers-at-age"          = "naa_haddock_doc",
+                  choices  = c("Cod Numbers at age"       = "naa_cod_doc",
+                               "Haddock Numbers at age"   = "naa_haddock_doc",
                                "Black Sea Bass Numbers-at-age"   = "naa_bsb_doc",
                                "Summer Flounder Numbers-at-age"  = "naa_sf_doc",
                                "Scup Numbers-at-age"             = "naa_scup_doc",
-                               
-                               "Directed Trips and Catch" = "trips_catch_cod_haddock_doc"),
-                  selected = "length_doc",
+                               "Directed Trips and Catch" = "trips_catch_cod_haddock_doc", 
+                               "Catch per trip"           = "cpt_cod_haddock_doc",
+                               "Catch at length"          = "catch_at_len_doc"),
+                  selected = "catch_at_len_doc",
                   width    = "100%"
                 )
               ),
@@ -599,18 +599,18 @@ server <- function(input, output, session) {
                      ifelse(input$naa_period == "historical", "Historical", "Projected"))
              )
            },
-           "trips" = paste("Directed Trips \u2014", input$tc_fishery),
+           "trips" = paste("Directed Trips ", input$tc_fishery),
            "catch_tc" = {
              req(input$species)
-             paste(input$species, "\u2014 Catch")
+             paste(input$species, " Catch")
            },
            "cpt" = {
              req(input$species)
-             paste(input$species, "\u2014 Catch per Trip")
+             paste(input$species, "Catch per Trip")
            },
            {
              metric_label <- switch(input$data_metric,
-                                    "length" = "Catch-at-Length",
+                                    "length" = "Catch at Length",
                                     "cpue"   = "CPUE (fish per trip)",
                                     "weight" = "Average Weight (kg)")
              paste(input$species, "-", metric_label)
@@ -828,35 +828,54 @@ server <- function(input, output, session) {
                                       "median catch per trip" = "median",
                                       "max catch per trip"    = "max")) %>%
         tidyr::pivot_wider(names_from = metric, values_from = value) %>%
-        mutate(month_label = factor(month.abb[month], levels = month.abb[sort(unique(month))]),
-               year        = factor(year),
-               mode        = factor(mode, levels = c("for_hire", "private", "shore"),
-                                    labels = c("For Hire", "Private", "Shore")))
+        mutate(
+          mode = factor(mode, levels = c("for_hire", "private", "shore"),
+                        labels = c("For Hire", "Private", "Shore")),
+          year       = factor(year),
+          date_order = as.Date(paste(year, month, "01"), "%Y %m %d"),
+          month_year = format(date_order, "%b %Y"),
+        )
+      
+      # Build complete grid of all mode x month-year combos
+      all_combos <- tidyr::expand_grid(
+        mode       = levels(plot_data$mode),
+        date_order = seq(min(plot_data$date_order),
+                         max(plot_data$date_order),
+                         by = "month")
+      ) %>%
+        mutate(
+          mode       = factor(mode, levels = levels(plot_data$mode)),
+          year       = factor(format(date_order, "%Y")),
+          month_year = format(date_order, "%b %Y")
+        )
+      
+      plot_data <- all_combos %>%
+        left_join(plot_data %>% select(mode, date_order, median, min, max),
+                  by = c("mode", "date_order")) %>%
+        mutate(month_year = factor(month_year,
+                                   levels = unique(format(sort(unique(date_order)), "%b %Y"))))
       
       pd <- position_dodge(width = 0.5)
       
       g <- ggplot(plot_data,
-                  aes(x = month_label, y = median, color = mode, group = mode,
+                  aes(x = month_year, y = median, color = mode,
+                      group = interaction(mode, year),
                       text = paste0("Mode: ", mode,
-                                    "<br>Month: ", month_label,
-                                    "<br>Year: ", year,
+                                    "<br>Month/Year: ", month_year,
                                     "<br>Median: ", scales::comma(round(median, 2)),
                                     "<br>Min: ",    scales::comma(round(min, 2)),
                                     "<br>Max: ",    scales::comma(round(max, 2))))) +
-        geom_errorbar(aes(ymin = min, ymax = max), width = 0.25, position = pd, alpha = 0.6) +
-        #geom_line(position = pd, linewidth = 0.6, alpha = 0.8) +
-        geom_point(position = pd, size = 2.2) +
+        geom_errorbar(aes(ymin = min, ymax = max), width = 0.25, position = pd, alpha = 0.6,
+                      na.rm = TRUE) +
+        
+        geom_point(position = pd, size = 2.2, na.rm = TRUE) +
         scale_color_manual(values = c("For Hire" = "#003087", "Private" = "#5EB6D9", "Shore" = "#C6E6F0"),
                            name = "Mode") +
         scale_y_continuous(labels = scales::comma) +
-        labs(x = "Month", y = y_lab,
+        labs(x = "Month / Year", y = y_lab,
              caption = "Points = median catch per trip; bars span min\u2013max") +
         theme_minimal(base_size = 12) +
         theme(axis.text.x = element_text(angle = 35, hjust = 1), legend.position = "right")
-      
-      if (length(unique(plot_data$year)) > 1) {
-        g <- g + facet_wrap(~ year)
-      }
       
       return(ggplotly(g, tooltip = "text"))
     } 
@@ -1017,13 +1036,15 @@ server <- function(input, output, session) {
   
   output$documentation_content <- renderUI({
     doc_path <- switch(input$doc_metric,
-                       "length_doc"                  = "docs/catch-at-length.html",
+                       "catch_at_len_doc"            = "docs/catch_at_len_GF.html",
                        "naa_cod_doc"                 = "docs/NAA_cod.html",
                        "naa_haddock_doc"             = "docs/NAA_haddock.html",
                        "naa_bsb_doc"                 = "docs/NAA_blackseabass.html",
                        "naa_sf_doc"                  = "docs/NAA_summerflounder.html",
                        "naa_scup_doc"                = "docs/NAA_scup.html",
-                       "trips_catch_cod_haddock_doc" = "docs/trips_catch_cod_haddock.html")
+                       "trips_catch_cod_haddock_doc" = "docs/trips_catch_cod_haddock.html", 
+                       "cpt_cod_haddock_doc"         = "docs/cpt_cod_haddock.html")
+
     tags$iframe(src = doc_path, style = "width: 100%; height: 800px; border: none;", seamless = NA)
   })
 }

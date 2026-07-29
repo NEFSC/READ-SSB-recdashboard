@@ -1,14 +1,13 @@
-## This script reads in the WGOM Cod & Haddock catch per trip Rds from Google Drive
+## This script reads in the WGOM Cod & Haddock catch at length Rds from Google Drive
 
-
-#Load libraries
+# Load libraries
 library(tidyverse)
 library(haven)
 library(glue)
 library(googledrive)
 library(here)
 
-here::i_am("stored_scripts/pull_cpt.R")
+here::i_am("stored_scripts/pull_catch_len.R")
 
 # Connect to Google Drive
 # NOTE: Relies on cached credentials in .secrets. Will prompt interactive auth if missing or expired.
@@ -23,17 +22,18 @@ folder_info <- drive_get(
   shared_drive = "NMFS NEC READ SSB"
 )
 
+
 # List files inside the miscellaneous folder, only the ones containing our target string to save API calls
 folder_files <- drive_ls(
   path = as_id(folder_info$id),
-  q = "name contains 'rdb_catch_per_trip_'"
+  q = "name contains 'rdb_catch_at_length_'"
 )
 
 
 # Filter for our specific files, extract dates, and find the most recent one
 latest_file <- folder_files %>%
   # Keep only files that match our naming pattern
-  filter(str_detect(name, "^rdb_catch_per_trip_\\d{4}-\\d{2}-\\d{2}\\.Rds$")) %>%
+  filter(str_detect(name, "^rdb_catch_at_length_\\d{4}-\\d{2}-\\d{2}\\.Rds$")) %>%
   # Extract the date string and convert to an actual Date object for accurate sorting
   mutate(
     parsed_date = as.Date(str_extract(name, "\\d{4}-\\d{2}-\\d{2}"))
@@ -44,7 +44,7 @@ latest_file <- folder_files %>%
 
 # Safety check in case the folder is empty or files were renamed/moved
 if (nrow(latest_file) == 0) {
-  stop("No files matching 'rdb_catch_per_trip_{YYYY-MM-DD}.Rds' were found in the folder.")
+  stop("No files matching 'rdb_catch_at_length_{YYYY-MM-DD}.Rds' were found in the folder.")
 }
 
 # Grab the ID of the most recent file
@@ -63,7 +63,7 @@ drive_download(
 )
 
 # Read file into R environment
-rdb_catch_per_trip <- read_rds(temp_path)
+rdb_catch_at_len <- read_rds(temp_path)
 
 # cleanup
 if (file.exists(temp_path)) {
@@ -75,13 +75,11 @@ if (file.exists(temp_path)) {
 data_vintage <- as.character(latest_file$parsed_date)
 
 write_rds(
-  rdb_catch_per_trip,
-  file = here("data", "main", glue("catch_per_trip_{data_vintage}.Rds"))
+  rdb_catch_at_len,
+  file = here("data", "main", glue("catch_at_len_{data_vintage}.Rds"))
 )
 
 
 #cleanup
 rm(folder_info, latest_file, folder_files)
-
-
 
