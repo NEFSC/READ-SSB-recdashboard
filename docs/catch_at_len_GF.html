@@ -360,14 +360,20 @@ by season for Western Gulf of Maine (WGOM) Atlantic Cod and Gulf of
 Maine (GOM) Haddock. The ‘summer’ season is May - August and the
 ‘winter’ is September - April. We provide the medians of 101 random
 draws of the observed proportions caught at length and the fitted (i.e.,
-smoothed) proportions.</p>
+smoothed) proportions for the baseline year.</p>
+<p>We also provide the median fitted projected catch at length
+probability distribution across 101 draws for the upcoming management
+cycle. The projected catch at length distribution is based on the
+baseline observed catch at length distribution and the projected numbers
+at age from the stock assessment.</p>
 <p><strong>Years available</strong>:</p>
 <p>The data are for the baseline regulatory year, also called the
-calibration year. Baseline simulated catch at length is based on the
-most recent 6 waves of data. For the 2026 management cycle, catch at
-length was simulated using data for waves 1-5 of 2025 and wave 6 of
-2024. For the 2027 management cycle, catch at length will be simulated
-using data for waves 1-5 of 2026 and wave 6 of 2025.</p>
+calibration year, as well as the projection year. Baseline catch at
+length is based on the most recent 6 waves of data. For the 2026
+management cycle, baseline catch at length was simulated using data for
+waves 1-5 of 2025 and wave 6 of 2024 and we provide projected catch at
+length for 2026. For the 2027 management cycle, catch at length will be
+simulated using data for waves 1-5 of 2026 and wave 6 of 2025.</p>
 <div id="methods" class="section level2">
 <h2>Methods</h2>
 <div id="data-sources" class="section level3">
@@ -377,6 +383,8 @@ from the Marine Recreational Information Program (<a href="https://www.fisheries
 MRIP provides length data for a sample of harvested fish and for a
 sample of discarded fish, the latter of which comes from headboat
 observations.</p>
+<p>The numbers at age data are from the most recent stock
+assessment.</p>
 </div>
 <div id="data-extraction" class="section level3">
 <h3>Data extraction</h3>
@@ -397,26 +405,49 @@ Stock Areas</div>
 <h3>Data analysis/Processing</h3>
 <p><a href="https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim">Data
 processing code</a> is in the groundfishRDM repository.</p>
+<div id="baseline-catch-at-length-distribution" class="section level4">
+<h4>Baseline Catch at Length Distribution</h4>
 <p>We use the samples of the number of fish discarded at length and
-harvested at length to get probability distributions for both by season
-for each species. Next, we multiply the harvest at length probability
-distribution by 101 draws of simulated total harvest and we multiply the
-discards at length probability distribution by 101 draws of simulated
-total discards. The simulated total numbers of fish harvested and
-discarded are based on random draws of simulated directed trips and
-simulated harvest- and discards per trip.</p>
+harvested at length to get baseline probability distributions for both
+by season for each species. Next, we multiply the harvest at length
+probability distribution by 101 draws of baseline simulated total
+harvest and we multiply the discards at length probability distribution
+by 101 draws of simulated total discards. The simulated baseline total
+numbers of fish harvested and discarded are based on random draws of
+simulated directed trips and simulated harvest- and discards per
+trip.</p>
 <p>We add the simulated total harvest and discards at length to get 101
-draws of total numbers of fish caught at length, and then convert the
-numbers to proportions which form the ‘observed’ catch at length
-distribution draws. We then fit these observed probabilities to a gamma
-distribution to get smoothed distributions. These fitted probabilities
-are fed into the model. Finally, for the dashboard we take the medians
-of the 101 draws of observed and fitted catch at length probabilities by
-season for cod and haddock.</p>
+draws of total baseline numbers of fish caught at length, and then
+convert the numbers to proportions which form the ‘observed’ catch at
+length distribution draws. We then fit these observed probabilities to a
+gamma distribution to get smoothed distributions. These fitted
+probabilities are fed into the model. Finally, for the dashboard we take
+the medians of the 101 draws of baseline observed and fitted catch at
+length probabilities by season for cod and haddock.</p>
 <p>The metric column in the raw data has the season and the length of
 the fish in inches. We receive the fish lengths in centimeters and
 convert them to inches, which is why the lengths are non-integers in the
 raw data.</p>
+</div>
+<div id="projected-catch-at-length-distribution" class="section level4">
+<h4>Projected Catch at Length Distribution</h4>
+<p>To get the projected catch at length distribution, we compute an
+empirical selectivity at length by species, season, draw, and length
+based on the baseline observed catch at length probabilities and
+baseline numbers at length. Baseline numbers at length are converted
+from the baseline numbers at age from the stock assessment using
+age-length keys from recent NEFSC trawl survey data.</p>
+<p>Next, we convert the projected numbers at age from the stock
+assessment into projected numbers at length using the same age-length
+keys. We apply the baseline selectivity at length to the projected
+numbers at length to get the projected catch at length in numbers. We
+convert the projected catch at length numbers to probabilities and then
+fit the probabilities to a gamma distribution to get the projected
+fitted probabilities (i.e., a smoothed distribution).</p>
+<p>Finally, we take the median fitted projected catch at length
+probabilities across 101 draws by season and species to display in the
+recDST data dashboard. The lengths are in inches.</p>
+</div>
 </div>
 </div>
 </div>
