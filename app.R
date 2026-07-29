@@ -45,16 +45,34 @@ pivot_naa_long <- function(df) {
 }
 
 parse_metric_naa <- function(df) {
+  # Handles both the older cod/haddock convention ("Numbers of Age 1") and the
+  # newer species files ("2024 Numbers at Age 1" / "2026 Projected Numbers At Age 1")
+  # — age is just the trailing number, and metric_parsed strips any leading year
+  # and trailing "of/at Age N" (case-insensitive, since capitalization varies).
   df %>%
-    mutate(age = as.integer(str_split_i(metric, pattern = " of Age ", -1)),
-           metric_parsed = str_split_i(metric, pattern = " of Age ", -2))
+    mutate(
+      age           = as.integer(str_extract(metric, "\\d+$")),
+      metric_parsed = metric %>%
+        str_remove("^\\d{4}\\s+") %>%
+        str_remove(stringr::regex("\\s+(of|at)\\s+Age\\s*\\d+$", ignore_case = TRUE))
+    )
 }
 
 naa_data <- list(
-  cod_historical     = parse_metric_naa(readRDS(here::here("data", "main", "WGOM_Cod_historical_NAA_2026-05-21.Rds"))),
-  cod_projected      = parse_metric_naa(readRDS(here::here("data", "main", "WGOM_Cod_projected_NAA_2026-05-21.Rds"))),
-  haddock_historical = parse_metric_naa(readRDS(here::here("data", "main", "GOM_Haddock_historical_NAA_2026-05-21.Rds"))),
-  haddock_projected  = parse_metric_naa(readRDS(here::here("data", "main", "GOM_Haddock_projected_NAA_2026-05-21.Rds")))
+  cod_historical     = parse_metric_naa(readRDS(here::here("data", "main", "WGOM_Cod_historical_NAA_2026-06-16.Rds"))),
+  cod_projected      = parse_metric_naa(readRDS(here::here("data", "main", "WGOM_Cod_projected_NAA_2026-06-16.Rds"))),
+  haddock_historical = parse_metric_naa(readRDS(here::here("data", "main", "GOM_Haddock_historical_NAA_2026-06-16.Rds"))),
+  haddock_projected  = parse_metric_naa(readRDS(here::here("data", "main", "GOM_Haddock_projected_NAA_2026-06-16.Rds"))),
+  
+  bsb_n_historical   = parse_metric_naa(readRDS(here::here("data", "main", "BlackSeaBassNorth_historicalNAA_2026_07_29.Rds"))),
+  bsb_n_projected    = parse_metric_naa(readRDS(here::here("data", "main", "BlackSeaBassNorth_projectedNAA_2026_07_29.Rds"))),
+  bsb_s_historical   = parse_metric_naa(readRDS(here::here("data", "main", "BlackSeaBassSouth_historicalNAA_2026_07_29.Rds"))),
+  bsb_s_projected    = parse_metric_naa(readRDS(here::here("data", "main", "BlackSeaBassSouth_projectedNAA_2026_07_29.Rds"))), 
+  
+  scup_historical   = parse_metric_naa(readRDS(here::here("data", "main", "Scup_historicalNAA_2026_07_29.Rds"))),
+  scup_projected    = parse_metric_naa(readRDS(here::here("data", "main", "Scup_projectedNAA_2026_07_29.Rds"))),
+  sf_historical     = parse_metric_naa(readRDS(here::here("data", "main", "SummerFlounder_historicalNAA_2026_07_29.Rds"))),
+  sf_projected      = parse_metric_naa(readRDS(here::here("data", "main", "SummerFlounder_projectedNAA_2026_07_29.Rds")))
 )
 
 # ── Load Catch-per-Trip RDS ───────────────────────────────────────────────────
@@ -247,7 +265,7 @@ ui <- page_fillable(
           
           # State selector — mid-atlantic species only
           conditionalPanel(
-            condition = "input.species == 'Summer Flounder' || input.species == 'Black Sea Bass' || input.species == 'Scup'",
+            condition = "(input.species == 'Summer Flounder' || input.species == 'Black Sea Bass' || input.species == 'Scup') && input.data_metric != 'naa'",
             div(
               style = "margin-top: 15px;",
               div(style = "background-color: #003087; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
@@ -350,6 +368,9 @@ ui <- page_fillable(
                   "doc_metric", NULL,
                   choices  = c("Cod Numbers at age"       = "naa_cod_doc",
                                "Haddock Numbers at age"   = "naa_haddock_doc",
+                               "Black Sea Bass Numbers-at-age"   = "naa_bsb_doc",
+                               "Summer Flounder Numbers-at-age"  = "naa_sf_doc",
+                               "Scup Numbers-at-age"             = "naa_scup_doc",
                                "Directed Trips and Catch" = "trips_catch_cod_haddock_doc", 
                                "Catch per trip"           = "cpt_cod_haddock_doc",
                                "Catch at length"          = "catch_at_len_doc"),
@@ -426,8 +447,15 @@ server <- function(input, output, session) {
       shinyjs::show("time_standard"); shinyjs::hide("time_naa");  shinyjs::hide("time_cpt")
     }
     
-    # Species choices — NAA / catch / cpt limited to cod/haddock; standard gets all
-    if (is_naa || is_catch) {
+    # Species choices — NAA now covers all six assessed stocks; catch / catch-per-trip
+    # (MRIP-derived metrics) stay limited to cod/haddock; standard catch-at-length gets all species.
+    naa_species_choices <- c("Atlantic Cod", "Haddock", "Black Sea Bass (North)",
+                             "Black Sea Bass (South)", "Scup", "Summer Flounder")
+    if (is_naa) {
+      updateSelectInput(session, "species",
+                        choices  = naa_species_choices,
+                        selected = if (input$species %in% naa_species_choices) input$species else "Atlantic Cod")
+    } else if (is_catch) {
       updateSelectInput(session, "species",
                         choices  = c("Atlantic Cod", "Haddock"),
                         selected = if (input$species %in% c("Atlantic Cod", "Haddock")) input$species else "Atlantic Cod")
@@ -484,14 +512,28 @@ server <- function(input, output, session) {
   })
   
   # ── NAA reactive ───────────────────────────────────────────────────────────
+  naa_species_key_map <- c(
+    "Atlantic Cod"           = "cod",
+    "Haddock"                = "haddock",
+    "Black Sea Bass (North)" = "bsb_n",
+    "Black Sea Bass (South)" = "bsb_s",
+    "Scup"                   = "scup",
+    "Summer Flounder"        = "sf"
+  )
+
   stock_abbrev <- reactive({
-    switch(input$species, "Atlantic Cod" = "WGOM", "Haddock" = "GOM")
+    switch(input$species,
+           "Atlantic Cod"           = "WGOM",
+           "Haddock"                = "GOM",
+           "Black Sea Bass (North)" = "North",
+           "Black Sea Bass (South)" = "South",
+           "Scup"                   = "",
+           "Summer Flounder"        = "")
   })
   
   filtered_naa <- reactive({
     req(input$data_metric == "naa", input$species, input$naa_period)
-    key <- paste0(if (input$species == "Atlantic Cod") "cod" else "haddock",
-                  "_", input$naa_period)
+    key <- paste0(naa_species_key_map[[input$species]], "_", input$naa_period)
     naa_data[[key]]
   })
   
@@ -552,8 +594,10 @@ server <- function(input, output, session) {
     switch(input$data_metric,
            "naa" = {
              req(input$species, input$naa_period)
-             paste(stock_abbrev(), input$species, " Numbers at Age,",
-                   ifelse(input$naa_period == "historical", "Historical", "Projected"))
+             stringr::str_squish(
+               paste(stock_abbrev(), input$species, "\u2014 Numbers-at-Age,",
+                     ifelse(input$naa_period == "historical", "Historical", "Projected"))
+             )
            },
            "trips" = paste("Directed Trips ", input$tc_fishery),
            "catch_tc" = {
@@ -584,10 +628,19 @@ server <- function(input, output, session) {
     # ── NAA ──
     if (input$data_metric == "naa") {
       req(filtered_naa())
-      df         <- filtered_naa()
+      df          <- filtered_naa()
       yaxis_label <- glue::glue("{df$metric_parsed[1]} at Age ({df$units[1]})")
       
-      if (input$naa_period == "historical") {
+      # Multi-year historical time series (e.g. Cod/Haddock) get the line-per-year
+      # view; a single historical assessment year or the projected replicates
+      # (e.g. Scup, Summer Flounder, Black Sea Bass N/S) get a boxplot showing
+      # the spread across replicates/estimates instead.
+      use_line_view <- input$naa_period == "historical" &&
+        (length(unique(df$year)) > 1 ||
+           input$species %in% c("Black Sea Bass (North)", "Black Sea Bass (South)",
+                                "Scup", "Summer Flounder"))
+      
+      if (use_line_view) {
         n_years     <- length(unique(tail(sort(unique(df$year)), 5)))
         year_colors <- colorRampPalette(c("#C6E6F0", "#0085CA", "#003087"))(n_years)
         plot_data   <- df %>%
@@ -606,6 +659,7 @@ server <- function(input, output, session) {
           theme(legend.position = "right", axis.text.x = element_text(angle = 45, hjust = 1))
         
       } else {
+        n_reps    <- df %>% dplyr::count(age) %>% dplyr::pull(n) %>% max()
         plot_data <- df %>%
           mutate(age = factor(paste0("Age ", age), levels = paste0("Age ", sort(unique(df$age)))))
         
@@ -613,7 +667,9 @@ server <- function(input, output, session) {
           geom_boxplot(fill = "#5EB6D9", color = "#003087",
                        outlier.fill = "#5EB6D9", outlier.alpha = 0.1, outlier.color = "transparent") +
           scale_y_continuous(labels = scales::comma) +
-          labs(x = "Age", y = yaxis_label, caption = "Boxes show distribution across 500 replicates") +
+          labs(x = "Age", y = yaxis_label,
+               caption = paste0("Boxes show distribution across ", scales::comma(n_reps),
+                                " replicate", ifelse(n_reps == 1, "", "s"))) +
           theme_minimal(base_size = 12) +
           theme(axis.text.x = element_text(angle = 45, hjust = 1))
       }
@@ -833,7 +889,8 @@ server <- function(input, output, session) {
     if (input$data_metric == "naa") {
       req(filtered_naa())
       df <- filtered_naa()
-      if (input$naa_period == "historical") {
+      use_line_view <- input$naa_period == "historical" && length(unique(df$year)) > 1
+      if (use_line_view) {
         df %>%
           group_by(Year = as.integer(year)) %>%
           summarise(across(c(), ~ NULL),
@@ -982,8 +1039,12 @@ server <- function(input, output, session) {
                        "catch_at_len_doc"            = "docs/catch_at_len_GF.html",
                        "naa_cod_doc"                 = "docs/NAA_cod.html",
                        "naa_haddock_doc"             = "docs/NAA_haddock.html",
+                       "naa_bsb_doc"                 = "docs/NAA_blackseabass.html",
+                       "naa_sf_doc"                  = "docs/NAA_summerflounder.html",
+                       "naa_scup_doc"                = "docs/NAA_scup.html",
                        "trips_catch_cod_haddock_doc" = "docs/trips_catch_cod_haddock.html", 
                        "cpt_cod_haddock_doc"         = "docs/cpt_cod_haddock.html")
+
     tags$iframe(src = doc_path, style = "width: 100%; height: 800px; border: none;", seamless = NA)
   })
 }

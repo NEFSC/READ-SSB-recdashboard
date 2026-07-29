@@ -25,6 +25,11 @@ conflicts_prefer(dplyr::filter)
 # Declare script location to establish project root for relative paths
 here::i_am("stored_scripts/pull_NAA.R")
 
+# locations of NAA on google drive
+groundfish_processed_data_path<-file.path("socialsci","RecreationalDST","2027_management_cycle_data","groundfishRDM","input_data")
+sfsbsb_processed_data_path<-file.path("socialsci","RecreationalDST","2028_management_cycle_data","flukeRDM","miscellaneous")
+
+
 #Set this to TRUE if you want to download the files and read them into memory. FALSE otherwise
 # NOTE: Toggles whether downloaded files are immediately loaded into the global environment
 readin<-FALSE
@@ -33,13 +38,23 @@ readin<-FALSE
 # stubs of output save files
 # no wildcards, because googledrive doesn't like that
 # NOTE: These exact string stubs will be used for both regex matching and dynamic variable assignment
-CodProjectedNAA<-"WGOM_Cod_projected_NAA"
-CodHistoricalNAA<-"WGOM_Cod_historical_NAA"
 
-HaddockProjectedNAA<-glue("GOM_Haddock_projected_NAA")
-HaddockHistoricalNAA<-glue("GOM_Haddock_historical_NAA")
+SFSBSB_files_to_get<-list("SummerFlounder_historicalNAA",
+             "Scup_historicalNAA",
+             "BlackSeaBassSouth_historicalNAA",
+             "BlackSeaBassNorth_historicalNAA",
+             "SummerFlounder_projectedNAA",
+             "Scup_projectedNAA",
+             "BlackSeaBassSouth_projectedNAA",
+             "BlackSeaBassNorth_projectedNAA")
+             
 
-files_to_get<-list(CodProjectedNAA,CodHistoricalNAA,HaddockProjectedNAA,HaddockHistoricalNAA)
+groundfish_files_to_get<-list("WGOM_Cod_projected_NAA",
+                   "WGOM_Cod_historical_NAA",
+                   "GOM_Haddock_projected_NAA",
+                   "GOM_Haddock_historical_NAA")
+
+files_to_get<-append(groundfish_files_to_get,SFSBSB_files_to_get)
 
 #####################################################################################################
 # Connect to Google Drive
@@ -47,32 +62,56 @@ files_to_get<-list(CodProjectedNAA,CodHistoricalNAA,HaddockProjectedNAA,HaddockH
 drive_auth(cache = here(".secrets"), email = TRUE,  scopes = "https://www.googleapis.com/auth/drive")
 
 # Find the folder on google drive
-processed_data_path<-file.path("socialsci","RecreationalDST","2027_management_cycle_data","groundfishRDM","input_data")
 folder_info <- drive_get(
-  path = processed_data_path,
+  path = groundfish_processed_data_path,
   shared_drive = "NMFS NEC READ SSB"
 )
 # Reassign processed_data_path to the specific Google Drive folder ID for targeted queries
-processed_data_path<-folder_info$id
+groundfish_processed_data_path<-folder_info$id
 
-if(length(processed_data_path)>1){
-  stop("more than 1 folder found.")
+if(length(groundfish_processed_data_path)>1){
+  stop("more than 1 groundfish folder found.")
 }
-if(length(processed_data_path)<1){
-  stop("no folders found")
+if(length(groundfish_processed_data_path)<1){
+  stop("no groundfish folders found")
 }
+
+
+# Find the folder on google drive
+folder_info <- drive_get(
+  path = sfsbsb_processed_data_path,
+  shared_drive = "NMFS NEC READ SSB"
+)
+# Reassign processed_data_path to the specific Google Drive folder ID for targeted queries
+sfsbsb_processed_data_path<-folder_info$id
+
+if(length(sfsbsb_processed_data_path)>1){
+  stop("more than 1 folder for sfsbsb found.")
+}
+if(length(sfsbsb_processed_data_path)<1){
+  stop("no sfsbsb folders found")
+}
+
+
 
 #####################################################################################################
 
 # It's a loop. Sorry.
 
-
+download_count<-0
 for (my_file in files_to_get){
   
+  if (my_file %in% SFSBSB_files_to_get){
+    search_path<-sfsbsb_processed_data_path
+  } else  if (my_file %in% groundfish_files_to_get){
+    search_path<-groundfish_processed_data_path
+  } else {
+    stop("Error: the file you're looking for is not valid. This shouldn't happen")
+  }
   # Search for files that match the pattern in myfile
   # NOTE: as_id prevents drive_ls from treating the ID string as a literal file path
   files_in_folder <- drive_ls(
-    path = as_id(processed_data_path), 
+    path = as_id(search_path), 
     pattern = my_file
   )
   #################### Ensure you only get an Rds file#####
@@ -107,14 +146,20 @@ for (my_file in files_to_get){
       overwrite = TRUE
     )
     print(glue("Successfully downloaded file {my_file}_{most_recent_file$file_date}.Rds" ))
-  }
+    download_count<-download_count+1
+    }
   
   # read it in
   if(readin==TRUE){
     # Dynamically assign the loaded RDS to a variable in the global environment named after the my_file stub string
     assign(my_file, readRDS(here("data", "main", most_recent_file$name)))
   }
+
 }
+
+message("Files expected: " , length(files_to_get))
+message("Files downloaded: " , download_count)
+
 
 #cleanup
 rm(folder_info, most_recent_file, files_to_get, files_in_folder)
