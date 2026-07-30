@@ -2,7 +2,7 @@
 
 **Description**: 
 
-Historical numbers at age (mean). 
+Historical numbers at age (median). 
 
 Projected Numbers at age contain 100 individual draws for the North and South Unit separately for the upcoming year to give insight into variability. These draws were independently constructed.
 
@@ -10,7 +10,7 @@ Black Sea Bass has 8 age classes (Age 1 to Age 7 and Age 8+).
 
 **Years available**: 
 
-Mean historical numbers at age are provided for the 2024.  
+Median historical numbers at age are provided for the 2024.  
 
 Projected numbers at age are provided for the one year.
 
