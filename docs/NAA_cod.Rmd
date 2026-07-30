@@ -2,7 +2,7 @@
 
 **Description**: 
 
-Historical numbers at age (median).  Depending on 
+Historical numbers at age (mean).  Depending on 
 the timing of the most recent stock assessment, these contain a mix of 
 assessment estimates and a "bridge" to current regulatory year. The bridging is
 performed in a manner consistent with the stock projections, but may be updated with
@@ -14,7 +14,7 @@ WGOM Cod has 9 age classes (Age 1 to Age 8 and Age 9+).
 
 **Years available**: 
 
-Median historical numbers at age are provided for the most recent 3 years.  
+Mean historical numbers at age are provided for the most recent 3 years.  
 
 Projected numbers at age are provided for the upcoming management year.
 
