@@ -10,6 +10,8 @@ realized commercial and recreational removals.
 
 Simulated Numbers at age for Western Gulf of Maine Cod for the upcoming regulatory cycle.
 
+WGOM Cod has 9 age classes (Age 1 to Age 8 and Age 9+).
+
 **Years available**: 
 
 Mean historical numbers at age are provided for the most recent 3 years.  
