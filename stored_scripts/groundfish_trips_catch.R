@@ -83,7 +83,6 @@ cod_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE',
                 
 names(cod_effort) <- tolower(names(cod_effort))
 cod_effort[] <- lapply(cod_effort, function(x) if(is.character(x)) tolower(x) else x)
-cod_effort <- subset(cod_effort, select = -c(hrsf)) # drop: hours fished, not needed downstream
 
 #######################################################################  
 ######  Expand the survey data for catch  ######
@@ -134,7 +133,6 @@ hadd_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE',
 
 names(hadd_effort) <- tolower(names(hadd_effort))
 hadd_effort[] <- lapply(hadd_effort, function(x) if(is.character(x)) tolower(x) else x)
-hadd_effort <- subset(hadd_effort, select = -c(hrsf))
 
 
 #### Haddock catch ####
