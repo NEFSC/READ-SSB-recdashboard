@@ -64,15 +64,15 @@ naa_data <- list(
   haddock_historical = parse_metric_naa(readRDS(here::here("data", "main", "GOM_Haddock_historical_NAA_2026-06-16.Rds"))),
   haddock_projected  = parse_metric_naa(readRDS(here::here("data", "main", "GOM_Haddock_projected_NAA_2026-06-16.Rds"))),
   
-  bsb_n_historical   = parse_metric_naa(readRDS(here::here("data", "main", "BlackSeaBassNorth_historicalNAA_2026_07_29.Rds"))),
-  bsb_n_projected    = parse_metric_naa(readRDS(here::here("data", "main", "BlackSeaBassNorth_projectedNAA_2026_07_29.Rds"))),
-  bsb_s_historical   = parse_metric_naa(readRDS(here::here("data", "main", "BlackSeaBassSouth_historicalNAA_2026_07_29.Rds"))),
-  bsb_s_projected    = parse_metric_naa(readRDS(here::here("data", "main", "BlackSeaBassSouth_projectedNAA_2026_07_29.Rds"))), 
+  bsb_n_historical   = parse_metric_naa(readRDS(here::here("data", "main", "BlackSeaBassNorth_historicalNAA_2026_07_30.Rds"))),
+  bsb_n_projected    = parse_metric_naa(readRDS(here::here("data", "main", "BlackSeaBassNorth_projectedNAA_2026_07_30.Rds"))),
+  bsb_s_historical   = parse_metric_naa(readRDS(here::here("data", "main", "BlackSeaBassSouth_historicalNAA_2026_07_30.Rds"))),
+  bsb_s_projected    = parse_metric_naa(readRDS(here::here("data", "main", "BlackSeaBassSouth_projectedNAA_2026_07_30.Rds"))), 
   
-  scup_historical   = parse_metric_naa(readRDS(here::here("data", "main", "Scup_historicalNAA_2026_07_29.Rds"))),
-  scup_projected    = parse_metric_naa(readRDS(here::here("data", "main", "Scup_projectedNAA_2026_07_29.Rds"))),
-  sf_historical     = parse_metric_naa(readRDS(here::here("data", "main", "SummerFlounder_historicalNAA_2026_07_29.Rds"))),
-  sf_projected      = parse_metric_naa(readRDS(here::here("data", "main", "SummerFlounder_projectedNAA_2026_07_29.Rds")))
+  scup_historical   = parse_metric_naa(readRDS(here::here("data", "main", "Scup_historicalNAA_2026_07_30.Rds"))),
+  scup_projected    = parse_metric_naa(readRDS(here::here("data", "main", "Scup_projectedNAA_2026_07_30.Rds"))),
+  sf_historical     = parse_metric_naa(readRDS(here::here("data", "main", "SummerFlounder_historicalNAA_2026_07_30.Rds"))),
+  sf_projected      = parse_metric_naa(readRDS(here::here("data", "main", "SummerFlounder_projectedNAA_2026_07_30.Rds")))
 )
 
 # ── Load Catch-per-Trip RDS ───────────────────────────────────────────────────
@@ -368,9 +368,9 @@ ui <- page_fillable(
                   "doc_metric", NULL,
                   choices  = c("Cod Numbers at age"       = "naa_cod_doc",
                                "Haddock Numbers at age"   = "naa_haddock_doc",
-                               "Black Sea Bass Numbers-at-age"   = "naa_bsb_doc",
-                               "Summer Flounder Numbers-at-age"  = "naa_sf_doc",
-                               "Scup Numbers-at-age"             = "naa_scup_doc",
+                               "Black Sea Bass Numbers at age"   = "naa_bsb_doc",
+                               "Summer Flounder Numbers at age"  = "naa_sf_doc",
+                               "Scup Numbers at age"             = "naa_scup_doc",
                                "Directed Trips and Catch" = "trips_catch_cod_haddock_doc", 
                                "Catch per trip"           = "cpt_cod_haddock_doc",
                                "Catch at length"          = "catch_at_len_doc"),
