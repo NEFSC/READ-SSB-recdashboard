@@ -51,6 +51,8 @@ run_date<-as.Date(file_date)
 filename <- here("data","raw",glue("mrip_statistics_{file_date}.Rds"))
 mrip_statistics <- read_rds(filename) # comes from get_mrip(), which returned a named list with elements: trip, catch, size, size_b2
 
+# read this in (copied from gf misc)
+#mrip_statistics <- readRDS("~/GitHub/READ-SSB-recdashboard/data/raw/mrip_pull2026-07-31.Rds")
 
 
 # Load the elements in the list 
