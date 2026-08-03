@@ -98,6 +98,23 @@ cpt_data <- cpt_raw %>%
     )
   )
 
+# ── Load Catch-at-Length RDS ──────────────────────────────────────────────────
+# NEW METRIC: metric column encodes "<season> <length>" (e.g. "summer 6.7"), so
+# season and the numeric length (used for the x-axis) are parsed out here. The
+# "units" column distinguishes projected vs. baseline (fitted/observed) values;
+# common names are title-cased to match the existing species_map ("Atlanticcod"/"Haddock").
+catch_len_raw <- tryCatch(
+  readRDS(here::here("data", "main", "catch_at_len_2026-07-16.Rds")),
+  error = function(e) readRDS("data/main/catch_at_len_2026-07-16.Rds")
+)
+
+catch_len_data <- catch_len_raw %>%
+  mutate(
+    common = tools::toTitleCase(common),
+    season = stringr::str_extract(metric, "^[A-Za-z]+"),
+    length = as.numeric(stringr::str_extract(metric, "[0-9.]+$"))
+  )
+
 # ── Colour palettes ───────────────────────────────────────────────────────────
 mode_colors_tc <- c("for_hire" = "#003087",
                     "private"  = "#5EB6D9",
@@ -210,7 +227,8 @@ ui <- page_fillable(
                           "Numbers at Age - Stock Assessment"    = "naa",
                           "Directed Trips - MRIP"                = "trips",
                           "Catch - MRIP"                         = "catch_tc",
-                          "Catch per trip - model intermediate"  = "cpt"
+                          "Catch per trip - model intermediate"  = "cpt",
+                          "Catch-at-Length - model intermediate" = "catch_len"
                         ),
                         selected = "length")
           ),
@@ -236,6 +254,18 @@ ui <- page_fillable(
                 checkboxGroupInput("tc_mode", NULL,
                                    choices  = c("For Hire" = "for_hire", "Private" = "private", "Shore" = "shore"),
                                    selected = c("for_hire", "private", "shore"))
+              )
+          ),
+          
+          # Season — only shown when data_metric == "catch_len"
+          div(id = "season_control",
+              div(
+                style = "margin-top: 15px;",
+                div(style = "background-color: #003087; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
+                    "Season"),
+                checkboxGroupInput("catch_len_season", NULL,
+                                   choices  = c("Summer" = "summer", "Winter" = "winter"),
+                                   selected = c("summer", "winter"))
               )
           ),
           
@@ -400,22 +430,23 @@ server <- function(input, output, session) {
   
   # ── Sidebar visibility logic ───────────────────────────────────────────────
   observeEvent(input$data_metric, {
-    is_naa      <- input$data_metric == "naa"
-    is_cpt      <- input$data_metric == "cpt"
+    is_naa       <- input$data_metric == "naa"
+    is_cpt       <- input$data_metric == "cpt"
+    is_catch_len <- input$data_metric == "catch_len"
     # tc_mode_control (for_hire/private/shore) is shared by trips, catch, and cpt
     is_tc       <- input$data_metric %in% c("trips", "catch_tc", "cpt")
-    # species limited to cod/haddock for catch and catch-per-trip
-    is_catch    <- input$data_metric %in% c("catch_tc", "cpt")
-    is_standard <- !is_naa && !is_tc
+    # species limited to cod/haddock for catch, catch-per-trip, and catch-at-length
+    is_catch    <- input$data_metric %in% c("catch_tc", "cpt", "catch_len")
+    is_standard <- !is_naa && !is_tc && !is_catch_len
     
-    # Stock selector — hide for trips only; show for catch_tc / cpt (cod/haddock)
+    # Stock selector — hide for trips only; show for catch_tc / cpt / catch_len (cod/haddock)
     if (input$data_metric == "trips") shinyjs::hide("stock_selector") else shinyjs::show("stock_selector")
     
-    # Fishing mode controls — mutually exclusive sets
+    # Fishing mode controls — mutually exclusive sets (catch_len has no mode dimension, so hide both)
     if (is_tc) {
       shinyjs::hide("fishing_mode_control")
       shinyjs::show("tc_mode_control")
-    } else if (is_naa) {
+    } else if (is_naa || is_catch_len) {
       shinyjs::hide("fishing_mode_control")
       shinyjs::hide("tc_mode_control")
     } else {
@@ -423,10 +454,13 @@ server <- function(input, output, session) {
       shinyjs::hide("tc_mode_control")
     }
     
+    # Season selector — only for catch_len
+    if (is_catch_len) shinyjs::show("season_control") else shinyjs::hide("season_control")
+    
     # Catch type sub-selector — no longer needed (always shows all metrics in chart)
     shinyjs::hide("catch_metric_control")
     
-    # Fishery selector — only for trips (catch / cpt show all species across fisheries)
+    # Fishery selector — only for trips (catch / cpt / catch_len show all species across fisheries)
     if (input$data_metric == "trips") {
       shinyjs::show("fishery_control")
       updateSelectInput(session, "tc_fishery",
@@ -438,17 +472,24 @@ server <- function(input, output, session) {
       shinyjs::hide("fishery_control")
     }
     
-    # Time interval: NAA vs catch-per-trip vs standard/tc
-    if (is_naa) {
-      shinyjs::hide("time_standard"); shinyjs::show("time_naa");  shinyjs::hide("time_cpt")
-    } else if (is_cpt) {
-      shinyjs::hide("time_standard"); shinyjs::hide("time_naa");  shinyjs::show("time_cpt")
+    # Time interval: catch_len doesn't use it at all (baseline vs. projected panels are
+    # fixed, and time is filtered via Season instead), so hide the whole control for it.
+    if (is_catch_len) {
+      shinyjs::hide("time_interval_control")
     } else {
-      shinyjs::show("time_standard"); shinyjs::hide("time_naa");  shinyjs::hide("time_cpt")
+      shinyjs::show("time_interval_control")
+      if (is_naa) {
+        shinyjs::hide("time_standard"); shinyjs::show("time_naa");  shinyjs::hide("time_cpt")
+      } else if (is_cpt) {
+        shinyjs::hide("time_standard"); shinyjs::hide("time_naa");  shinyjs::show("time_cpt")
+      } else {
+        shinyjs::show("time_standard"); shinyjs::hide("time_naa");  shinyjs::hide("time_cpt")
+      }
     }
     
-    # Species choices — NAA now covers all six assessed stocks; catch / catch-per-trip
-    # (MRIP-derived metrics) stay limited to cod/haddock; standard catch-at-length gets all species.
+    # Species choices — NAA now covers all six assessed stocks; catch / catch-per-trip /
+    # catch-at-length (MRIP- and model-derived metrics) stay limited to cod/haddock;
+    # standard catch-at-length gets all species.
     naa_species_choices <- c("Atlantic Cod", "Haddock", "Black Sea Bass (North)",
                              "Black Sea Bass (South)", "Scup", "Summer Flounder")
     if (is_naa) {
@@ -587,6 +628,17 @@ server <- function(input, output, session) {
              month %in% as.numeric(input$cpt_months))
   })
   
+  # ── Catch-at-Length reactive ───────────────────────────────────────────────
+  filtered_catch_len <- reactive({
+    req(input$data_metric == "catch_len", input$species, input$catch_len_season)
+    
+    species_map <- c("Atlantic Cod" = "Atlanticcod", "Haddock" = "Haddock")
+    selected_common <- species_map[[input$species]]
+    
+    catch_len_data %>%
+      filter(common == selected_common, season %in% input$catch_len_season)
+  })
+  
   # ── Plot title reactive (shared by both headers) ───────────────────────────
   # ── CHANGED: extracted into a reactive so both plot and table headers
   #             can reference the same logic without duplicating code ──────────
@@ -607,6 +659,10 @@ server <- function(input, output, session) {
            "cpt" = {
              req(input$species)
              paste(input$species, "Catch per Trip")
+           },
+           "catch_len" = {
+             req(input$species)
+             paste(input$species, "Catch-at-Length (Projected vs. Baseline)")
            },
            {
              metric_label <- switch(input$data_metric,
@@ -878,6 +934,41 @@ server <- function(input, output, session) {
         theme(axis.text.x = element_text(angle = 35, hjust = 1), legend.position = "right")
       
       return(ggplotly(g, tooltip = "text"))
+      
+      # ── Catch-at-Length ──
+      # Two stacked line plots — Projected on top, Baseline below — with length
+      # (parsed from the metric column) on the x-axis and one line per season.
+    } else if (input$data_metric == "catch_len") {
+      
+      req(filtered_catch_len())
+      df <- filtered_catch_len()
+      
+      plot_data <- df %>%
+        filter(units %in% c("projected fitted proportion of catch",
+                            "baseline fitted proportion of catch")) %>%
+        mutate(
+          panel  = dplyr::if_else(units == "projected fitted proportion of catch",
+                                  "Projected", "Baseline"),
+          panel  = factor(panel, levels = c("Projected", "Baseline")),
+          Season = factor(tools::toTitleCase(season), levels = c("Summer", "Winter"))
+        ) %>%
+        arrange(panel, Season, length)
+      
+      g <- ggplot(plot_data,
+                  aes(x = length, y = value, color = Season, group = Season,
+                      text = paste0("Season: ", Season,
+                                    "<br>Length: ", length,
+                                    "<br>Value: ", scales::comma(round(value, 5))))) +
+        geom_line(linewidth = 0.8, alpha = 0.85) +
+        geom_point(size = 1.2, alpha = 0.7) +
+        facet_wrap(~ panel, ncol = 1, scales = "free_y") +
+        scale_color_manual(values = c("Summer" = "#0085CA", "Winter" = "#003087"), name = "Season") +
+        scale_y_continuous(labels = scales::comma) +
+        labs(x = "Length (in)", y = "Proportion of Catch") +
+        theme_minimal(base_size = 12) +
+        theme(legend.position = "right")
+      
+      return(ggplotly(g, tooltip = "text"))
     } 
   })
   
@@ -978,6 +1069,20 @@ server <- function(input, output, session) {
         arrange(Year, Month, Mode) %>%
         mutate(Month = as.character(Month))
       
+    } else if (input$data_metric == "catch_len") {
+      req(filtered_catch_len())
+      filtered_catch_len() %>%
+        filter(units %in% c("projected fitted proportion of catch",
+                            "baseline fitted proportion of catch")) %>%
+        mutate(
+          Panel  = dplyr::if_else(units == "projected fitted proportion of catch",
+                                  "Projected", "Baseline"),
+          Season = tools::toTitleCase(season)
+        ) %>%
+        transmute(Panel, Season, Length = length,
+                  `Proportion of Catch` = scales::comma(round(value, 5))) %>%
+        arrange(Panel, Season, Length)
+      
     } else {
       metric_name <- switch(input$data_metric,
                             "length" = "catch_count", "cpue" = "cpue", "weight" = "weight_kg")
@@ -998,10 +1103,11 @@ server <- function(input, output, session) {
     filename = function() paste0("data_", gsub(" ", "_", input$data_metric), "_", Sys.Date(), ".csv"),
     content  = function(file) {
       df <- switch(input$data_metric,
-                   "naa"      = filtered_naa(),
-                   "trips"    = filtered_trips(),
-                   "catch_tc" = filtered_catch_tc(),
-                   "cpt"      = filtered_cpt(),
+                   "naa"       = filtered_naa(),
+                   "trips"     = filtered_trips(),
+                   "catch_tc"  = filtered_catch_tc(),
+                   "cpt"       = filtered_cpt(),
+                   "catch_len" = filtered_catch_len(),
                    filtered_data())
       write.csv(df, file, row.names = FALSE)
     }
