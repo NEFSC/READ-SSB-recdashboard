@@ -163,17 +163,6 @@ ui <- page_fillable(
           div("Northeast & Mid-Atlantic Region",
               style = "color: #C6E6F0; font-size: 11px; margin: 0; padding: 0; line-height: 1;")
         )
-      ),
-      
-      conditionalPanel(
-        condition = "input.current_tab == 'overview'",
-        div(
-          style = "display: flex; gap: 10px; flex-wrap: wrap;",
-          downloadButton("download_data", "Download Data",
-                         style = "background-color: #0085CA; border: none; color: white; font-size: 13px; border-radius: 3px; padding: 5px 10px;"),
-          downloadButton("download_plot", "Download Plot",
-                         style = "background-color: transparent; border: 1.5px solid #0085CA; color: white; font-size: 13px; border-radius: 3px; padding: 5px 10px;")
-        )
       )
     ),
     
@@ -347,6 +336,14 @@ ui <- page_fillable(
                   )
                 )
               )
+          ),
+          
+          # Download data — bottom of sidebar. Downloads exactly what's shown in the
+          # table on the right, with the table's title used as the CSV filename.
+          div(
+            style = "margin-top: 20px; padding-top: 15px; border-top: 1px solid #CBCFD1;",
+            downloadButton("download_data", "Download Data",
+                           style = "background-color: #0085CA; border: none; color: white; font-size: 13px; border-radius: 3px; padding: 6px 12px; width: 100%;")
           )
         ),
         
@@ -975,7 +972,7 @@ server <- function(input, output, session) {
   output$main_plot <- renderPlotly({ plot_obj() })
   
   # ── Summary table ──────────────────────────────────────────────────────────
-  output$summary_table <- renderTable({
+  summary_table_data <- reactive({
     
     if (input$data_metric == "naa") {
       req(filtered_naa())
@@ -1098,24 +1095,18 @@ server <- function(input, output, session) {
     }
   })
   
-  # ── Downloads ──────────────────────────────────────────────────────────────
-  output$download_data <- downloadHandler(
-    filename = function() paste0("data_", gsub(" ", "_", input$data_metric), "_", Sys.Date(), ".csv"),
-    content  = function(file) {
-      df <- switch(input$data_metric,
-                   "naa"       = filtered_naa(),
-                   "trips"     = filtered_trips(),
-                   "catch_tc"  = filtered_catch_tc(),
-                   "cpt"       = filtered_cpt(),
-                   "catch_len" = filtered_catch_len(),
-                   filtered_data())
-      write.csv(df, file, row.names = FALSE)
-    }
-  )
+  output$summary_table <- renderTable({ summary_table_data() })
   
-  output$download_plot <- downloadHandler(
-    filename = function() paste0("plot_", gsub(" ", "_", input$data_metric), "_", Sys.Date(), ".png"),
-    content  = function(file) plotly::save_image(plot_obj(), file)
+  # ── Downloads ──────────────────────────────────────────────────────────────
+  # Downloads exactly what's shown in the summary table, named after the table's title.
+  output$download_data <- downloadHandler(
+    filename = function() {
+      title_clean <- plot_title_text() %>%
+        stringr::str_replace_all("[^A-Za-z0-9]+", "_") %>%
+        stringr::str_replace_all("^_+|_+$", "")
+      paste0(title_clean, "_", Sys.Date(), ".csv")
+    },
+    content = function(file) write.csv(summary_table_data(), file, row.names = FALSE)
   )
   
   # ── Nav observers ──────────────────────────────────────────────────────────
