@@ -37,20 +37,25 @@ common_name2<-'HADDOCK'
 
 fishery<-"NE Groundfish"
 
-file_date<-"2026-06-09" # date stamp of the MRIP data pull; used for file lookup and data_version field
-
-
-
-run_date<-as.Date(file_date)
 
 #######################################################################  
 ######  Read in Data  ######
 #######################################################################  
 
-# NOTE: glue and here are used to dynamically locate the file. Ensure the raw folder exists.
-filename <- here("data","raw",glue("mrip_statistics_{file_date}.Rds"))
-mrip_statistics <- read_rds(filename) # comes from get_mrip(), which returned a named list with elements: trip, catch, size, size_b2
+# July 31 updates. tried to read this in (copied from gf misc), mrip_effort function did not work
+#mrip_statistics <- readRDS("~/GitHub/READ-SSB-recdashboard/data/raw/mrip_pull2026-07-31.Rds")
 
+# To pull in most recent mrip file
+folder<-file.path("data","raw")
+vintage_string<-list.files(folder, pattern=glob2rx("mrip_statistics_*Rds"))
+vintage_string<-gsub("mrip_statistics_","",vintage_string)
+vintage_string<-gsub(".Rds","",vintage_string)
+data_vintage<-max(vintage_string)
+run_date<-as.Date(data_vintage)
+
+# NOTE: glue and here are used to dynamically locate the file. Ensure the raw folder exists.
+filename <- here("data","raw",glue("mrip_statistics_{data_vintage}.Rds"))
+mrip_statistics <- read_rds(filename)  # comes from get_mrip(), which returned a named list with elements: trip, catch, size, size_b2
 
 
 # Load the elements in the list 
@@ -83,7 +88,6 @@ cod_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE',
                 
 names(cod_effort) <- tolower(names(cod_effort))
 cod_effort[] <- lapply(cod_effort, function(x) if(is.character(x)) tolower(x) else x)
-cod_effort <- subset(cod_effort, select = -c(dir_trip_typ, hrsf)) # drop: direction trip type flag and hours fished, not needed downstream
 
 #######################################################################  
 ######  Expand the survey data for catch  ######
@@ -134,7 +138,6 @@ hadd_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE',
 
 names(hadd_effort) <- tolower(names(hadd_effort))
 hadd_effort[] <- lapply(hadd_effort, function(x) if(is.character(x)) tolower(x) else x)
-hadd_effort <- subset(hadd_effort, select = -c(dir_trip_typ, hrsf))
 
 
 #### Haddock catch ####
