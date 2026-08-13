@@ -359,13 +359,17 @@ display: none;
 by season for Western Gulf of Maine (WGOM) Atlantic Cod and Gulf of
 Maine (GOM) Haddock. The ‘summer’ season is May - August and the
 ‘winter’ is September - April. We provide the medians of 101 random
-draws of the observed proportions caught at length and the fitted (i.e.,
-smoothed) proportions for the baseline year.</p>
+draws of the fitted (i.e., smoothed) proportions caught at length for
+the baseline year.</p>
 <p>We also provide the median fitted projected catch at length
 probability distribution across 101 draws for the upcoming management
 cycle. The projected catch at length distribution is based on the
-baseline observed catch at length distribution and the projected numbers
-at age from the stock assessment.</p>
+baseline catch at length distribution and the projected numbers at age
+from the stock assessment.</p>
+<p>The length data we use is in centimeters and we smooth the
+distributions over cm bins. We convert cm to inches for our users, which
+is why our inch bins are non-integers in the catch at length figure and
+table (eg, 10.6 inches).</p>
 <p><strong>Years available</strong>:</p>
 <p>The data are for the baseline regulatory year, also called the
 calibration year, as well as the projection year. Baseline catch at
@@ -422,8 +426,8 @@ convert the numbers to proportions which form the ‘observed’ catch at
 length distribution draws. We then fit these observed probabilities to a
 gamma distribution to get smoothed distributions. These fitted
 probabilities are fed into the model. Finally, for the dashboard we take
-the medians of the 101 draws of baseline observed and fitted catch at
-length probabilities by season for cod and haddock.</p>
+the medians of the 101 draws of baseline fitted catch at length
+probabilities by season for cod and haddock.</p>
 <p>The metric column in the raw data has the season and the length of
 the fish in inches. We receive the fish lengths in centimeters and
 convert them to inches, which is why the lengths are non-integers in the
@@ -446,7 +450,7 @@ fit the probabilities to a gamma distribution to get the projected
 fitted probabilities (i.e., a smoothed distribution).</p>
 <p>Finally, we take the median fitted projected catch at length
 probabilities across 101 draws by season and species to display in the
-recDST data dashboard. The lengths are in inches.</p>
+recDST data dashboard.</p>
 </div>
 </div>
 </div>
