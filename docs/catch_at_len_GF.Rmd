@@ -5,13 +5,17 @@
 This data contains the proportions of fish caught at length in inches by season for
 Western Gulf of Maine (WGOM) Atlantic Cod and Gulf of Maine (GOM) Haddock.
 The 'summer' season is May - August and the 'winter' is September - April. 
-We provide the medians of 101 random draws of the observed proportions caught at length 
-and the fitted (i.e., smoothed) proportions for the baseline year. 
+We provide the medians of 101 random draws of the fitted (i.e., smoothed) proportions 
+caught at length for the baseline year. 
 
 We also provide the median fitted projected catch at length probability distribution 
 across 101 draws for the upcoming management cycle. The projected catch at length 
-distribution is based on the baseline observed catch at length distribution and the projected 
+distribution is based on the baseline catch at length distribution and the projected 
 numbers at age from the stock assessment. 
+
+The length data we use is in centimeters and we smooth the distributions over cm bins. 
+We convert cm to inches for our users, which is why our inch bins are non-integers 
+in the catch at length figure and table (eg, 10.6 inches).
 
 **Years available**: 
 
