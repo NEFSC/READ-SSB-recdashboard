@@ -65,8 +65,8 @@ We add the simulated total harvest and discards at length to get 101 draws of to
 baseline numbers of fish caught at length, and then convert the numbers to proportions which form the 
 'observed' catch at length distribution draws. We then fit these observed probabilities 
 to a gamma distribution to get smoothed distributions. These fitted probabilities are fed into 
-the model. Finally, for the dashboard we take the medians of the 101 draws of baseline observed 
-and fitted catch at length probabilities by season for cod and haddock.  
+the model. Finally, for the dashboard we take the medians of the 101 draws of baseline 
+fitted catch at length probabilities by season for cod and haddock.  
 
 The metric column in the raw data has the season and the length of the fish in inches. 
 We receive the fish lengths in centimeters and convert them to inches, which is why
@@ -87,4 +87,4 @@ We convert the projected catch at length numbers to probabilities and then fit t
 probabilities to a gamma distribution to get the projected fitted probabilities (i.e., a smoothed distribution). 
 
 Finally, we take the median fitted projected catch at length probabilities across 101 draws 
-by season and species to display in the recDST data dashboard. The lengths are in inches.
+by season and species to display in the recDST data dashboard. 
