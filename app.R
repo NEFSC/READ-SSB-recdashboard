@@ -933,8 +933,9 @@ server <- function(input, output, session) {
       return(ggplotly(g, tooltip = "text"))
       
       # ── Catch-at-Length ──
-      # Two stacked line plots — Projected on top, Baseline below — with length
-      # (parsed from the metric column) on the x-axis and one line per season.
+      # One figure per season (faceted), with Baseline and Projected overlaid as
+      # two colored lines on the same panel. Length (parsed from the metric
+      # column) is the x-axis.
     } else if (input$data_metric == "catch_len") {
       
       req(filtered_catch_len())
@@ -944,22 +945,23 @@ server <- function(input, output, session) {
         filter(units %in% c("projected fitted proportion of catch",
                             "baseline fitted proportion of catch")) %>%
         mutate(
-          panel  = dplyr::if_else(units == "projected fitted proportion of catch",
+          Panel  = dplyr::if_else(units == "projected fitted proportion of catch",
                                   "Projected", "Baseline"),
-          panel  = factor(panel, levels = c("Projected", "Baseline")),
+          Panel  = factor(Panel, levels = c("Projected", "Baseline")),
           Season = factor(tools::toTitleCase(season), levels = c("Summer", "Winter"))
         ) %>%
-        arrange(panel, Season, length)
+        arrange(Season, Panel, length)
       
       g <- ggplot(plot_data,
-                  aes(x = length, y = value, color = Season, group = Season,
-                      text = paste0("Season: ", Season,
+                  aes(x = length, y = value, color = Panel, group = Panel,
+                      text = paste0("Series: ", Panel,
+                                    "<br>Season: ", Season,
                                     "<br>Length: ", length,
                                     "<br>Value: ", scales::comma(round(value, 5))))) +
         geom_line(linewidth = 0.8, alpha = 0.85) +
         geom_point(size = 1.2, alpha = 0.7) +
-        facet_wrap(~ panel, ncol = 1, scales = "free_y") +
-        scale_color_manual(values = c("Summer" = "#0085CA", "Winter" = "#003087"), name = "Season") +
+        facet_wrap(~ Season, ncol = 1, scales = "free_y") +
+        scale_color_manual(values = c("Projected" = "#0085CA", "Baseline" = "#003087"), name = NULL) +
         scale_y_continuous(labels = scales::comma) +
         labs(x = "Length (in)", y = "Proportion of Catch") +
         theme_minimal(base_size = 12) +
