@@ -39,7 +39,8 @@ common_name3<-'BLACK SEA BASS'
 
 fishery<-"SFSBSB"
 
-
+# to get this file, went to tacklebox_start branch in groundfishRDM and ran get_mrip_oracle.R 
+# and then test_mrip_effort.R but the latter needs modifications
 mrip_pull <- readRDS("~/GitHub/groundfishRDM/Data/2027_mgt_cycle/miscellaneous/mrip_pull2026-08-13.Rds")
 
 # Load the elements in the list 
