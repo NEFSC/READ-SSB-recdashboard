@@ -104,8 +104,8 @@ cpt_data <- cpt_raw %>%
 # "units" column distinguishes projected vs. baseline (fitted/observed) values;
 # common names are title-cased to match the existing species_map ("Atlanticcod"/"Haddock").
 catch_len_raw <- tryCatch(
-  readRDS(here::here("data", "main", "catch_at_len_2026-07-16.Rds")),
-  error = function(e) readRDS("data/main/catch_at_len_2026-07-16.Rds")
+  readRDS(here::here("data", "main", "catch_at_len_2026-08-13.Rds")),
+  error = function(e) readRDS("data/main/catch_at_len_2026-08-13.Rds")
 )
 
 catch_len_data <- catch_len_raw %>%
@@ -942,10 +942,10 @@ server <- function(input, output, session) {
       df <- filtered_catch_len()
       
       plot_data <- df %>%
-        filter(units %in% c("projected fitted proportion of catch",
-                            "baseline fitted proportion of catch")) %>%
+        filter(units %in% c("projected fitted percent of catch",
+                            "baseline fitted percent of catch")) %>%
         mutate(
-          Panel  = dplyr::if_else(units == "projected fitted proportion of catch",
+          Panel  = dplyr::if_else(units == "projected fitted percent of catch",
                                   "Projected", "Baseline"),
           Panel  = factor(Panel, levels = c("Projected", "Baseline")),
           Season = factor(tools::toTitleCase(season), levels = c("Summer", "Winter"))
@@ -960,10 +960,10 @@ server <- function(input, output, session) {
                                     "<br>Value: ", scales::comma(round(value, 5))))) +
         geom_line(linewidth = 0.8, alpha = 0.85) +
         geom_point(size = 1.2, alpha = 0.7) +
-        facet_wrap(~ Season, ncol = 1, scales = "free_y") +
+        facet_wrap(~ Season, ncol = 1) +
         scale_color_manual(values = c("Projected" = "#0085CA", "Baseline" = "#003087"), name = NULL) +
         scale_y_continuous(labels = scales::comma) +
-        labs(x = "Length (in)", y = "Proportion of Catch") +
+        labs(x = "Length (in)", y = "Percentage of Catch") +
         theme_minimal(base_size = 12) +
         theme(legend.position = "right")
       
@@ -1071,10 +1071,10 @@ server <- function(input, output, session) {
     } else if (input$data_metric == "catch_len") {
       req(filtered_catch_len())
       filtered_catch_len() %>%
-        filter(units %in% c("projected fitted proportion of catch",
-                            "baseline fitted proportion of catch")) %>%
+        filter(units %in% c("projected fitted percent of catch",
+                            "baseline fitted percent of catch")) %>%
         mutate(
-          Panel  = dplyr::if_else(units == "projected fitted proportion of catch",
+          Panel  = dplyr::if_else(units == "projected fitted percent of catch",
                                   "Projected", "Baseline"),
           Season = tools::toTitleCase(season)
         ) %>%
