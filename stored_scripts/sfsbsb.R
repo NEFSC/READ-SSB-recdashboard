@@ -448,8 +448,6 @@ sfsbsb_trips_catch <- rbind(sfsbsb_trips, sfsbsb_catch)
 sfsbsb_trips_catch <- sfsbsb_trips_catch %>%
   mutate(source = "MRIP")
 
-write.csv(sfsbsb_trips_catch, file = here("data/main/trip_catch_sfsbsb.csv"))
-
 # look at it.
 sfsbsb_trips_catch %>% 
   ungroup() %>%
@@ -477,11 +475,40 @@ sfsbsb_trips_catch %>%
 
 
 
+saveRDS(sfsbsb_trips_catch, file = here("data/main/trip_catch_sfsbsb.rds"))
+
+
+## Push Rds to google drive
+
+#Load libraries
+library(haven)
+library(googledrive)
+
+output_folder <- file.path(here("data","main"))
+
+
+# Connect to Google Drive
+# NOTE: Relies on cached credentials in .secrets. Will prompt interactive auth if missing or expired.
+drive_auth(cache = here(".secrets"), email = TRUE)
+
+# Output folder on google drive
+miscellaneous_path <-file.path("socialsci","RecreationalDST","2028_management_cycle_data",
+                               "flukeRDM","miscellaneous")
+
+folder_info <- drive_get(
+  path = miscellaneous_path,
+  shared_drive = "NMFS NEC READ SSB"
+)
+miscellaneous_path<-folder_info$id
 
 
 
-
-
+drive_upload(
+  media = file.path(output_folder,"trip_catch_sfsbsb.Rds"),
+  path = as_id(miscellaneous_path),
+  name = "trip_catch_sfsbsb.Rds",
+  overwrite = TRUE
+)
 
 
 
