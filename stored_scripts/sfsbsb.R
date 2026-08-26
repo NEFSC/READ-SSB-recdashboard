@@ -327,7 +327,7 @@ rm(sf_catch, sf_effort, sf_effort_catch, sc_catch, sc_effort, sc_effort_catch,
 ## Other variables for our dataframe
 
 # Use date from the Rds file read in at the top (WILL REMOVE QUOTATION MARKS SO IT FILLS IN THE DATE)
-sfsbsb_all_w$data_version <- "run_date"
+sfsbsb_all_w$data_version <- run_date
 
 sfsbsb_all_w$metric <- "directed trips"
 sfsbsb_all_w$units <- "number of trips"
@@ -411,7 +411,7 @@ sfsbsb_all_w2$species_itis <- as.numeric(sfsbsb_all_w2$species_itis)
 
 
 # Use date from the Rds file read in at the top (REMOVE QUOTATION MARKS SO IT FILLS IN THE DATE)
-sfsbsb_all_w2$data_version <- "run_date"
+sfsbsb_all_w2$data_version <- run_date
 
 sfsbsb_all_w2$units <- "number of fish"
 sfsbsb_all_w2$fishery <- fishery
