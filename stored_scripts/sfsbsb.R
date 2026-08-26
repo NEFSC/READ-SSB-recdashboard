@@ -41,8 +41,7 @@ fishery<-"SFSBSB"
 
 # to get this file, went to tacklebox_start branch in groundfishRDM and ran get_mrip_oracle.R 
 # and then test_mrip_effort.R but the latter needs modifications
-#mrip_pull <- readRDS("~/GitHub/groundfishRDM/Data/2027_mgt_cycle/miscellaneous/mrip_pull2026-08-13.Rds")
-mrip_pull <- readRDS("~/GitHub/flukeRDM/Data/2028_mgt_cycle/miscellaneous/mrip_pull2026-08-25.Rds")
+#mrip_pull <- readRDS("~/GitHub/flukeRDM/Data/2028_mgt_cycle/miscellaneous/mrip_pull2026-08-25.Rds")
 
 #######################################################################  
 ######  Read in Data  ######
@@ -502,7 +501,7 @@ folder_info <- drive_get(
 miscellaneous_path<-folder_info$id
 
 
-
+## Push Rds to google drive
 drive_upload(
   media = file.path(output_folder,"trip_catch_sfsbsb.Rds"),
   path = as_id(miscellaneous_path),
