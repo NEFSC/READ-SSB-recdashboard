@@ -44,6 +44,23 @@ fishery<-"SFSBSB"
 #mrip_pull <- readRDS("~/GitHub/groundfishRDM/Data/2027_mgt_cycle/miscellaneous/mrip_pull2026-08-13.Rds")
 mrip_pull <- readRDS("~/GitHub/flukeRDM/Data/2028_mgt_cycle/miscellaneous/mrip_pull2026-08-25.Rds")
 
+#######################################################################  
+######  Read in Data  ######
+#######################################################################  
+# To pull in most recent mrip file
+folder <- "C:/Users/theresa.petesch/Documents/GitHub/flukeRDM/Data/2028_mgt_cycle/miscellaneous"
+#folder<-file.path("GitHub","flukeRDM","Data","2028_mgt_cycle","miscellaneous")
+vintage_string<-list.files(folder, pattern=glob2rx("mrip_pull*Rds"))
+vintage_string<-gsub("mrip_pull","",vintage_string)
+vintage_string<-gsub(".Rds","",vintage_string)
+data_vintage<-max(vintage_string)
+run_date<-as.Date(data_vintage)
+
+# NOTE: glue and here are used to dynamically locate the file. Ensure the raw folder exists.
+filename <- file.path(folder,glue("mrip_pull{data_vintage}.Rds"))
+#filename <- here("GitHub","flukeRDM","Data","2028_mgt_cycle","miscellaneous",glue("mrip_pull{data_vintage}.Rds"))
+mrip_pull <- read_rds(filename)  # a named list with elements: trip, catch, size, size_b2
+
 # Load the elements in the list 
 trip<-mrip_pull$trip
 catch<-mrip_pull$catch
@@ -52,26 +69,6 @@ names(trip) <- tolower(names(trip))
 trip[] <- lapply(trip, function(x) if(is.character(x)) tolower(x) else x)
 names(catch) <- tolower(names(catch))
 catch[] <- lapply(catch, function(x) if(is.character(x)) tolower(x) else x)
-
-
-#skip for now, will read it in like this later. pull_mrip.R is currently out of date
-#######################################################################  
-######  Read in Data  ######
-#######################################################################  
-
-# To pull in most recent mrip file
-folder<-file.path("data","raw")
-vintage_string<-list.files(folder, pattern=glob2rx("mrip_pull*Rds"))
-vintage_string<-gsub("mrip_pull","",vintage_string)
-vintage_string<-gsub(".Rds","",vintage_string)
-data_vintage<-max(vintage_string)
-run_date<-as.Date(data_vintage)
-
-# NOTE: glue and here are used to dynamically locate the file. Ensure the raw folder exists.
-filename <- here("data","raw",glue("mrip_pull{data_vintage}.Rds"))
-mrip_statistics <- read_rds(filename)  # a named list with elements: trip, catch, size, size_b2
-
-
 
 #######################################################################  
 ######  Expand the survey data for trips and catch  ######
