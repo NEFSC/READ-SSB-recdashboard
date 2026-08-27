@@ -473,17 +473,17 @@ sfsbsb_trips_catch %>%
   summarise(value=sum(value))
 
 
+##### Save file as Rds
+output_folder <- file.path(here("data","main"))
+SaveFile<-glue("trip_catch_sfsbsb{data_vintage}")
+write_rds(sfsbsb_trips_catch, file=file.path(output_folder,glue("{SaveFile}.Rds")))
 
-saveRDS(sfsbsb_trips_catch, file = here("data/main/trip_catch_sfsbsb.rds"))
 
-
-## Push Rds to google drive
+###### Push Rds to google drive ######
 
 #Load libraries
 library(haven)
 library(googledrive)
-
-output_folder <- file.path(here("data","main"))
 
 
 # Connect to Google Drive
@@ -503,9 +503,9 @@ miscellaneous_path<-folder_info$id
 
 ## Push Rds to google drive
 drive_upload(
-  media = file.path(output_folder,"trip_catch_sfsbsb.Rds"),
+  media = file.path(output_folder,glue("{SaveFile}.Rds")),
   path = as_id(miscellaneous_path),
-  name = "trip_catch_sfsbsb.Rds",
+  name = glue("{SaveFile}.Rds"),
   overwrite = TRUE
 )
 
