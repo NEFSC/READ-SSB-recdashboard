@@ -16,7 +16,6 @@
 library(dplyr)
 library(readr)
 library(mriptacklebox)
-#library("mriptacklebox")
 library(tidyverse)
 library(here)
 library(glue)
@@ -39,14 +38,11 @@ common_name3<-'BLACK SEA BASS'
 
 fishery<-"SFSBSB"
 
-# to get this file, went to tacklebox_start branch in groundfishRDM and ran get_mrip_oracle.R 
-# and then test_mrip_effort.R but the latter needs modifications
-#mrip_pull <- readRDS("~/GitHub/flukeRDM/Data/2028_mgt_cycle/miscellaneous/mrip_pull2026-08-25.Rds")
 
 #######################################################################  
 ######  Read in Data  ######
 #######################################################################  
-# To pull in most recent mrip file
+# To pull in most recent mrip file (to get this file, need to run get_mrip_oracle.R in flukeRDm repo)
 folder <- "C:/Users/theresa.petesch/Documents/GitHub/flukeRDM/Data/2028_mgt_cycle/miscellaneous"
 #folder<-file.path("GitHub","flukeRDM","Data","2028_mgt_cycle","miscellaneous")
 vintage_string<-list.files(folder, pattern=glob2rx("mrip_pull*Rds"))
@@ -349,7 +345,6 @@ sfsbsb_trips <- sfsbsb_trips %>%
 
 
 
-
 ###### CATCH ###### 
 ## Wide out the catch variables 
 # Second wide pivot from sfsbsb_all — does NOT deduplicate by id_code,
@@ -454,9 +449,6 @@ sfsbsb_trips_catch %>%
   summarise(value=sum(value))
 
 
-## where to put this
-##divide everything by 1000?
-
 # checking state level harvest, they all look the numbers in lou's report for 2024 MRIP harvest
 sfsbsb_trips_catch %>% 
   ungroup() %>%
@@ -465,12 +457,6 @@ sfsbsb_trips_catch %>%
   group_by(metric, year, common) %>% 
   summarise(value=sum(value))
 
-sfsbsb_trips_catch %>% 
-  ungroup() %>%
-  filter(state=="MD") %>% 
-  filter(metric=="harvest") %>% 
-  group_by(metric, year, common) %>% 
-  summarise(value=sum(value))
 
 
 ##### Save file as Rds
