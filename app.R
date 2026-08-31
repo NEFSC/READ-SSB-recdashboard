@@ -34,6 +34,87 @@ catch_data <- trip_catch_raw %>%
   group_by(across(-value)) %>%
   summarise(value = sum(value, na.rm = TRUE), .groups = "drop")
 
+# ── Load Trip/Catch RDS for Summer Flounder, Black Sea Bass & Scup ────────────
+# NEW SPECIES: adds these three mid-Atlantic stocks (fishery = "SFSBSB") to the
+# existing trips/catch metrics. Unlike the cod/haddock CSV, this source is
+# state-level (has a "state" column), so it powers the State checkbox filter.
+# Modes (charter/headboat/private/shore) are mapped to the same
+# for_hire/private/shore vocabulary used everywhere else, and common names are
+# title-cased to match the existing species_map convention
+# ("Summerflounder"/"Blackseabass"/"Scup").
+trip_catch_sfsbsb_raw <- tryCatch(
+  readRDS(here::here("data", "main", "trip_catch_sfsbsb2026-08-25.Rds")),
+  error = function(e) readRDS("data/main/trip_catch_sfsbsb2026-08-25.Rds")
+)
+
+trip_catch_sfsbsb <- trip_catch_sfsbsb_raw %>%
+  dplyr::ungroup() %>%
+  mutate(wave = as.integer(wave), year = as.integer(year),
+         common = tools::toTitleCase(common),
+         mode = dplyr::case_when(
+           mode %in% c("charter", "headboat") ~ "for_hire",
+           TRUE ~ mode
+         ))
+
+trips_data_sfsbsb <- trip_catch_sfsbsb %>%
+  filter(metric == "directed trips") %>%
+  group_by(across(-value)) %>%
+  summarise(value = sum(value, na.rm = TRUE), .groups = "drop")
+
+catch_data_sfsbsb <- trip_catch_sfsbsb %>%
+  filter(metric %in% c("harvest", "catch", "discards")) %>%
+  group_by(across(-value)) %>%
+  summarise(value = sum(value, na.rm = TRUE), .groups = "drop")
+
+# Align shared-column types before binding. The CSV-derived trips_data/catch_data
+# never touch data_version, so it stays character from read.csv(), while the RDS
+# gives data_version as class Date — bind_rows() errors on that mismatch. This
+# coerces any shared column on the new side to match the old side's type, so it's
+# robust to that (and any similar) mismatch without needing to know the CSV's
+# exact schema.
+align_types <- function(new_df, ref_df) {
+  for (col in intersect(names(new_df), names(ref_df))) {
+    ref_class <- class(ref_df[[col]])[1]
+    if (!identical(class(new_df[[col]])[1], ref_class)) {
+      new_df[[col]] <- switch(ref_class,
+        "Date"      = as.Date(new_df[[col]]),
+        "character" = as.character(new_df[[col]]),
+        "numeric"   = as.numeric(new_df[[col]]),
+        "double"    = as.double(new_df[[col]]),
+        "integer"   = as.integer(new_df[[col]]),
+        "factor"    = as.character(new_df[[col]]),
+        new_df[[col]]
+      )
+    }
+  }
+  new_df
+}
+
+trips_data_sfsbsb <- align_types(trips_data_sfsbsb, trips_data)
+catch_data_sfsbsb <- align_types(catch_data_sfsbsb, catch_data)
+
+trips_data <- dplyr::bind_rows(trips_data, trips_data_sfsbsb)
+catch_data <- dplyr::bind_rows(catch_data, catch_data_sfsbsb)
+
+# Friendlier display label for the SFSBSB fishery code in the Fishery dropdown
+# (underlying value passed to the server stays "SFSBSB").
+fishery_display_labels <- function(fishery_values) {
+  setNames(fishery_values,
+           ifelse(fishery_values == "SFSBSB",
+                  "Summer Flounder / Black Sea Bass / Scup",
+                  fishery_values))
+}
+
+# Shared species -> common-name-key map for the catch/trips (MRIP) metrics,
+# now covering cod/haddock (CSV) plus SF/BSB/Scup (state-level RDS above).
+catch_tc_species_map <- c(
+  "Atlantic Cod"     = "Atlanticcod",
+  "Haddock"          = "Haddock",
+  "Summer Flounder"  = "Summerflounder",
+  "Black Sea Bass"   = "Blackseabass",
+  "Scup"             = "Scup"
+)
+
 # ── Load NAA RDS files ────────────────────────────────────────────────────────
 pivot_naa_long <- function(df) {
   age_cols <- grep("^age\\d+$", names(df), value = TRUE)
@@ -277,14 +358,16 @@ ui <- page_fillable(
                 div(style = "background-color: #003087; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
                     "Fishery"),
                 selectInput("tc_fishery", NULL,
-                            choices  = sort(unique(trips_data$fishery)),
+                            choices  = fishery_display_labels(sort(unique(trips_data$fishery))),
                             selected = sort(unique(trips_data$fishery))[1])
               )
           ),
           
-          # State selector — mid-atlantic species only
+          # State selector — mid-atlantic species only (Catch: species-driven;
+          # Trips: driven by the SFSBSB fishery selection instead, since Trips
+          # has no species dimension of its own)
           conditionalPanel(
-            condition = "(input.species == 'Summer Flounder' || input.species == 'Black Sea Bass' || input.species == 'Scup') && input.data_metric != 'naa'",
+            condition = "(input.data_metric == 'catch_tc' && (input.species == 'Summer Flounder' || input.species == 'Black Sea Bass' || input.species == 'Scup')) || (input.data_metric == 'trips' && input.tc_fishery == 'SFSBSB')",
             div(
               style = "margin-top: 15px;",
               div(style = "background-color: #003087; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
@@ -493,7 +576,14 @@ server <- function(input, output, session) {
       updateSelectInput(session, "species",
                         choices  = naa_species_choices,
                         selected = if (input$species %in% naa_species_choices) input$species else "Atlantic Cod")
-    } else if (is_catch) {
+    } else if (input$data_metric == "catch_tc") {
+      # Catch (MRIP) now covers cod/haddock plus the three SFSBSB stocks
+      catch_tc_choices <- names(catch_tc_species_map)
+      updateSelectInput(session, "species",
+                        choices  = catch_tc_choices,
+                        selected = if (input$species %in% catch_tc_choices) input$species else "Atlantic Cod")
+    } else if (is_cpt || is_catch_len) {
+      # Catch-per-trip and Catch-at-Length (model-derived) remain cod/haddock only
       updateSelectInput(session, "species",
                         choices  = c("Atlantic Cod", "Haddock"),
                         selected = if (input$species %in% c("Atlantic Cod", "Haddock")) input$species else "Atlantic Cod")
@@ -507,10 +597,13 @@ server <- function(input, output, session) {
   
   # ── Dynamic year/wave selectors (shared by standard + trips/catch) ──────────
   active_years <- reactive({
-    if (input$data_metric %in% c("trips")) {
-      sort(unique(trips_data$year))
+    if (input$data_metric == "trips") {
+      req(input$tc_fishery)
+      sort(unique(trips_data$year[trips_data$fishery == input$tc_fishery]))
     } else if (input$data_metric == "catch_tc") {
-      sort(unique(catch_data$year))
+      req(input$species)
+      selected_common <- catch_tc_species_map[[input$species]]
+      sort(unique(catch_data$year[catch_data$common == selected_common]))
     } else {
       2020:2023
     }
@@ -523,7 +616,14 @@ server <- function(input, output, session) {
   
   output$wave_selector_ui <- renderUI({
     if (input$data_metric %in% c("trips", "catch_tc")) {
-      df <- if (input$data_metric == "trips") trips_data else catch_data
+      df <- if (input$data_metric == "trips") {
+        req(input$tc_fishery)
+        trips_data %>% filter(fishery == input$tc_fishery)
+      } else {
+        req(input$species)
+        selected_common <- catch_tc_species_map[[input$species]]
+        catch_data %>% filter(common == selected_common)
+      }
       avail_waves <- sort(unique(df$wave))
       wave_names  <- setNames(avail_waves, paste("Wave", avail_waves))
       checkboxGroupInput("waves", "Select Waves:", choices = wave_names, selected = avail_waves)
@@ -581,6 +681,13 @@ server <- function(input, output, session) {
     df <- trips_data %>%
       filter(fishery %in% input$tc_fishery, mode %in% input$tc_mode)
     
+    # State filter only applies to the state-level SFSBSB fishery; other
+    # fisheries have no state dimension (state is NA there).
+    if (input$tc_fishery == "SFSBSB") {
+      req(input$state)
+      df <- df %>% filter(state %in% input$state)
+    }
+    
     if (input$time_interval == "annual") {
       req(input$years)
       df <- df %>% filter(year %in% as.numeric(input$years))
@@ -595,11 +702,18 @@ server <- function(input, output, session) {
   filtered_catch_tc <- reactive({
     req(input$data_metric == "catch_tc", input$tc_mode, input$species)
     
-    species_map <- c("Atlantic Cod" = "Atlanticcod", "Haddock" = "Haddock")
-    selected_common <- species_map[[input$species]]
+    selected_common <- catch_tc_species_map[[input$species]]
     
     df <- catch_data %>%
       filter(mode %in% input$tc_mode, common == selected_common)
+    
+    # State filter only applies to the state-level SFSBSB stocks; cod/haddock
+    # rows have no state dimension (state is NA there).
+    if (input$species %in% c("Summer Flounder", "Black Sea Bass", "Scup")) {
+      req(input$state)
+      df <- df %>% filter(state %in% input$state)
+    }
+    
     if (input$time_interval == "annual") {
       req(input$years)
       df <- df %>% filter(year %in% as.numeric(input$years))
@@ -648,7 +762,7 @@ server <- function(input, output, session) {
                      ifelse(input$naa_period == "historical", "Historical", "Projected"))
              )
            },
-           "trips" = paste("Directed Trips ", input$tc_fishery),
+           "trips" = paste("Directed Trips ", names(fishery_display_labels(input$tc_fishery))),
            "catch_tc" = {
              req(input$species)
              paste(input$species, " Catch")
