@@ -481,7 +481,8 @@ ui <- page_fillable(
                                "Black Sea Bass Numbers at age"   = "naa_bsb_doc",
                                "Summer Flounder Numbers at age"  = "naa_sf_doc",
                                "Scup Numbers at age"             = "naa_scup_doc",
-                               "Directed Trips and Catch" = "trips_catch_cod_haddock_doc", 
+                               "Groundfish Directed Trips and Catch" = "trips_catch_cod_haddock_doc", 
+                               "SFBSBS Directed Trips and Catch" = "trips_catch_sfbsbs_doc", 
                                "Catch per trip"           = "cpt_cod_haddock_doc",
                                "Catch at length"          = "catch_at_len_doc"),
                   selected = "catch_at_len_doc",
@@ -1255,7 +1256,8 @@ server <- function(input, output, session) {
                        "naa_bsb_doc"                 = "docs/NAA_blackseabass.html",
                        "naa_sf_doc"                  = "docs/NAA_summerflounder.html",
                        "naa_scup_doc"                = "docs/NAA_scup.html",
-                       "trips_catch_cod_haddock_doc" = "docs/trips_catch_cod_haddock.html", 
+                       "trips_catch_cod_haddock_doc" = "docs/trips_catch_cod_haddock.html",
+                       "trips_catch_sfbsbs_doc"      = "docs/trips_catch_sfsbsb.html",
                        "cpt_cod_haddock_doc"         = "docs/cpt_cod_haddock.html")
 
     tags$iframe(src = doc_path, style = "width: 100%; height: 800px; border: none;", seamless = NA)
