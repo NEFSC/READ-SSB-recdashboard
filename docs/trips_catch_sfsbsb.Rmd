@@ -28,7 +28,7 @@ The code builds a long-format dataframe of directed trip counts and catch (harve
 total) for Summer Flounder, Scup, and Black Sea Bass. 
 
 We pull trips where Summer Flounder, Scup, and Black Sea Bass were caught or stated 
-as the primary target by the angler. For trips, we ensure that trips that caught or 
+as the primary target by the angler(PRIM1, A, B1, B2).  Trips that caught or 
 targeted multiple species are not double-counted. While catch is species 
 specific, trips are not and represent a combined measure of Summer Flounder and/or Scup
 and/or Black Sea Bass trips. 
