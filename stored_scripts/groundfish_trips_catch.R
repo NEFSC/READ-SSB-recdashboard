@@ -77,7 +77,7 @@ catch[] <- lapply(catch, function(x) if(is.character(x)) tolower(x) else x)
 #### Cod effort ####
 # typ = c('PRIM1', 'A', 'B1', 'B2') captures directed trips where cod was 
 # the primary target OR was caught (kept, unobserved dead, or released)
-cod_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE', 
+cod_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE1', 'INTSITE', 
                                   'STRAT_ID', 'PSU_ID', 'ID_CODE', 'LEADER'),
                       microdata = mrip_statistics,
                       dir_trip = list(comname = common_name1,
@@ -95,7 +95,7 @@ cod_effort[] <- lapply(cod_effort, function(x) if(is.character(x)) tolower(x) el
 #### Cod Catch ####
 # estimate_var=FALSE speeds up processing by skipping variance/SE/CV calculation
 cod_catch <- mrip_catch(comname = common_name1, 
-                        dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'STRAT_ID', 
+                        dom = c('YEAR', 'WAVE', 'ST', 'MODE1', 'STRAT_ID', 
                                 'PSU_ID', 'ID_CODE', 'WP_INT'), 
                         microdata = mrip_statistics, estimate_var = FALSE) 
 
@@ -114,7 +114,7 @@ cod_catch <- subset(cod_catch, select = -c(se, cv)) # se and cv only populated w
 cod_effort$source <- "effort"
 cod_catch$source <- "catch"
 cod_effort_catch <- left_join(cod_effort, cod_catch, # left join: retains all effort rows; unmatched catch rows are NA
-                              by = c("common", "year", "wave", "mode_fx", "st", 
+                              by = c("common", "year", "wave", "mode1", "st", 
                                      "strat_id", "psu_id", "id_code"))
 
 ## some trips without catch, keep them, will assign claim=0 down below
@@ -127,7 +127,7 @@ cod_effort_catch$day <- substr(cod_effort_catch$date, 7, 8)
 cod_effort_catch <- cod_effort_catch %>% filter(!(day %in% c("9x", "xx"))) # drop records with imputed/unknown interview day
 
 #### Haddock effort ####
-hadd_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE', 
+hadd_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE1', 'INTSITE', 
                                   'STRAT_ID', 'PSU_ID', 'ID_CODE', 'LEADER'),
                       microdata = mrip_statistics,
                       dir_trip = list(comname = common_name2,
@@ -141,7 +141,7 @@ hadd_effort[] <- lapply(hadd_effort, function(x) if(is.character(x)) tolower(x) 
 
 #### Haddock catch ####
 hadd_catch <- mrip_catch(comname = common_name2, 
-                        dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'STRAT_ID', 
+                        dom = c('YEAR', 'WAVE', 'ST', 'MODE1', 'STRAT_ID', 
                                 'PSU_ID', 'ID_CODE', 'WP_INT'), 
                         microdata = mrip_statistics, estimate_var = FALSE)
 
@@ -158,7 +158,7 @@ hadd_catch <- subset(hadd_catch, select = -c(se, cv))
 hadd_effort$source <- "effort"
 hadd_catch$source <- "catch"
 hadd_effort_catch <- left_join(hadd_effort, hadd_catch, 
-                              by = c("common", "year", "wave", "mode_fx", "st", 
+                              by = c("common", "year", "wave", "mode1", "st", 
                                      "strat_id", "psu_id", "id_code"))
 
 # Parse interview date from id_code; same logic as cod above
@@ -174,14 +174,8 @@ hadd_effort_catch <- hadd_effort_catch %>% filter(!(day %in% c("9x", "xx")))
 ### APPEND cod and haddock ###
 cod_hadd_all <- rbind(cod_effort_catch, hadd_effort_catch)
 
-# Recode numeric mode_fx to readable labels; mode_fx 1/2/3 = shore modes
-cod_hadd_all <- cod_hadd_all %>%
-  mutate(mode = case_when(
-    mode_fx == 3|mode_fx==2|mode_fx==1 ~ "shore",
-    mode_fx == 5 ~ "charter",
-    mode_fx == 7 ~ "private",
-    mode_fx == 4 ~ "headboat"
-  ))
+# Rename mode1 mode
+sfsbsb_all <- rename(sfsbsb_all, mode1 = mode)
 
 # Recode FIPS state codes to abbreviations
 cod_hadd_all <- cod_hadd_all %>%
