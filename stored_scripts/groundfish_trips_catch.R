@@ -420,3 +420,44 @@ rec_trips_catch %>%
     summarise(value=sum(value))
 
 
+
+##### Save file as Rds
+output_folder <- file.path(here("data","main"))
+SaveFile<-glue("trip_catch_gf{data_vintage}")
+write_rds(rec_trips_catch, file=file.path(output_folder,glue("{SaveFile}.Rds")))
+
+
+
+###### Push Rds to google drive ######
+
+#Load libraries
+library(haven)
+library(googledrive)
+
+
+# Connect to Google Drive
+# NOTE: Relies on cached credentials in .secrets. Will prompt interactive auth if missing or expired.
+drive_auth(cache = here(".secrets"), email = TRUE)
+
+# Output folder on google drive
+miscellaneous_path <-file.path("socialsci","RecreationalDST","2027_management_cycle_data",
+                               "groundfishRDM","miscellaneous")
+
+folder_info <- drive_get(
+  path = miscellaneous_path,
+  shared_drive = "NMFS NEC READ SSB"
+)
+miscellaneous_path<-folder_info$id
+
+
+## Push Rds to google drive
+drive_upload(
+  media = file.path(output_folder,glue("{SaveFile}.Rds")),
+  path = as_id(miscellaneous_path),
+  name = glue("{SaveFile}.Rds"),
+  overwrite = TRUE
+)
+
+
+
+
