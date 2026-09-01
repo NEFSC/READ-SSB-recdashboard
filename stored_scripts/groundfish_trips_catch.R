@@ -411,7 +411,6 @@ rec_trips_catch <- rbind(cod_hadd_trips, cod_hadd_catch)
 rec_trips_catch <- rec_trips_catch %>%
   mutate(source = "MRIP")
 
-write.csv(rec_trips_catch, file = here("data/main/trip_catch.csv"))
 
 # look at it.
 rec_trips_catch %>% 
