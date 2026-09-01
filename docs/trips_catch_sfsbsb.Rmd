@@ -1,0 +1,38 @@
+# Mid Atlantic Summer Flounder, Scup, and Black Sea Bass Trips and Catch
+
+**Description**: 
+
+Historical directed trips and catch for Mid Atlantic Summer Flounder, Scup, and 
+Black Sea Bass.
+
+**Years available**: 
+
+Trips and catch are provided for 2024 and 2025.  
+
+
+## Methods
+
+### Data sources
+
+Data are from the Marine Recreational Information Program  ([MRIP](https://www.fisheries.noaa.gov/insight/marine-recreational-information-program)).
+
+### Data extraction 
+
+Data were obtained using functions in the [mriptacklebox](https://github.com/NEFSC/READ-PDB-mriptacklebox) package that was created by the Population Dynamics Branch at the NEFSC to process MRIP microdata. 
+
+### Data analysis/Processing
+
+[Data processing code](https://github.com/NEFSC/READ-SSB-recdashboard/blob/main/stored_scripts/sfsbsb.R) can be seen in the READ-SSB-recdashboard repository. 
+
+The code builds a long-format dataframe of directed trip counts and catch (harvest, discards, 
+total) for Summer Flounder, Scup, and Black Sea Bass. 
+
+We pull trips where Summer Flounder, Scup, and Black Sea Bass were caught or stated 
+as the primary target by the angler(PRIM1, A, B1, B2).  Trips that caught or 
+targeted multiple species are not double-counted. While catch is species 
+specific, trips are not and represent a combined measure of Summer Flounder and/or Scup
+and/or Black Sea Bass trips. 
+
+For catch, we provide harvest (landed + unobserved), discards, and catch (harvest + 
+discards) in numbers of fish for each species.
+
