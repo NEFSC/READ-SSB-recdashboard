@@ -16,7 +16,6 @@
 library(dplyr)
 library(readr)
 library(mriptacklebox)
-#library("mriptacklebox")
 library(tidyverse)
 library(here)
 library(glue)
@@ -45,17 +44,17 @@ fishery<-"NE Groundfish"
 # July 31 updates. tried to read this in (copied from gf misc), mrip_effort function did not work
 #mrip_statistics <- readRDS("~/GitHub/READ-SSB-recdashboard/data/raw/mrip_pull2026-07-31.Rds")
 
-# To pull in most recent mrip file
-folder<-file.path("data","raw")
-vintage_string<-list.files(folder, pattern=glob2rx("mrip_statistics_*Rds"))
-vintage_string<-gsub("mrip_statistics_","",vintage_string)
+# To pull in most recent mrip file (to get this file, need to run get_mrip_oracle.R in groundfishRDM repo)
+folder <- "C:/Users/theresa.petesch/Documents/GitHub/groundfishRDM/Data/2027_mgt_cycle/miscellaneous"
+vintage_string<-list.files(folder, pattern=glob2rx("mrip_pull*Rds"))
+vintage_string<-gsub("mrip_pull","",vintage_string)
 vintage_string<-gsub(".Rds","",vintage_string)
 data_vintage<-max(vintage_string)
 run_date<-as.Date(data_vintage)
 
 # NOTE: glue and here are used to dynamically locate the file. Ensure the raw folder exists.
-filename <- here("data","raw",glue("mrip_statistics_{data_vintage}.Rds"))
-mrip_statistics <- read_rds(filename)  # comes from get_mrip(), which returned a named list with elements: trip, catch, size, size_b2
+filename <- file.path(folder,glue("mrip_pull{data_vintage}.Rds"))
+mrip_statistics <- read_rds(filename)  # a named list with elements: trip, catch, size, size_b2
 
 
 # Load the elements in the list 
