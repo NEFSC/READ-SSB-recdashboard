@@ -1,5 +1,5 @@
 # Name: groundfish_trips_catch.R
-# Inputs: mrip_statistics_{file_date}.Rds, MRIP_COD_ALL_SITE_LIST.csv
+# Inputs: mrip_pull{file_date}.Rds, MRIP_COD_ALL_SITE_LIST.csv
 # Outputs: rec_trips_catch
 # Description: Builds a long-format data frame of directed trip counts and catch 
 # (harvest, discards, total) for Atlantic Cod and Haddock in the Western Gulf 
@@ -175,7 +175,8 @@ hadd_effort_catch <- hadd_effort_catch %>% filter(!(day %in% c("9x", "xx")))
 cod_hadd_all <- rbind(cod_effort_catch, hadd_effort_catch)
 
 # Rename mode1 mode
-sfsbsb_all <- rename(sfsbsb_all, mode1 = mode)
+cod_hadd_all <- cod_hadd_all %>% 
+  rename(mode = mode1)
 
 # Recode FIPS state codes to abbreviations
 cod_hadd_all <- cod_hadd_all %>%
@@ -352,8 +353,8 @@ cod_hadd_all_w2 <- cod_hadd_all_w2 %>%
   filter(wgom == 1)
 
 # Remove clutter in environment
-#rm(cod_catch, cod_effort, cod_effort_catch, hadd_catch, hadd_effort, hadd_effort_catch,
-#   cod_hadd_all, cod_site_list, trip_species_composition)
+rm(cod_catch, cod_effort, cod_effort_catch, hadd_catch, hadd_effort, hadd_effort_catch,
+   cod_hadd_all, cod_site_list, trip_species_composition)
 
 
 ### Other variables for our dataframe
