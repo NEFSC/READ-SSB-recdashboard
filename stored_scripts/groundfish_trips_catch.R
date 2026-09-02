@@ -45,7 +45,10 @@ fishery<-"NE Groundfish"
 #mrip_statistics <- readRDS("~/GitHub/READ-SSB-recdashboard/data/raw/mrip_pull2026-07-31.Rds")
 
 # To pull in most recent mrip file (to get this file, need to run get_mrip_oracle.R in groundfishRDM repo)
-folder <- "C:/Users/theresa.petesch/Documents/GitHub/groundfishRDM/Data/2027_mgt_cycle/miscellaneous"
+# traverse up 1 directory.
+folder <- dirname(here()) 
+# go down to groundfishRDM
+folder <- file.path(folder , "groundfishRDM", "Data", "2027_mgt_cycle", "miscellaneous") 
 vintage_string<-list.files(folder, pattern=glob2rx("mrip_pull*Rds"))
 vintage_string<-gsub("mrip_pull","",vintage_string)
 vintage_string<-gsub(".Rds","",vintage_string)
