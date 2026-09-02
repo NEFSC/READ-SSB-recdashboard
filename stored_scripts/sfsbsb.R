@@ -218,7 +218,7 @@ bsb_effort_catch <- bsb_effort_catch %>% filter(!(day %in% c("9x", "xx"))) # dro
 sfsbsb_all <- rbind(sf_effort_catch, sc_effort_catch, bsb_effort_catch)
 
 # Rename mode1 mode
-sfsbsb_all <- rename(sfsbsb_all, mode1 = mode)
+sfsbsb_all <- rename(sfsbsb_all, mode = mode1)
 
 
 # Recode FIPS state codes to abbreviations
