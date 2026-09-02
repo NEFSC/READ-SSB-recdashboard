@@ -1,5 +1,5 @@
 # Name: groundfish_trips_catch.R
-# Inputs: mrip_statistics_{file_date}.Rds, MRIP_COD_ALL_SITE_LIST.csv
+# Inputs: mrip_pull{file_date}.Rds, MRIP_COD_ALL_SITE_LIST.csv
 # Outputs: rec_trips_catch
 # Description: Builds a long-format data frame of directed trip counts and catch 
 # (harvest, discards, total) for Atlantic Cod and Haddock in the Western Gulf 
@@ -16,7 +16,6 @@
 library(dplyr)
 library(readr)
 library(mriptacklebox)
-#library("mriptacklebox")
 library(tidyverse)
 library(here)
 library(glue)
@@ -45,17 +44,20 @@ fishery<-"NE Groundfish"
 # July 31 updates. tried to read this in (copied from gf misc), mrip_effort function did not work
 #mrip_statistics <- readRDS("~/GitHub/READ-SSB-recdashboard/data/raw/mrip_pull2026-07-31.Rds")
 
-# To pull in most recent mrip file
-folder<-file.path("data","raw")
-vintage_string<-list.files(folder, pattern=glob2rx("mrip_statistics_*Rds"))
-vintage_string<-gsub("mrip_statistics_","",vintage_string)
+# To pull in most recent mrip file (to get this file, need to run get_mrip_oracle.R in groundfishRDM repo)
+# traverse up 1 directory.
+folder <- dirname(here()) 
+# go down to groundfishRDM
+folder <- file.path(folder , "groundfishRDM", "Data", "2027_mgt_cycle", "miscellaneous") 
+vintage_string<-list.files(folder, pattern=glob2rx("mrip_pull*Rds"))
+vintage_string<-gsub("mrip_pull","",vintage_string)
 vintage_string<-gsub(".Rds","",vintage_string)
 data_vintage<-max(vintage_string)
 run_date<-as.Date(data_vintage)
 
 # NOTE: glue and here are used to dynamically locate the file. Ensure the raw folder exists.
-filename <- here("data","raw",glue("mrip_statistics_{data_vintage}.Rds"))
-mrip_statistics <- read_rds(filename)  # comes from get_mrip(), which returned a named list with elements: trip, catch, size, size_b2
+filename <- file.path(folder,glue("mrip_pull{data_vintage}.Rds"))
+mrip_statistics <- read_rds(filename)  # a named list with elements: trip, catch, size, size_b2
 
 
 # Load the elements in the list 
@@ -78,7 +80,7 @@ catch[] <- lapply(catch, function(x) if(is.character(x)) tolower(x) else x)
 #### Cod effort ####
 # typ = c('PRIM1', 'A', 'B1', 'B2') captures directed trips where cod was 
 # the primary target OR was caught (kept, unobserved dead, or released)
-cod_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE', 
+cod_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE1', 'INTSITE', 
                                   'STRAT_ID', 'PSU_ID', 'ID_CODE', 'LEADER'),
                       microdata = mrip_statistics,
                       dir_trip = list(comname = common_name1,
@@ -96,7 +98,7 @@ cod_effort[] <- lapply(cod_effort, function(x) if(is.character(x)) tolower(x) el
 #### Cod Catch ####
 # estimate_var=FALSE speeds up processing by skipping variance/SE/CV calculation
 cod_catch <- mrip_catch(comname = common_name1, 
-                        dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'STRAT_ID', 
+                        dom = c('YEAR', 'WAVE', 'ST', 'MODE1', 'STRAT_ID', 
                                 'PSU_ID', 'ID_CODE', 'WP_INT'), 
                         microdata = mrip_statistics, estimate_var = FALSE) 
 
@@ -115,7 +117,7 @@ cod_catch <- subset(cod_catch, select = -c(se, cv)) # se and cv only populated w
 cod_effort$source <- "effort"
 cod_catch$source <- "catch"
 cod_effort_catch <- left_join(cod_effort, cod_catch, # left join: retains all effort rows; unmatched catch rows are NA
-                              by = c("common", "year", "wave", "mode_fx", "st", 
+                              by = c("common", "year", "wave", "mode1", "st", 
                                      "strat_id", "psu_id", "id_code"))
 
 ## some trips without catch, keep them, will assign claim=0 down below
@@ -128,7 +130,7 @@ cod_effort_catch$day <- substr(cod_effort_catch$date, 7, 8)
 cod_effort_catch <- cod_effort_catch %>% filter(!(day %in% c("9x", "xx"))) # drop records with imputed/unknown interview day
 
 #### Haddock effort ####
-hadd_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE', 
+hadd_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE1', 'INTSITE', 
                                   'STRAT_ID', 'PSU_ID', 'ID_CODE', 'LEADER'),
                       microdata = mrip_statistics,
                       dir_trip = list(comname = common_name2,
@@ -142,7 +144,7 @@ hadd_effort[] <- lapply(hadd_effort, function(x) if(is.character(x)) tolower(x) 
 
 #### Haddock catch ####
 hadd_catch <- mrip_catch(comname = common_name2, 
-                        dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'STRAT_ID', 
+                        dom = c('YEAR', 'WAVE', 'ST', 'MODE1', 'STRAT_ID', 
                                 'PSU_ID', 'ID_CODE', 'WP_INT'), 
                         microdata = mrip_statistics, estimate_var = FALSE)
 
@@ -159,7 +161,7 @@ hadd_catch <- subset(hadd_catch, select = -c(se, cv))
 hadd_effort$source <- "effort"
 hadd_catch$source <- "catch"
 hadd_effort_catch <- left_join(hadd_effort, hadd_catch, 
-                              by = c("common", "year", "wave", "mode_fx", "st", 
+                              by = c("common", "year", "wave", "mode1", "st", 
                                      "strat_id", "psu_id", "id_code"))
 
 # Parse interview date from id_code; same logic as cod above
@@ -175,14 +177,9 @@ hadd_effort_catch <- hadd_effort_catch %>% filter(!(day %in% c("9x", "xx")))
 ### APPEND cod and haddock ###
 cod_hadd_all <- rbind(cod_effort_catch, hadd_effort_catch)
 
-# Recode numeric mode_fx to readable labels; mode_fx 1/2/3 = shore modes
-cod_hadd_all <- cod_hadd_all %>%
-  mutate(mode = case_when(
-    mode_fx == 3|mode_fx==2|mode_fx==1 ~ "shore",
-    mode_fx == 5 ~ "charter",
-    mode_fx == 7 ~ "private",
-    mode_fx == 4 ~ "headboat"
-  ))
+# Rename mode1 mode
+cod_hadd_all <- cod_hadd_all %>% 
+  rename(mode = mode1)
 
 # Recode FIPS state codes to abbreviations
 cod_hadd_all <- cod_hadd_all %>%
@@ -359,8 +356,8 @@ cod_hadd_all_w2 <- cod_hadd_all_w2 %>%
   filter(wgom == 1)
 
 # Remove clutter in environment
-#rm(cod_catch, cod_effort, cod_effort_catch, hadd_catch, hadd_effort, hadd_effort_catch,
-#   cod_hadd_all, cod_site_list, trip_species_composition)
+rm(cod_catch, cod_effort, cod_effort_catch, hadd_catch, hadd_effort, hadd_effort_catch,
+   cod_hadd_all, cod_site_list, trip_species_composition)
 
 
 ### Other variables for our dataframe
@@ -418,12 +415,52 @@ rec_trips_catch <- rbind(cod_hadd_trips, cod_hadd_catch)
 rec_trips_catch <- rec_trips_catch %>%
   mutate(source = "MRIP")
 
-write.csv(rec_trips_catch, file = here("data/main/trip_catch.csv"))
 
 # look at it.
 rec_trips_catch %>% 
     ungroup() %>%
     group_by(metric, year, common) %>% 
     summarise(value=sum(value))
+
+
+
+##### Save file as Rds
+output_folder <- file.path(here("data","main"))
+SaveFile<-glue("trip_catch_gf{data_vintage}")
+write_rds(rec_trips_catch, file=file.path(output_folder,glue("{SaveFile}.Rds")))
+
+
+
+###### Push Rds to google drive ######
+
+#Load libraries
+library(haven)
+library(googledrive)
+
+
+# Connect to Google Drive
+# NOTE: Relies on cached credentials in .secrets. Will prompt interactive auth if missing or expired.
+drive_auth(cache = here(".secrets"), email = TRUE)
+
+# Output folder on google drive
+miscellaneous_path <-file.path("socialsci","RecreationalDST","2027_management_cycle_data",
+                               "groundfishRDM","miscellaneous")
+
+folder_info <- drive_get(
+  path = miscellaneous_path,
+  shared_drive = "NMFS NEC READ SSB"
+)
+miscellaneous_path<-folder_info$id
+
+
+## Push Rds to google drive
+drive_upload(
+  media = file.path(output_folder,glue("{SaveFile}.Rds")),
+  path = as_id(miscellaneous_path),
+  name = glue("{SaveFile}.Rds"),
+  overwrite = TRUE
+)
+
+
 
 
