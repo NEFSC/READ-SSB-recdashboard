@@ -43,8 +43,10 @@ fishery<-"SFSBSB"
 ######  Read in Data  ######
 #######################################################################  
 # To pull in most recent mrip file (to get this file, need to run get_mrip_oracle.R in flukeRDm repo)
-folder <- "C:/Users/theresa.petesch/Documents/GitHub/flukeRDM/Data/2028_mgt_cycle/miscellaneous"
-#folder<-file.path("GitHub","flukeRDM","Data","2028_mgt_cycle","miscellaneous")
+# traverse up 1 directory.
+folder <- dirname(here()) 
+# go down to flukeRDM
+folder <- file.path(folder , "flukeRDM", "Data", "2028_mgt_cycle", "miscellaneous") 
 vintage_string<-list.files(folder, pattern=glob2rx("mrip_pull*Rds"))
 vintage_string<-gsub("mrip_pull","",vintage_string)
 vintage_string<-gsub(".Rds","",vintage_string)
