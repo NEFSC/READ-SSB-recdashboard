@@ -873,7 +873,8 @@ server <- function(input, output, session) {
         scale_y_continuous(labels = scales::comma) +
         labs(x = tools::toTitleCase(grp), y = y_lab) +
         theme_minimal(base_size = 12) +
-        theme(axis.text.x = element_text(angle = 35, hjust = 1), legend.position = "right")
+        theme(axis.text.x = element_text(angle = 35, hjust = 1), legend.position = "right",
+              legend.title = element_blank())
       
       return(ggplotly(g, tooltip = "text"))
       
