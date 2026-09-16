@@ -161,8 +161,8 @@ naa_data <- list(
 # for_hire/private/shore vocabulary used by the trips/catch controls, and common
 # names are title-cased to match the existing species_map ("Atlanticcod"/"Haddock").
 cpt_raw <- tryCatch(
-  readRDS(here::here("data", "main", "catch_per_trip_2026-06-15.Rds")),
-  error = function(e) readRDS("data/main/catch_per_trip_2026-06-15.Rds")
+  readRDS(here::here("data", "main", "catch_per_trip_2026-07-16.Rds")),
+  error = function(e) readRDS("data/main/catch_per_trip_2026-07-16.Rds")
 )
 
 cpt_data <- cpt_raw %>%
