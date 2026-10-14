@@ -11,8 +11,6 @@
 #  3. De-duplicate trips
 #  4. reshape and add descriptive columns
 
-#test22
-
 # load packages
 library(dplyr)
 library(readr)
