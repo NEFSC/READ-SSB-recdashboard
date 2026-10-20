@@ -24,7 +24,7 @@ Projected numbers at age are provided for the upcoming management year.
 
 ### Data sources
 
-All are derived from the most recent stock assessment ([2024 Management Track](https://apps-st.fisheries.noaa.gov/sis/docServlet?fileAction=download&fileId=9882))
+All are derived from the most recent stock assessment ([2026 Management Track](https://apps-nefsc.fisheries.noaa.gov/saw/sasi_files.php?year=2026&species_id=5&stock_id=2&review_type_id=6&info_type_id=-1&map_type_id=&filename=Gulf_of_Maine_Haddock_SAR_2026.pdf))
 that was used for providing specifications advice to fishery managers
 
 ### Data extraction 
@@ -34,11 +34,11 @@ This includes the "WHAM" model file weight-at-age excel file.
 
 ### Data analysis/Processing
 
-[Data processing code](https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim/get_haddock_assessment_data.R) can be seen in the groundfishRDM repository. In brief, for 2026 fishery management, we
+[Data processing code](https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim/process_haddock_assessment_data.R) can be seen in the groundfishRDM repository. In brief, for 2027 fishery management, we
 
-1.  We use using actual catch (in mt) for 2023 and 2024. We use 75%FMSY for 2025-2026 mortality.
-2.  We project the stock forward and extract mean NAA through 2025.
-3.  We simulate 500 draws of the Numbers-at-Age for each age class for 2026 based on 
+1.  Use the stock assessment projections as they are provided to fishery managers.  
+2.  We extract mean NAA through 2026.
+3.  We simulate 500 draws of the Numbers-at-Age for each age class for 2027 based on 
 the mean and standard deviations from WHAM.
 
 
