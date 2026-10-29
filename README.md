@@ -2,16 +2,16 @@
 (Last updated October 29, 2026)
 
 This repository is used to create the [RecDST data dashboard](https://connect.fisheries.noaa.gov/content/c257deee-a657-4c10-be8a-92827cb5bdfe/). 
-The intention of the dashboard is to increase stakeholder understanding of the data used in the 
+The intention of the dashboard is to improve stakeholder understanding of the data used in the 
 Recreational Fisheries Decision Support Tool (RecDST). The dashboard contains tables and visualizations of summary statistics and intermediate
 model input data. The documentation section of the dashboard discusses data processing and methods. 
 
-The dashboard does not have every recreational fishing metric and focuses only on metrics relevant
-to understanding the RecDST. It has historical data from MRIP for recreational trips and catch, data 
+The dashboard does not contain every recreational fishing metric.  It focuses on the metrics most relevant
+to understanding the RecDST. It currently contains historical data from MRIP for recreational trips and catch, data 
 from stock assessments including numbers at age, and intermediate model inputs including catch per trip, 
 catch at length, and directed trips. 
 
-The dashboard does not currently have all metrics for all species (Western Gulf of Maine Cod, Gulf of Maine 
+The dashboard is in development and does not currently have all metrics for all species (Western Gulf of Maine Cod, Gulf of Maine 
 Haddock, and Mid-Atlantic Summer Flounder, Scup, and Black Sea Bass).
 
 ## Data
