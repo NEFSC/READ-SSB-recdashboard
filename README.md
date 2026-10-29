@@ -3,7 +3,7 @@
 
 This repository is used to create the [RecDST data dashboard](https://connect.fisheries.noaa.gov/content/c257deee-a657-4c10-be8a-92827cb5bdfe/). 
 The intention of the dashboard is to increase stakeholder understanding of the data used in the 
-RecDST. The dashboard contains tables and visualizations of summary statistics and intermediate
+Recreational Fisheries Decision Support Tool (RecDST). The dashboard contains tables and visualizations of summary statistics and intermediate
 model input data. The documentation section of the dashboard discusses data processing and methods. 
 
 The dashboard does not have every recreational fishing metric and focuses only on metrics relevant
@@ -12,7 +12,7 @@ from stock assessments including numbers at age, and intermediate model inputs i
 catch at length, and directed trips. 
 
 The dashboard does not currently have all metrics for all species (Western Gulf of Maine Cod, Gulf of Maine 
-Haddock, and Mid Atlantic Summer Flounder, Scup, and Black Sea Bass).
+Haddock, and Mid-Atlantic Summer Flounder, Scup, and Black Sea Bass).
 
 ## Data
 The historical trips and catch data are from the Marine Recreational Information Program 
