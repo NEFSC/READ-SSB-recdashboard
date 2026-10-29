@@ -1,4 +1,6 @@
 # READ-SSB-recdashboard
+(Last updated October 29, 2026)
+
 This repository is used to create the [RecDST data dashboard](https://connect.fisheries.noaa.gov/content/c257deee-a657-4c10-be8a-92827cb5bdfe/). 
 The intention of the dashboard is to increase stakeholder understanding of the data used in the 
 RecDST. The dashboard contains tables and visualizations of summary statistics and intermediate
@@ -15,7 +17,7 @@ Haddock, and Mid Atlantic Summer Flounder, Scup, and Black Sea Bass).
 ## Data
 The historical trips and catch data are from the Marine Recreational Information Program 
 ([MRIP](https://www.fisheries.noaa.gov/insight/marine-recreational-information-program)). These data 
-are processed by code in this repository in the stored_scripts folder. The scripts for processing the 
+are processed by code in this repository in the stored_scripts folder. The code for processing the 
 intermediate model input data and the numbers at age data are located in the respective 
 [groundfishRDM](https://github.com/kimberly-bastille/groundfishRDM) and 
 [flukeRDM](https://github.com/kimberly-bastille/flukeRDM) repositories. We use R Shiny 
