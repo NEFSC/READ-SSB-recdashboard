@@ -2,7 +2,7 @@
 
 **Description**: 
 
-This data contains the simulated directed trips by month, mode, and kind of day for
+This data contains the simulated directed trips by month, mode, and kind of day (weekday or weekend) for
 Western Gulf of Maine (WGOM) Atlantic Cod and Gulf of Maine (GOM) Haddock.
 We provide the medians of our random n draws for the baseline year. As of October 
 2026, we have 101 draws in this dataset, but this could change in the future.
