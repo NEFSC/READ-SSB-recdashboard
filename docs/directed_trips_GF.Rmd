@@ -12,7 +12,9 @@ We provide the medians of our random n draws for the baseline year. As of Octobe
 The data are for the baseline regulatory year, also called the calibration year, 
 and they are based on the most recent 6 waves of data. For the 2026 management 
 cycle, directed trips were simulated using data for waves 1-5 of 2025 and wave 
-6 of 2024. 
+6 of 2024.   For the 2027 management 
+cycle, directed trips will be simulated using data for waves 1-5 of 2026 and wave 
+6 of 2025. 
 
 ## Methods
 
