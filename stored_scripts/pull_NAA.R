@@ -140,7 +140,7 @@ if (management_cycle_fluke==9999){
 
 
 files_to_get<-append(groundfish_files_to_get,SFSBSB_files_to_get)
-files_to_get
+
 #####################################################################################################
 # Connect to Google Drive
 # Authenticate using cached credentials located in the .secrets directory to bypass interactive prompts
@@ -215,7 +215,8 @@ for (my_file in files_to_get){
     arrange(desc(file_date)) %>%
     # Isolates the single most recent file based on the parsed date
     slice(1)
-  fd<-most_recent_file$file_date
+  fd<-most_recent_file %>%
+    pull(file_date)
   # Throw some warnings
   
   if (nrow(most_recent_file) == 0) {

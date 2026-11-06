@@ -7,12 +7,13 @@ set -euo pipefail
 #   type: ./stored_scripts/run_pull_NAA.sh 
 # if you would like to skip groundfish or fluke, you can 
 # set the appropriate value to 9999
+# You might have issues with google drive tokens
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 
 Rscript --vanilla "${SCRIPT_DIR}/pull_NAA.R" \
-  management_cycle_groundfish=9999 \
+  management_cycle_groundfish=2027 \
   management_cycle_fluke=2026
   
 # Get the 2026 groundfish data and skip fluke:   
