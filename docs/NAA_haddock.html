@@ -372,9 +372,12 @@ year.</p>
 <h2>Methods</h2>
 <div id="data-sources" class="section level3">
 <h3>Data sources</h3>
-<p>All are derived from the most recent stock assessment (<a href="https://apps-st.fisheries.noaa.gov/sis/docServlet?fileAction=download&amp;fileId=9882">2024
-Management Track</a>) that was used for providing specifications advice
-to fishery managers</p>
+<p>For the 2026 management cycle, we use the <a href="https://apps-st.fisheries.noaa.gov/sis/docServlet?fileAction=download&amp;fileId=9882">2024
+Management Track stock assessment</a>.</p>
+<p>For the 2027 management cycle, we these data were derived from the <a href="https://apps-nefsc.fisheries.noaa.gov/saw/sasi_files.php?year=2026&amp;species_id=5&amp;stock_id=2&amp;review_type_id=6&amp;info_type_id=-1&amp;map_type_id=&amp;filename=Gulf_of_Maine_Haddock_SAR_2026.pdf">2026
+Management Track stock assessment</a>. We used the following assumptions
+for fishing mortality: 0.75Fmsy (2027-2029), Constant at 2029 level
+(2030-2031)</p>
 </div>
 <div id="data-extraction" class="section level3">
 <h3>Data extraction</h3>
@@ -384,16 +387,19 @@ file.</p>
 </div>
 <div id="data-analysisprocessing" class="section level3">
 <h3>Data analysis/Processing</h3>
-<p><a href="https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim/get_haddock_assessment_data.R">Data
-processing code</a> can be seen in the groundfishRDM repository. In
-brief, for 2026 fishery management, we</p>
-<ol style="list-style-type: decimal">
-<li>We use using actual catch (in mt) for 2023 and 2024. We use 75%FMSY
-for 2025-2026 mortality.</li>
-<li>We project the stock forward and extract mean NAA through 2025.</li>
-<li>We simulate 500 draws of the Numbers-at-Age for each age class for
-2026 based on the mean and standard deviations from WHAM.</li>
-</ol>
+<p><a href="https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim/process_haddock_assessment_data.R">Current
+Data processing code</a> can be seen in the groundfishRDM
+repository.</p>
+<p>For the 2026 management cycle: 1. We use the actual catch (in mt) for
+2023 and 2024. We use 75%FMSY for 2025-2026 mortality. 2. We project the
+stock forward and extract mean NAA through 2025. 3. We simulate 500
+draws of the Numbers-at-Age for each age class for 2026 based on the
+mean and standard deviations from WHAM.</p>
+<p>For the 2027 management cycle: 1. We use the stock assessment
+projections as they are provided to fishery managers.<br />
+2. We extract mean NAA through 2026. 3. We simulate 500 draws of the
+Numbers-at-Age for each age class for 2027 based on the mean and
+standard deviations from WHAM.</p>
 </div>
 </div>
 </div>
