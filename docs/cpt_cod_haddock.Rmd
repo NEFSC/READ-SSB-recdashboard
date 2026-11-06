@@ -7,6 +7,13 @@ Simulated catch per trip for Western Gulf of Maine (WGOM) Atlantic Cod and Gulf 
 Maine (GOM) Haddock. We provide the median, minimum, and maximum of 100 draws of 
 simulated mean catch per trip at the mode-month level. 
 
+The simulated catch per trip data are used in the Recreational Demand Model to estimate
+overall fishing mortality. Catch per trip also helps determine the quality of fishing trips 
+in the baseline and projection periods. When anglers catch more fish, they also retain 
+more fish, other things equal. This increases the quality of fishing trips. Since 
+fishing quality is higher, the model assumes that anglers will respond by 
+taking more fishing trips, ultimately increasing the estimated fishing mortality. 
+
 **Years available**: 
 
 Simulated catch per trip for the upcoming management cycle is based on the most recent 
