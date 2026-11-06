@@ -5,6 +5,14 @@
 # Dependencies: Valid Google Drive access credentials cached locally
 # Description: Retrieves most recent Numbers-at-Age (NAA) data for GOM Cod 
 #              and Haddock from Drive and downloads them locally.
+
+# Takes two named arguments. 
+# Arg 1: "management_cycle_groundfish",
+# Arg 2: "management_cycle_fluke
+# Usage:
+# Rscript /stored_scripts/pull_NAA_args.R management_cycle_groundfish=2027 management_cycle_fluke=2028
+# will download groundfish and fluke NAA from google drive from the 2027 and 2028 folders respectively
+# and put them into data/main
 ###############################################################################  
 
 ###################################################
@@ -25,9 +33,65 @@ conflicts_prefer(dplyr::filter)
 # Declare script location to establish project root for relative paths
 here::i_am("stored_scripts/pull_NAA.R")
 
+# Define arguments
+raw_args <- commandArgs(trailingOnly = TRUE)
+parsed_args <- list()
+
+for (arg in raw_args) {
+  # Split at the first '=' only to preserve values that might contain '='
+  parts <- regmatches(arg, regexec("^([^=]+)=(.*)$", arg))[[1]]
+  
+  if (length(parts) == 3) {
+    # parts[2] is key, parts[3] is value
+    parsed_args[[trimws(parts[2])]] <- trimws(parts[3])
+  } else {
+    stop(paste("Malformed argument:", arg, "- Expected syntax: key=value"), call. = FALSE)
+  }
+}
+
+# Define required keys and verify presence
+required_keys <- c("management_cycle_groundfish", "management_cycle_fluke")
+missing_keys  <- setdiff(required_keys, names(parsed_args))
+
+
+if (length(missing_keys) > 0) {
+  stop(
+    paste("Missing required argument(s):", paste(missing_keys, collapse = ", ")),
+    call. = FALSE
+  )
+}
+# Coerce to numeric
+management_cycle_groundfish <- as.numeric(parsed_args[["management_cycle_groundfish"]])
+management_cycle_fluke      <- as.numeric(parsed_args[["management_cycle_fluke"]])
+
+# Validate numeric conversion
+if (is.na(management_cycle_groundfish) || is.na(management_cycle_fluke)) {
+  stop("Type error: Both management cycles must be valid numeric values.", call. = FALSE)
+}
+
+if (!management_cycle_groundfish %in% c(2026,2027,9999)){
+  stop(glue("Groundfish Managment cycle set to {management_cycle_groundfish}.
+            Only 2026 or 2027 is allowed"), call. = FALSE)
+}
+
+
+if (!management_cycle_fluke %in% c(2026, 2028,9999)){
+  stop(glue("Fluke Managment cycle set to {management_cycle_fluke}.
+            Only 2026 or 2028 is allowed"), call. = FALSE)
+}
+
+
 # locations of NAA on google drive
-groundfish_processed_data_path<-file.path("socialsci","RecreationalDST","2027_management_cycle_data","groundfishRDM","input_data")
-sfsbsb_processed_data_path<-file.path("socialsci","RecreationalDST","2028_management_cycle_data","flukeRDM","miscellaneous")
+groundfish_processed_data_path<-file.path("socialsci","RecreationalDST",
+                                          glue("{management_cycle_groundfish}_management_cycle_data"),
+                                          "groundfishRDM",
+                                          "input_data")
+
+sfsbsb_processed_data_path<-file.path("socialsci",
+                                      "RecreationalDST",
+                                      glue("{management_cycle_fluke}_management_cycle_data"),
+                                      "flukeRDM",
+                                      "miscellaneous")
 
 
 #Set this to TRUE if you want to download the files and read them into memory. FALSE otherwise
@@ -54,27 +118,49 @@ groundfish_files_to_get<-list("WGOM_Cod_projected_NAA",
                    "GOM_Haddock_projected_NAA",
                    "GOM_Haddock_historical_NAA")
 
-files_to_get<-append(groundfish_files_to_get,SFSBSB_files_to_get)
 
+# Zero out the files and file paths if we don't want one of the fisheries.
+# pretty inelegant. but it should work.
+if (management_cycle_groundfish==9999){
+  groundfish_files_to_get<-list()
+  groundfish_processed_data_path<-file.path("socialsci","RecreationalDST",
+                                            glue("2026_management_cycle_data"),
+                                            "groundfishRDM",
+                                            "input_data")
+}
+
+if (management_cycle_fluke==9999){
+  SFSBSB_files_to_get<-list()
+  sfsbsb_processed_data_path<-file.path("socialsci",
+                                        "RecreationalDST",
+                                        glue("2026_management_cycle_data"),
+                                        "flukeRDM",
+                                        "miscellaneous")
+}
+
+
+files_to_get<-append(groundfish_files_to_get,SFSBSB_files_to_get)
+files_to_get
 #####################################################################################################
 # Connect to Google Drive
 # Authenticate using cached credentials located in the .secrets directory to bypass interactive prompts
 drive_auth(cache = here(".secrets"), email = TRUE,  scopes = "https://www.googleapis.com/auth/drive")
 
-# Find the folder on google drive
-folder_info <- drive_get(
-  path = groundfish_processed_data_path,
-  shared_drive = "NMFS NEC READ SSB"
-)
-# Reassign processed_data_path to the specific Google Drive folder ID for targeted queries
-groundfish_processed_data_path<-folder_info$id
 
-if(length(groundfish_processed_data_path)>1){
-  stop("more than 1 groundfish folder found.")
-}
-if(length(groundfish_processed_data_path)<1){
-  stop("no groundfish folders found")
-}
+  # Find the folder on google drive
+  folder_info <- drive_get(
+    path = groundfish_processed_data_path,
+    shared_drive = "NMFS NEC READ SSB"
+  )
+  # Reassign processed_data_path to the specific Google Drive folder ID for targeted queries
+  groundfish_processed_data_path<-folder_info$id
+  
+  if(length(groundfish_processed_data_path)>1){
+    stop("more than 1 groundfish folder found.")
+  }
+  if(length(groundfish_processed_data_path)<1){
+    stop("no groundfish folders found")
+  }
 
 
 # Find the folder on google drive
@@ -129,7 +215,7 @@ for (my_file in files_to_get){
     arrange(desc(file_date)) %>%
     # Isolates the single most recent file based on the parsed date
     slice(1)
-  
+  fd<-most_recent_file$file_date
   # Throw some warnings
   
   if (nrow(most_recent_file) == 0) {
@@ -145,7 +231,7 @@ for (my_file in files_to_get){
       path = here("data", "main", most_recent_file$name),
       overwrite = TRUE
     )
-    print(glue("Successfully downloaded file {my_file}_{most_recent_file$file_date}.Rds" ))
+    print(glue("Successfully downloaded file {my_file}_{fd}.Rds" ))
     download_count<-download_count+1
     }
   
