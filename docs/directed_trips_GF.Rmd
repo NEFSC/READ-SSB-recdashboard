@@ -7,8 +7,8 @@ Western Gulf of Maine (WGOM) Atlantic Cod and Gulf of Maine (GOM) Haddock.
 We provide the medians of our random n draws for the baseline year. As of October 
 2026, we have 101 draws in this dataset, but this could change in the future.
 
-The simulated directed trips are used to simulate catch per trip. They are also 
-used to calibrate the Recreational Demand Model and ensure it is producing realistic 
+The simulated directed trips are used to simulate catch per trip. They are  
+used to calibrate the Recreational Demand Model to ensure it is producing realistic 
 harvest outcomes compared to the MRIP estimates for the baseline year.
 
 **Years available**: 
