@@ -164,49 +164,49 @@ message("Files downloaded: " , download_count)
 #cleanup
 rm(folder_info, most_recent_file, files_to_get, files_in_folder)
 
-
-#### GOM Haddock Hist
-GOM_Haddock_hist_NAA_2026 <- readRDS(here::here("data/main/GOM_Haddock_historical_NAA_2026-06-16.RDS"))
-GOM_Haddock_hist_NAA_2027 <- readRDS(here::here("data/main/GOM_Haddock_historical_NAA_2026-11-05.RDS"))
-
-GOM_Haddock_hist_NAA_2026<- GOM_Haddock_hist_NAA_2026 %>% 
-  dplyr::mutate(management_cycle = c("2026"))
-
-GOM_Haddock_hist_NAA<- rbind(GOM_Haddock_hist_NAA_2026, GOM_Haddock_hist_NAA_2027)
-
-saveRDS(GOM_Haddock_hist_NAA, here::here("data/main/GOM_Haddock_hist_NAA.RDS"))
-
-#### GOM Haddock proj
-GOM_Haddock_proj_NAA_2026 <- readRDS(here::here("data/main/GOM_Haddock_projected_NAA_2026-06-16.RDS"))
-GOM_Haddock_proj_NAA_2027 <- readRDS(here::here("data/main/GOM_Haddock_projected_NAA_2026-11-05.RDS"))
-
-GOM_Haddock_proj_NAA_2026<- GOM_Haddock_proj_NAA_2026 %>% 
-  dplyr::mutate(management_cycle = c("2026"))
-
-GOM_Haddock_proj_NAA<- rbind(GOM_Haddock_proj_NAA_2026, GOM_Haddock_proj_NAA_2027)
-
-saveRDS(GOM_Haddock_proj_NAA, here::here("data/main/GOM_Haddock_proj_NAA.RDS"))
-
-
-
-#### WGOM Cod Hist
-WGOM_Cod_hist_NAA_2026 <- readRDS(here::here("data/main/WGOM_Cod_historical_NAA_2026-06-16.RDS"))
-WGOM_Cod_hist_NAA_2027 <- readRDS(here::here("data/main/WGOM_Cod_historical_NAA_2026-11-05.RDS"))
-
-WGOM_Cod_hist_NAA_2026<- WGOM_Cod_hist_NAA_2026 %>% 
-  dplyr::mutate(management_cycle = c("2026"))
-
-WGOM_Cod_hist_NAA<- rbind(WGOM_Cod_hist_NAA_2026, WGOM_Cod_hist_NAA_2027)
-
-saveRDS(WGOM_Cod_hist_NAA, here::here("data/main/WGOM_Cod_hist_NAA.RDS"))
-
-#### WGOM Haddock proj
-WGOM_Cod_proj_NAA_2026 <- readRDS(here::here("data/main/WGOM_Cod_projected_NAA_2026-06-16.RDS"))
-WGOM_Cod_proj_NAA_2027 <- readRDS(here::here("data/main/WGOM_Cod_projected_NAA_2026-11-05.RDS"))
-
-WGOM_Cod_proj_NAA_2026<- WGOM_Cod_proj_NAA_2026 %>% 
-  dplyr::mutate(management_cycle = c("2026"))
-
-WGOM_Cod_proj_NAA<- rbind(WGOM_Cod_proj_NAA_2026, WGOM_Cod_proj_NAA_2027)
-
-saveRDS(WGOM_Cod_proj_NAA, here::here("data/main/WGOM_Cod_proj_NAA.RDS"))
+# 
+# #### GOM Haddock Hist
+# GOM_Haddock_hist_NAA_2026 <- readRDS(here::here("data/main/GOM_Haddock_historical_NAA_2026-06-16.RDS"))
+# GOM_Haddock_hist_NAA_2027 <- readRDS(here::here("data/main/GOM_Haddock_historical_NAA_2026-11-05.RDS"))
+# 
+# GOM_Haddock_hist_NAA_2026<- GOM_Haddock_hist_NAA_2026 %>% 
+#   dplyr::mutate(management_cycle = c("2026"))
+# 
+# GOM_Haddock_hist_NAA<- rbind(GOM_Haddock_hist_NAA_2026, GOM_Haddock_hist_NAA_2027)
+# 
+# saveRDS(GOM_Haddock_hist_NAA, here::here("data/main/GOM_Haddock_hist_NAA.RDS"))
+# 
+# #### GOM Haddock proj
+# GOM_Haddock_proj_NAA_2026 <- readRDS(here::here("data/main/GOM_Haddock_projected_NAA_2026-06-16.RDS"))
+# GOM_Haddock_proj_NAA_2027 <- readRDS(here::here("data/main/GOM_Haddock_projected_NAA_2026-11-05.RDS"))
+# 
+# GOM_Haddock_proj_NAA_2026<- GOM_Haddock_proj_NAA_2026 %>% 
+#   dplyr::mutate(management_cycle = c("2026"))
+# 
+# GOM_Haddock_proj_NAA<- rbind(GOM_Haddock_proj_NAA_2026, GOM_Haddock_proj_NAA_2027)
+# 
+# saveRDS(GOM_Haddock_proj_NAA, here::here("data/main/GOM_Haddock_proj_NAA.RDS"))
+# 
+# 
+# 
+# #### WGOM Cod Hist
+# WGOM_Cod_hist_NAA_2026 <- readRDS(here::here("data/main/WGOM_Cod_historical_NAA_2026-06-16.RDS"))
+# WGOM_Cod_hist_NAA_2027 <- readRDS(here::here("data/main/WGOM_Cod_historical_NAA_2026-11-05.RDS"))
+# 
+# WGOM_Cod_hist_NAA_2026<- WGOM_Cod_hist_NAA_2026 %>% 
+#   dplyr::mutate(management_cycle = c("2026"))
+# 
+# WGOM_Cod_hist_NAA<- rbind(WGOM_Cod_hist_NAA_2026, WGOM_Cod_hist_NAA_2027)
+# 
+# saveRDS(WGOM_Cod_hist_NAA, here::here("data/main/WGOM_Cod_hist_NAA.RDS"))
+# 
+# #### WGOM Haddock proj
+# WGOM_Cod_proj_NAA_2026 <- readRDS(here::here("data/main/WGOM_Cod_projected_NAA_2026-06-16.RDS"))
+# WGOM_Cod_proj_NAA_2027 <- readRDS(here::here("data/main/WGOM_Cod_projected_NAA_2026-11-05.RDS"))
+# 
+# WGOM_Cod_proj_NAA_2026<- WGOM_Cod_proj_NAA_2026 %>% 
+#   dplyr::mutate(management_cycle = c("2026"))
+# 
+# WGOM_Cod_proj_NAA<- rbind(WGOM_Cod_proj_NAA_2026, WGOM_Cod_proj_NAA_2027)
+# 
+# saveRDS(WGOM_Cod_proj_NAA, here::here("data/main/WGOM_Cod_proj_NAA.RDS"))
