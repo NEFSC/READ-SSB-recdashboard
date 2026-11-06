@@ -26,6 +26,11 @@ Projected numbers at age are provided for the upcoming management year.
 All are derived from the most recent stock assessment ([2024 Management Track](https://apps-st.fisheries.noaa.gov/sis/docServlet?fileAction=download&fileId=10095))
 that was used for providing specifications advice to fishery managers
 
+The historical numbers at age are used to build the baseline catch at length 
+distributions. The projected numbers at age are used to build the projected catch 
+at length distributions. These catch at length distributions 
+are used as intermediate model inputs in the RecDST. 
+
 ### Data extraction 
 
 Inputs need for stock assessment were obtained from stock assessment scientists. 

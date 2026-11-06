@@ -5,6 +5,10 @@
 Historical directed trips and catch for Mid Atlantic Summer Flounder, Scup, and 
 Black Sea Bass.
 
+The historical directed trips and catch are used to build the intermediate model 
+input data used to calibrate the Recreational Demand Model, such as the simulated
+directed trips and the catch per trip. 
+
 **Years available**: 
 
 Trips and catch are provided for 2024 and 2025.  
