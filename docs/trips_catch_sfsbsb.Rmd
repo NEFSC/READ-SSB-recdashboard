@@ -9,6 +9,8 @@ The historical directed trips and catch are used to build the intermediate model
 input data used to calibrate the Recreational Demand Model, such as the simulated
 directed trips and the catch per trip. 
 
+If you have questions or feedback, please contact <nefsc.recdst@noaa.gov>. 
+
 **Years available**: 
 
 Trips and catch are provided for 2024 and 2025.  

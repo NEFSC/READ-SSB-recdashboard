@@ -14,6 +14,8 @@ more fish, other things equal. This increases the quality of fishing trips. Sinc
 fishing quality is higher, the model assumes that anglers will respond by 
 taking more fishing trips, ultimately increasing the estimated fishing mortality. 
 
+If you have questions or feedback, please contact <nefsc.recdst@noaa.gov>. 
+
 **Years available**: 
 
 Simulated catch per trip for the upcoming management cycle is based on the most recent 

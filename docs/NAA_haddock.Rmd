@@ -18,6 +18,8 @@ distributions. The projected numbers at age are used to build the projected catc
 at length distributions. These catch at length distributions 
 are used as intermediate model inputs in the RecDST. 
 
+If you have questions or feedback, please contact <nefsc.recdst@noaa.gov>. 
+
 **Years available**: 
 
 Mean historical numbers at age are provided for the most recent 3 years.  

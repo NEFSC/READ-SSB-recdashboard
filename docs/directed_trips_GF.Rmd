@@ -11,6 +11,8 @@ The simulated directed trips are used to simulate catch per trip. They are
 used to calibrate the Recreational Demand Model to ensure it is producing realistic 
 harvest outcomes compared to the MRIP estimates for the baseline year.
 
+If you have questions or feedback, please contact <nefsc.recdst@noaa.gov>. 
+
 **Years available**: 
 
 The data are for the baseline regulatory year, also called the calibration year, 
