@@ -24,16 +24,16 @@ Projected numbers at age are provided for the upcoming management year.
 
 ### Data sources
 
-For the 2026 management cycle, we use the [2024 Management Track stock assessment](https://apps-st.fisheries.noaa.gov/sis/docServlet?fileAction=download&fileId=9882).
+For the 2026 management cycle, these data were derived from the [2024 Management Track stock assessment](https://apps-st.fisheries.noaa.gov/sis/docServlet?fileAction=download&fileId=9882).
 
 
-For the 2027 management cycle, we these data were derived from the [2026 Management Track stock assessment](https://apps-nefsc.fisheries.noaa.gov/saw/sasi_files.php?year=2026&species_id=5&stock_id=2&review_type_id=6&info_type_id=-1&map_type_id=&filename=Gulf_of_Maine_Haddock_SAR_2026.pdf).  We used the following assumptions for fishing mortality: 0.75Fmsy (2027-2029), Constant at 2029 level (2030-2031)
+For the 2027 management cycle, these data were derived from the [2026 Management Track stock assessment](https://apps-nefsc.fisheries.noaa.gov/saw/sasi_files.php?year=2026&species_id=5&stock_id=2&review_type_id=6&info_type_id=-1&map_type_id=&filename=Gulf_of_Maine_Haddock_SAR_2026.pdf).  We used the following assumptions for fishing mortality: 0.75Fmsy (2027-2029), Constant at 2029 level (2030-2031)
 
 
 ### Data extraction 
 
 Inputs need for stock assessment were obtained from stock assessment scientists. 
-This includes the "WHAM" model file weight-at-age excel file.
+This includes the "WHAM" model file and a weight-at-age excel file.
 
 ### Data analysis/Processing
 
