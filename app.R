@@ -840,7 +840,7 @@ server <- function(input, output, session) {
     base_title <- base_title_text()
     if (!is.null(input$management_cycle) && input$management_cycle != "" &&
         "management_cycle" %in% names(current_source_data())) {
-      paste0(base_title, " (Management Cycle ", input$management_cycle, ")")
+      paste0(base_title, " (", input$management_cycle, " Management Cycle" , ")"  )
     } else {
       base_title
     }
