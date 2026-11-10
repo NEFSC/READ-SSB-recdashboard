@@ -4,10 +4,17 @@
 
 Historical numbers at age (mean) in thousands.  
 
-Projected Numbers at age contain 100 individual draws for the upcoming regulatory year to give insight into variability.
+Projected Numbers at age contain 100 individual draws for the upcoming regulatory 
+year to give insight into variability.
 
 Summer Flounder has 7 age classes (Age 1 to Age 6 and Age 7+).
 
+The historical numbers at age are used to build the baseline catch at length 
+distributions. The projected numbers at age are used to build the projected catch 
+at length distributions. These catch at length distributions 
+are used as intermediate model inputs in the RecDST. 
+
+If you have questions or feedback, please contact <nefsc.recdst@noaa.gov>. 
 
 **Years available**: 
 
@@ -29,5 +36,7 @@ Inputs need for stock assessment were obtained from stock assessment scientists.
 
 ### Data analysis/Processing
 
-[Data processing code](https://github.com/kimberly-bastille/flukeRDM/blob/main/Code/pre_sim/rdb_processing_NAA.do)can be seen in the flukeRDM repository. In brief, for 2026 fishery management, we obtained NAA straight from the stock assessment projection
+[Data processing code](https://github.com/kimberly-bastille/flukeRDM/blob/main/Code/pre_sim/rdb_processing_NAA.do) 
+can be seen in the flukeRDM repository. In brief, for 2026 fishery management, 
+we obtained NAA straight from the stock assessment projection
 
