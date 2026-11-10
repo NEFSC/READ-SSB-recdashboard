@@ -139,11 +139,20 @@ parse_metric_naa <- function(df) {
     )
 }
 
+# Cod/haddock NAA files now carry a management_cycle column ("2026" / "2027"), The column is stored as a glue
+# string, so it's coerced to plain character here for clean filtering.
+read_naa_cycle <- function(file) {
+  readRDS(here::here("data", "main", file)) %>%
+    dplyr::ungroup() %>%
+    mutate(management_cycle = as.character(management_cycle)) %>%
+    parse_metric_naa()
+}
+
 naa_data <- list(
-  cod_historical     = parse_metric_naa(readRDS(here::here("data", "main", "WGOM_Cod_historical_NAA_2026-06-16.Rds"))),
-  cod_projected      = parse_metric_naa(readRDS(here::here("data", "main", "WGOM_Cod_projected_NAA_2026-06-16.Rds"))),
-  haddock_historical = parse_metric_naa(readRDS(here::here("data", "main", "GOM_Haddock_historical_NAA_2026-06-16.Rds"))),
-  haddock_projected  = parse_metric_naa(readRDS(here::here("data", "main", "GOM_Haddock_projected_NAA_2026-06-16.Rds"))),
+  cod_historical     = read_naa_cycle("WGOM_Cod_hist_NAA.RDS"),
+  cod_projected      = read_naa_cycle("WGOM_Cod_proj_NAA.RDS"),
+  haddock_historical = read_naa_cycle("GOM_Haddock_hist_NAA.RDS"),
+  haddock_projected  = read_naa_cycle("GOM_Haddock_proj_NAA.RDS"),
   
   bsb_n_historical   = parse_metric_naa(readRDS(here::here("data", "main", "BlackSeaBassNorth_historicalNAA_2026_07_30.Rds"))),
   bsb_n_projected    = parse_metric_naa(readRDS(here::here("data", "main", "BlackSeaBassNorth_projectedNAA_2026_07_30.Rds"))),
@@ -195,6 +204,40 @@ catch_len_data <- catch_len_raw %>%
     season = stringr::str_extract(metric, "^[A-Za-z]+"),
     length = as.numeric(stringr::str_extract(metric, "[0-9.]+$"))
   )
+
+# ── Management cycle ──────────────────────────────────────────────────────────
+# Choices come from every loaded dataset that has a management_cycle column, so
+# new cycles appear automatically when the data are updated. The dropdown
+# defaults to the latest (max) cycle.
+cycle_sources <- c(naa_data,
+                   list(trips_data, catch_data, cpt_data, catch_len_data))
+
+management_cycle_choices <- cycle_sources %>%
+  lapply(function(df) if ("management_cycle" %in% names(df))
+    as.character(df$management_cycle)) %>%
+  unlist() %>%
+  unique() %>%
+  na.omit() %>%
+  as.character() %>%
+  sort()
+
+default_management_cycle <- if (length(management_cycle_choices) > 0)
+  as.character(max(as.numeric(management_cycle_choices))) else NULL
+
+# Filters a dataset to the selected cycle. Datasets with no management_cycle
+# column are returned unchanged. If the dataset has the column but no rows for
+# the selected cycle, a message is shown instead of an empty plot.
+filter_cycle <- function(df, cycle) {
+  if (is.null(df) || !"management_cycle" %in% names(df) || is.null(cycle) || cycle == "") {
+    return(df)
+  }
+  out <- df[as.character(df$management_cycle) == cycle &
+              !is.na(df$management_cycle), , drop = FALSE]
+  shiny::validate(shiny::need(nrow(out) > 0,
+                              paste0("No data available for management cycle ", cycle,
+                                     " for this selection.")))
+  out
+}
 
 # ── Colour palettes ───────────────────────────────────────────────────────────
 mode_colors_tc <- c("for_hire" = "#003087",
@@ -301,6 +344,22 @@ ui <- page_fillable(
                           "Catch-at-Length - model intermediate" = "catch_len"
                         ),
                         selected = "length")
+          ),
+
+          # Management cycle — filters every dataset that has a management_cycle
+          # column; defaults to the latest cycle in the data. Starts hidden and is
+          # shown by the server only when the current data has that column.
+          shinyjs::hidden(
+            div(id = "management_cycle_control",
+                div(
+                  style = "margin-top: 15px;",
+                  div(style = "background-color: #003087; color: white; padding: 8px 12px; margin: -10px -10px 10px -10px; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em;",
+                      "Management Cycle"),
+                  selectInput("management_cycle", NULL,
+                              choices  = management_cycle_choices,
+                              selected = default_management_cycle)
+                )
+            )
           ),
           
           # Fishing Mode — for standard fish data metrics
@@ -484,6 +543,7 @@ ui <- page_fillable(
                                "Groundfish Directed Trips and Catch" = "trips_catch_cod_haddock_doc", 
                                "SFBSBS Directed Trips and Catch" = "trips_catch_sfbsbs_doc", 
                                "Catch per trip"           = "cpt_cod_haddock_doc",
+                               "Simulated Directed Trips"    = "dtrips_cod_haddock_doc",
                                "Catch at length"          = "catch_at_len_doc"),
                   selected = "catch_at_len_doc",
                   width    = "100%"
@@ -673,14 +733,15 @@ server <- function(input, output, session) {
   filtered_naa <- reactive({
     req(input$data_metric == "naa", input$species, input$naa_period)
     key <- paste0(naa_species_key_map[[input$species]], "_", input$naa_period)
-    naa_data[[key]]
+    filter_cycle(naa_data[[key]], input$management_cycle)
   })
   
   # ── Trips reactive ─────────────────────────────────────────────────────────
   filtered_trips <- reactive({
     req(input$data_metric == "trips", input$tc_mode, input$tc_fishery)
     df <- trips_data %>%
-      filter(fishery %in% input$tc_fishery, mode %in% input$tc_mode)
+      filter(fishery %in% input$tc_fishery, mode %in% input$tc_mode) %>%
+      filter_cycle(input$management_cycle)
     
     # State filter only applies to the state-level SFSBSB fishery; other
     # fisheries have no state dimension (state is NA there).
@@ -706,7 +767,8 @@ server <- function(input, output, session) {
     selected_common <- catch_tc_species_map[[input$species]]
     
     df <- catch_data %>%
-      filter(mode %in% input$tc_mode, common == selected_common)
+      filter(mode %in% input$tc_mode, common == selected_common) %>%
+      filter_cycle(input$management_cycle)
     
     # State filter only applies to the state-level SFSBSB stocks; cod/haddock
     # rows have no state dimension (state is NA there).
@@ -737,7 +799,8 @@ server <- function(input, output, session) {
       filter(common == selected_common,
              mode  %in% input$tc_mode,
              year  %in% as.numeric(input$cpt_years),
-             month %in% as.numeric(input$cpt_months))
+             month %in% as.numeric(input$cpt_months)) %>%
+      filter_cycle(input$management_cycle)
   })
   
   # ── Catch-at-Length reactive ───────────────────────────────────────────────
@@ -748,13 +811,49 @@ server <- function(input, output, session) {
     selected_common <- species_map[[input$species]]
     
     catch_len_data %>%
-      filter(common == selected_common, season %in% input$catch_len_season)
+      filter(common == selected_common, season %in% input$catch_len_season) %>%
+      filter_cycle(input$management_cycle)
   })
   
   # ── Plot title reactive (shared by both headers) ───────────────────────────
   # ── CHANGED: extracted into a reactive so both plot and table headers
   #             can reference the same logic without duplicating code ──────────
+  # Unfiltered dataset behind the current metric — used to check whether it has
+  # a management_cycle column (so the title only names a cycle when one applies)
+  current_source_data <- reactive({
+    switch(input$data_metric,
+           "naa"       = {
+             req(input$species, input$naa_period)
+             # Single-bracket lookup: during a metric switch the species can
+             # briefly be one with no NAA data, which would otherwise error
+             sp_key <- unname(naa_species_key_map[input$species])
+             if (is.na(sp_key)) NULL else naa_data[[paste0(sp_key, "_", input$naa_period)]]
+           },
+           "trips"     = trips_data,
+           "catch_tc"  = catch_data,
+           "cpt"       = cpt_data,
+           "catch_len" = catch_len_data,
+           NULL)
+  })
+
   plot_title_text <- reactive({
+    base_title <- base_title_text()
+    if (!is.null(input$management_cycle) && input$management_cycle != "" &&
+        "management_cycle" %in% names(current_source_data())) {
+      paste0(base_title, " (Management Cycle ", input$management_cycle, ")")
+    } else {
+      base_title
+    }
+  })
+
+  # Show the Management Cycle dropdown only when the data behind the current
+  # metric (and stock/period, for NAA) has a management_cycle column
+  observe({
+    has_cycle <- "management_cycle" %in% names(current_source_data())
+    shinyjs::toggle("management_cycle_control", condition = has_cycle)
+  })
+
+  base_title_text <- reactive({
     switch(input$data_metric,
            "naa" = {
              req(input$species, input$naa_period)
@@ -1258,6 +1357,7 @@ server <- function(input, output, session) {
                        "naa_scup_doc"                = "docs/NAA_scup.html",
                        "trips_catch_cod_haddock_doc" = "docs/trips_catch_cod_haddock.html",
                        "trips_catch_sfbsbs_doc"      = "docs/trips_catch_sfsbsb.html",
+                       "dtrips_cod_haddock_doc"      = "docs/directed_trips_GF.html",
                        "cpt_cod_haddock_doc"         = "docs/cpt_cod_haddock.html")
 
     tags$iframe(src = doc_path, style = "width: 100%; height: 800px; border: none;", seamless = NA)

@@ -12,6 +12,15 @@ Simulated Numbers at age for Western Gulf of Maine Cod for the upcoming regulato
 
 WGOM Cod has 9 age classes (Age 1 to Age 8 and Age 9+).
 
+The historical numbers at age are used to build the baseline catch at length 
+distributions. 
+
+The projected numbers at age are used to build the projected catch 
+at length distributions. Both of these catch at length distributions 
+are used as intermediate model inputs in the RecDST. 
+
+If you have questions or feedback, please contact <nefsc.recdst@noaa.gov>. 
+
 **Years available**: 
 
 Mean historical numbers at age are provided for the most recent 3 years.  
@@ -34,9 +43,9 @@ This includes the "WHAM" model file  and an ASAP3 model file.
 
 ### Data analysis/Processing
 
-[Data processing code](https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim/process_haddock_assessment_data.R) can be seen in the groundfishRDM repository. 
 
-For the 2026 management cycle: 
+[Data processing code](https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim/process_cod_assessment_data.R) 
+can be seen in the groundfishRDM repository. In brief, for 2026 fishery management, we
 
 1.  We use actual catch (in mt) for 2023 and 2024. We use 75%FMSY for 2025-2026 mortality.
 2.  We project the stock forward and extract mean NAA through 2025.
