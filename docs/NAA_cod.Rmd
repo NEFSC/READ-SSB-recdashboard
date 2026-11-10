@@ -30,7 +30,7 @@ The historical numbers at age are used to build the baseline catch at length
 distributions. 
 
 The projected numbers at age are used to build the projected catch 
-at length distributions. These catch at length distributions 
+at length distributions. Both of these catch at length distributions 
 are used as intermediate model inputs in the RecDST. 
 
 If you have questions or feedback, please contact <nefsc.recdst@noaa.gov>. 
