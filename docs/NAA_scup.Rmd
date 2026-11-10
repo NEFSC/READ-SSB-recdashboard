@@ -26,7 +26,7 @@ Projected numbers at age are provided for the one year.
 
 ### Data sources
 
-All are derived from the most recent stock assessment ([2025 Management Track](https://apps-st.fisheries.noaa.gov/sis/docServlet?fileAction=download&fileId=10336))
+For the 2026 management cycle we used the most recent stock assessment ([2025 Management Track](https://apps-st.fisheries.noaa.gov/sis/docServlet?fileAction=download&fileId=10336))
 that was used for providing specifications advice to fishery managers
 
 ### Data extraction 

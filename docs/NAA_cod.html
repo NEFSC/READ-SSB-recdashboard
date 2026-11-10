@@ -378,7 +378,8 @@ year.</p>
 <h2>Methods</h2>
 <div id="data-sources" class="section level3">
 <h3>Data sources</h3>
-<p>All are derived from the most recent stock assessment (<a href="https://apps-st.fisheries.noaa.gov/sis/docServlet?fileAction=download&amp;fileId=10095">2024
+<p>For both 2026 and 2027 fishery management cycles, we used the most
+recent stock assessment (<a href="https://apps-st.fisheries.noaa.gov/sis/docServlet?fileAction=download&amp;fileId=10095">2024
 Management Track</a>) that was used for providing specifications advice
 to fishery managers</p>
 </div>
@@ -390,15 +391,24 @@ file.</p>
 </div>
 <div id="data-analysisprocessing" class="section level3">
 <h3>Data analysis/Processing</h3>
-<p><a href="https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim/get_cod_assessment_data.R">Data
-processing code</a> can be seen in the groundfishRDM repository. In
-brief, for 2026 fishery management, we</p>
+<p><a href="https://github.com/kimberly-bastille/groundfishRDM/blob/main/Code/pre_sim/process_haddock_assessment_data.R">Data
+processing code</a> can be seen in the groundfishRDM repository.</p>
+<p>For the 2026 management cycle:</p>
 <ol style="list-style-type: decimal">
-<li>We use using actual catch (in mt) for 2023 and 2024. We use 75%FMSY
-for 2025-2026 mortality.</li>
+<li>We use actual catch (in mt) for 2023 and 2024. We use 75%FMSY for
+2025-2026 mortality.</li>
 <li>We project the stock forward and extract mean NAA through 2025.</li>
 <li>We simulate 500 draws of the Numbers-at-Age for each age class for
 2026 based on the mean and standard deviations from WHAM.</li>
+</ol>
+<p>For the 2027 management cycle:</p>
+<ol style="list-style-type: decimal">
+<li>We use actual catch (in mt) for 2023, 2024, and 2025. We use 75%FMSY
+for 2026 mortality.</li>
+<li>We project the stock forward from the terminal year and extract mean
+NAA through 2026.</li>
+<li>We simulate 500 draws of the Numbers-at-Age for each age class for
+2027 based on the mean and standard deviations from WHAM.</li>
 </ol>
 </div>
 </div>
