@@ -9,7 +9,9 @@ simulated mean catch per trip at the mode-month level.
 
 The simulated catch per trip data are used in the Recreational Demand Model to estimate
 overall fishing mortality. Catch per trip also helps determine the quality of fishing trips 
-in the baseline and projection periods. When anglers catch more fish, they also retain 
+in the baseline and projection periods. 
+
+As an example, when anglers catch more fish, they also retain 
 more fish, other things equal. This increases the quality of fishing trips. Since 
 fishing quality is higher, the model assumes that anglers will respond by 
 taking more fishing trips, ultimately increasing the estimated fishing mortality. 
