@@ -17,7 +17,7 @@ The length data we use is in centimeters and we smooth the distributions over cm
 We convert cm to inches for our users, which is why our inch bins are non-integers 
 in the catch at length figure and table (eg, 10.6 inches).
 
-The catch at length distributions are used in the Recreational Demand Model to help
+The catch at length distributions are used in the Recreational Demand Model to
 determine the lengths of the fish caught and thus how many are retained vs released. 
 Catch at length influences the quality of fishing trips in the baseline and projection periods. When 
 there are more big fish in the water, anglers catch larger fish on average and retain 
