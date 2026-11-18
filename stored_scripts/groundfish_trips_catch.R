@@ -29,8 +29,8 @@ here::i_am("stored_scripts/groundfish_trips_catch.R")
 #######################################################################  
 
 # Management year
-mgt_year <- 2026
-yearlist <- c(mgt_year - 1, mgt_year - 2)
+mgt_cycle <- 2026
+yearlist <- c(mgt_cycle - 1, mgt_cycle - 2)
 statelist<- c("25", "23", "33") # 25 is MA, 23 is ME, 33 is NH
 common_name1<-'ATLANTIC COD'
 common_name2<-'HADDOCK'
@@ -416,7 +416,7 @@ rec_trips_catch <- rbind(cod_hadd_trips, cod_hadd_catch)
 rec_trips_catch <- rec_trips_catch %>%
   mutate(
     source = "MRIP",
-    management_cycle = mgt_year
+    management_cycle = mgt_cycle
   )
 
 

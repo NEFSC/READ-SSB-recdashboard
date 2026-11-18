@@ -29,8 +29,8 @@ here::i_am("stored_scripts/sfsbsb.R")
 # intended to help with "function-izing"
 #######################################################################  
 # Management year
-mgt_year <- 2026
-yearlist <- c(mgt_year - 1, mgt_year - 2)
+mgt_cycle <- 2026
+yearlist <- c(mgt_cycle - 1, mgt_cycle - 2)
 # 25 is MA, 23 is ME, 33 is NH, 9 is CT, 10 is DE, 24 is MD, 34 is NJ, 36 is NY, 44 is RI, 51 is VA, 37 is NC
 statelist<- c("25", "09", "10", "24", "34", "36", "44", "51", "37")  
 common_name1<-'SUMMER FLOUNDER'
@@ -440,7 +440,7 @@ sfsbsb_trips_catch <- rbind(sfsbsb_trips, sfsbsb_catch)
 sfsbsb_trips_catch <- sfsbsb_trips_catch %>%
   mutate(
     source = "MRIP",
-    management_cycle = mgt_year
+    management_cycle = mgt_cycle
   )
 
 # look at it.
