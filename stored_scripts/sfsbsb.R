@@ -28,8 +28,9 @@ here::i_am("stored_scripts/sfsbsb.R")
 ###########OPTIONS
 # intended to help with "function-izing"
 #######################################################################  
-
-yearlist<-c("2024", "2025") 
+# Management year
+mgt_year <- 2026
+yearlist <- c(mgt_year - 1, mgt_year - 2)
 # 25 is MA, 23 is ME, 33 is NH, 9 is CT, 10 is DE, 24 is MD, 34 is NJ, 36 is NY, 44 is RI, 51 is VA, 37 is NC
 statelist<- c("25", "09", "10", "24", "34", "36", "44", "51", "37")  
 common_name1<-'SUMMER FLOUNDER'
@@ -435,9 +436,12 @@ sfsbsb_catch <- sfsbsb_catch %>%
 # units vary by metric: "number of trips" (directed trips) vs "number of fish" (catch metrics)
 sfsbsb_trips_catch <- rbind(sfsbsb_trips, sfsbsb_catch)
 
-# Add in a column for source
+# Add in a column for source and management cycle
 sfsbsb_trips_catch <- sfsbsb_trips_catch %>%
-  mutate(source = "MRIP")
+  mutate(
+    source = "MRIP",
+    management_cycle = mgt_year
+  )
 
 # look at it.
 sfsbsb_trips_catch %>% 

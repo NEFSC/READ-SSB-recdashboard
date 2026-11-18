@@ -28,7 +28,9 @@ here::i_am("stored_scripts/groundfish_trips_catch.R")
 # intended to help with "function-izing"
 #######################################################################  
 
-yearlist<-c("2024", "2025") 
+# Management year
+mgt_year <- 2026
+yearlist <- c(mgt_year - 1, mgt_year - 2)
 statelist<- c("25", "23", "33") # 25 is MA, 23 is ME, 33 is NH
 common_name1<-'ATLANTIC COD'
 common_name2<-'HADDOCK'
@@ -410,9 +412,12 @@ cod_hadd_catch <- cod_hadd_catch %>%
 # units vary by metric: "number of trips" (directed trips) vs "number of fish" (catch metrics)
 rec_trips_catch <- rbind(cod_hadd_trips, cod_hadd_catch)
 
-# Add in a column for source
+# Add in a column for source and management year
 rec_trips_catch <- rec_trips_catch %>%
-  mutate(source = "MRIP")
+  mutate(
+    source = "MRIP",
+    management_cycle = mgt_year
+  )
 
 
 # look at it.
