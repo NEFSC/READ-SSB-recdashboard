@@ -8,7 +8,7 @@
 #
 # Outputs:      Dated .Rds files in data/main/ (one per stub per cycle).
 #               Stacked data/main/{stub}.Rds (one per stub).
-#               Named character vector of stacked paths (NAA_stacked_paths).
+#               Named character vector of stacked paths (data_stacked_paths).
 # Dependencies: R/pull_dashboard_data.R. Packages dplyr, glue,
 #               here, lubridate, magrittr, purrr, stringr, tibble.
 # Pipeline:     Data setup for the dashboard.
@@ -143,7 +143,7 @@ names(data_2027) <- to_stub(names(data_2027))
 #### Stack and check every stub first. Nothing is saved unless all 4 pass,
 #### so a failure can't leave a mix of new and old stacked files.
 
-NAA_stacked <- list()
+data_stacked <- list()
 
 for (stub in stubs_2026) {
   df_2026 <- data_2026[[stub]]
@@ -204,23 +204,23 @@ for (stub in stubs_2026) {
     )
   }
 
-  NAA_stacked[[stub]] <- stacked
+  data_stacked[[stub]] <- stacked
 }
 
 #### All stubs passed: save each to data/main/{stub}.Rds (no date in name)
 
-NAA_stacked_paths <- character(0)
+data_stacked_paths <- character(0)
 
-for (stub in names(NAA_stacked)) {
+for (stub in names(data_stacked)) {
   stacked_path <- here::here("data", "main", paste0(stub, ".Rds"))
-  saveRDS(NAA_stacked[[stub]], stacked_path)
+  saveRDS(data_stacked[[stub]], stacked_path)
   message(glue::glue("Saved: {basename(stacked_path)}"))
 
-  NAA_stacked_paths[stub] <- stacked_path
+  data_stacked_paths[stub] <- stacked_path
 }
 
 # One stacked file per stub
-stopifnot(length(NAA_stacked_paths) == expected_n_files / 2)
+stopifnot(length(data_stacked_paths) == expected_n_files / 2)
 
 
 
