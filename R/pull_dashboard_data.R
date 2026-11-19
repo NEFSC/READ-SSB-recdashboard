@@ -159,7 +159,10 @@ pull_dashboard_data <- function(
     stop(glue::glue("Folder not found: {source_folder}"), call. = FALSE)
   }
 
-  destination_folder <- here::here("data", "main")
+  destination_folder <- here::here("data",
+                                   "main",
+                                   glue::glue("{management_cycle}_management_cycle_data")
+  )
 
   if (!dir.exists(destination_folder)) {
     stop(
