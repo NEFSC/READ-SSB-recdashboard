@@ -8,6 +8,13 @@ Projected Numbers at age contain 100 individual draws for the upcoming regulator
 
 Scup has 7 age classes (Age 1 to Age 6 and Age 7+).
 
+The historical numbers at age are used to build the baseline catch at length 
+distributions. The projected numbers at age are used to build the projected catch 
+at length distributions. These catch at length distributions 
+are used as intermediate model inputs in the RecDST. 
+
+If you have questions or feedback, please contact <nefsc.recdst@noaa.gov>. 
+
 **Years available**: 
 
 Mean historical numbers at age are provided for 2024.  
@@ -19,7 +26,7 @@ Projected numbers at age are provided for the one year.
 
 ### Data sources
 
-All are derived from the most recent stock assessment ([2025 Management Track](https://apps-st.fisheries.noaa.gov/sis/docServlet?fileAction=download&fileId=10336))
+For the 2026 management cycle we used the most recent stock assessment ([2025 Management Track](https://apps-st.fisheries.noaa.gov/sis/docServlet?fileAction=download&fileId=10336))
 that was used for providing specifications advice to fishery managers
 
 ### Data extraction 
