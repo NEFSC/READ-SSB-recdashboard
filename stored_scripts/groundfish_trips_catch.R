@@ -185,10 +185,10 @@ cod_hadd_all <- rbind(cod_effort_catch, hadd_effort_catch)
 # Rename mode1 mode
 cod_hadd_all <- cod_hadd_all %>% 
   mutate(mode = case_when(
-    mode_fx == 3 ~ "shore",
-    mode_fx == 4 ~ "headboat",
-    mode_fx == 5 ~ "charter",
-    mode_fx == 7 ~ "private"
+    mode_fx == 3 ~ "sh",
+    mode_fx == 4 ~ "fh",
+    mode_fx == 5 ~ "fh",
+    mode_fx == 7 ~ "pr"
 ))
 
 # Recode FIPS state codes to abbreviations
