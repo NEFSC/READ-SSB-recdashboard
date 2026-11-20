@@ -75,12 +75,13 @@ catch[] <- lapply(catch, function(x) if(is.character(x)) tolower(x) else x)
 #### SF effort ####
 # typ = c('PRIM1', 'A', 'B1', 'B2') captures directed trips where sf was 
 # the primary target OR was caught (kept, unobserved dead, or released)
-sf_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE1', 'INTSITE', 'CNTY',
+sf_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE', 'CNTY',
                                   'STRAT_ID', 'PSU_ID', 'ID_CODE', 'LEADER'),
                           microdata = mrip_pull,
                           dir_trip = list(comname = common_name1,
                                           typ = c('PRIM1', 'A', 'B1', 'B2')))|>
   filter(ST %in% statelist) |>
+  filter(MODE_FX %in% 3:7) |>
   filter(YEAR %in% yearlist)
 
 names(sf_effort) <- tolower(names(sf_effort))
@@ -89,13 +90,14 @@ sf_effort[] <- lapply(sf_effort, function(x) if(is.character(x)) tolower(x) else
 #### SF Catch ####
 # estimate_var=FALSE speeds up processing by skipping variance/SE/CV calculation
 sf_catch <- mrip_catch(comname = common_name1, 
-                        dom = c('YEAR', 'WAVE', 'ST', 'MODE1', 'STRAT_ID', 
+                        dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'STRAT_ID', 
                                 'PSU_ID', 'ID_CODE', 'WP_INT'), 
                         microdata = mrip_pull, estimate_var = FALSE) 
 
 ## pull out estimates
 sf_catch <- sf_catch$estimates%>%
   filter(ST %in% statelist) |>
+  filter(MODE_FX %in% 3:7) |>
   filter(YEAR %in% yearlist)
 
 names(sf_catch) <- tolower(names(sf_catch))
@@ -107,7 +109,7 @@ sf_catch <- subset(sf_catch, select = -c(se, cv)) # se and cv only populated whe
 sf_effort$source <- "effort"
 sf_catch$source <- "catch"
 sf_effort_catch <- left_join(sf_effort, sf_catch, # left join: retains all effort rows; unmatched catch rows are NA
-                              by = c("common", "year", "wave", "mode1", "st", 
+                              by = c("common", "year", "wave", "mode_fx", "st", 
                                      "strat_id", "psu_id", "id_code"))
 
 ## some trips without catch, keep them, will assign claim=0 down below
@@ -122,12 +124,13 @@ sf_effort_catch <- sf_effort_catch %>% filter(!(day %in% c("9x", "xx"))) # drop 
 
 
 #### Scup effort ####
-sc_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE1', 'INTSITE', 'CNTY',
+sc_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE', 'CNTY',
                                  'STRAT_ID', 'PSU_ID', 'ID_CODE', 'LEADER'),
                          microdata = mrip_pull,
                          dir_trip = list(comname = common_name2,
                                          typ = c('PRIM1', 'A', 'B1', 'B2')))|>
   filter(ST %in% statelist) |>
+  filter(MODE_FX %in% 3:7) |>
   filter(YEAR %in% yearlist)
 
 names(sc_effort) <- tolower(names(sc_effort))
@@ -135,12 +138,13 @@ sc_effort[] <- lapply(sc_effort, function(x) if(is.character(x)) tolower(x) else
 
 #### Scup Catch ####
 sc_catch <- mrip_catch(comname = common_name2, 
-                       dom = c('YEAR', 'WAVE', 'ST', 'MODE1', 'STRAT_ID', 
+                       dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'STRAT_ID', 
                                'PSU_ID', 'ID_CODE', 'WP_INT'), 
                        microdata = mrip_pull, estimate_var = FALSE) 
 
 sc_catch <- sc_catch$estimates%>%
   filter(ST %in% statelist) |>
+  filter(MODE_FX %in% 3:7) |>
   filter(YEAR %in% yearlist)
 
 names(sc_catch) <- tolower(names(sc_catch))
@@ -152,7 +156,7 @@ sc_catch <- subset(sc_catch, select = -c(se, cv)) # se and cv only populated whe
 sc_effort$source <- "effort"
 sc_catch$source <- "catch"
 sc_effort_catch <- left_join(sc_effort, sc_catch, # left join: retains all effort rows; unmatched catch rows are NA
-                             by = c("common", "year", "wave", "mode1", "st", 
+                             by = c("common", "year", "wave", "mode_fx", "st", 
                                     "strat_id", "psu_id", "id_code"))
 
 ## some trips without catch, keep them, will assign claim=0 down below
@@ -169,12 +173,13 @@ sc_effort_catch <- sc_effort_catch %>% filter(!(day %in% c("9x", "xx"))) # drop 
 
 
 #### BSB effort ####
-bsb_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE1', 'INTSITE', 'CNTY', 
+bsb_effort <- mrip_effort(dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'INTSITE', 'CNTY', 
                                  'STRAT_ID', 'PSU_ID', 'ID_CODE', 'LEADER'),
                          microdata = mrip_pull,
                          dir_trip = list(comname = common_name3,
                                          typ = c('PRIM1', 'A', 'B1', 'B2')))|>
   filter(ST %in% statelist) |>
+  filter(MODE_FX %in% 3:7) |>
   filter(YEAR %in% yearlist)
 
 names(bsb_effort) <- tolower(names(bsb_effort))
@@ -182,12 +187,13 @@ bsb_effort[] <- lapply(bsb_effort, function(x) if(is.character(x)) tolower(x) el
 
 #### BSB Catch ####
 bsb_catch <- mrip_catch(comname = common_name3, 
-                       dom = c('YEAR', 'WAVE', 'ST', 'MODE1', 'STRAT_ID', 
+                       dom = c('YEAR', 'WAVE', 'ST', 'MODE_FX', 'STRAT_ID', 
                                'PSU_ID', 'ID_CODE', 'WP_INT'), 
                        microdata = mrip_pull, estimate_var = FALSE) 
 
 bsb_catch <- bsb_catch$estimates%>%
   filter(ST %in% statelist) |>
+  filter(MODE_FX %in% 3:7) |>
   filter(YEAR %in% yearlist)
 
 names(bsb_catch) <- tolower(names(bsb_catch))
@@ -199,7 +205,7 @@ bsb_catch <- subset(bsb_catch, select = -c(se, cv)) # se and cv only populated w
 bsb_effort$source <- "effort"
 bsb_catch$source <- "catch"
 bsb_effort_catch <- left_join(bsb_effort, bsb_catch, # left join: retains all effort rows; unmatched catch rows are NA
-                             by = c("common", "year", "wave", "mode1", "st", 
+                             by = c("common", "year", "wave", "mode_fx", "st", 
                                     "strat_id", "psu_id", "id_code"))
 
 ## some trips without catch, keep them, will assign claim=0 down below
