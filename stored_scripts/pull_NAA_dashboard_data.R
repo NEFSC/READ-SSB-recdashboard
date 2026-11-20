@@ -80,7 +80,7 @@ stopifnot(length(data_2026)==length(data_2027))
 ###################################################
 
 # 4 stubs x 2 management cycles
-expected_n_files <- 8
+expected_n_files <- length(files_to_pull_2026)+ length(files_to_pull_2027)
 
 # Cycle labels taken from the request tables, as character, for comparing
 # with the management_cycle column in each file
