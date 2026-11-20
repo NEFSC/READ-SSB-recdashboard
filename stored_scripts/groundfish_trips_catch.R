@@ -457,8 +457,8 @@ library(googledrive)
 drive_auth(cache = here(".secrets"), email = TRUE)
 
 # Output folder on google drive
-miscellaneous_path <-file.path("socialsci","RecreationalDST","2027_management_cycle_data",
-                               "groundfishRDM","miscellaneous")
+miscellaneous_path <-file.path("socialsci","RecreationalDST",cycle_folder,
+                               "groundfishRDM","input_data")
 
 folder_info <- drive_get(
   path = miscellaneous_path,
