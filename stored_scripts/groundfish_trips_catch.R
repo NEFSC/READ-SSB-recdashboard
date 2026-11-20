@@ -438,7 +438,8 @@ rec_trips_catch %>%
 
 
 ##### Save file as Rds
-output_folder <- file.path(here("data","main"))
+cycle_folder <- glue("{mgt_cycle}_management_cycle_data")
+output_folder <- file.path(here("data","main",cycle_folder))
 SaveFile<-glue("trip_catch_gf{data_vintage}")
 write_rds(rec_trips_catch, file=file.path(output_folder,glue("{SaveFile}.Rds")))
 
