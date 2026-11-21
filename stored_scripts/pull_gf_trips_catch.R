@@ -9,13 +9,20 @@ library(here)
 
 here::i_am("stored_scripts/pull_gf_trips_catch.R")
 
+# TO DO. 
+# Define the cycles to stack
+# write a loop to pull in max date file from each cycle folder
+# name them based on mgt cycle then stack them at the end
+# change this so it's drawing from the D drive like how MY wrote it
+
+
 # Connect to Google Drive
 # NOTE: Relies on cached credentials in .secrets. Will prompt interactive auth if missing or expired.
 drive_auth(cache = here(".secrets"), email = TRUE)
 
 # Find miscellaneous folder on google drive
 miscellaneous_path <-file.path("socialsci","RecreationalDST","2027_management_cycle_data",
-                               "groundfishRDM","miscellaneous")
+                               "groundfishRDM","input_data")
 
 folder_info <- drive_get(
   path = miscellaneous_path,
